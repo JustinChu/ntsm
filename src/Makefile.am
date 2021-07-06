@@ -7,7 +7,8 @@ ntfp_CPPFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)
 		
 ntfp_LDFLAGS = $(OPENMP_CXXFLAGS) \
-	-lz \
 	-pthread
+
+ntfp_LDADD = -lz
 
 ntfp_SOURCES = ntfp.cpp
