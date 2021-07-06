@@ -19,5 +19,8 @@ using namespace std;
  */
 namespace opt {
 int verbose = 0;
+int threads = 1;
+string var = "";
+string ref = "";
 }
 #endif

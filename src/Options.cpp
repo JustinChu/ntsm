@@ -5,11 +5,14 @@
  *      Author: cjustin
  */
 
-#include <Options.h>
+#include "Options.h"
 using namespace std;
 
 namespace opt {
 extern int verbose;
+extern int threads;
+extern string ref;
+extern string var;
 }
 
 
