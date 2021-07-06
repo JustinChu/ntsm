@@ -23,6 +23,9 @@
 #include "config.h"
 #include "src/Options.h"
 #include "src/Util.h"
+
+#include "FingerPrint.hpp"
+
 #if _OPENMP
 # include <omp.h>
 #endif
@@ -149,7 +152,9 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-
+	FingerPrint fp(inputFiles);
+	fp.computeCounts();
+	fp.computeFingerPrint();
 	return 0;
 }
 
