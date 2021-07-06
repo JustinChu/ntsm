@@ -10,7 +10,4 @@ ntfp_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-lz \
 	-pthread
 
-ntfp_SOURCES = ntfp.cpp \
-	Options.h \
-	Options.cpp \ 
-	Util.h
+ntfp_SOURCES = ntfp.cpp

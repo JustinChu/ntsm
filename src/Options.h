@@ -19,7 +19,10 @@ using namespace std;
  */
 namespace opt {
 int verbose = 0;
-int threads = 1;
+unsigned threads = 1;
+unsigned k = 25;
+size_t genomeSize = 3000000000;
+double minProp = 0.5;
 string var = "";
 string ref = "";
 }

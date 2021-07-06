@@ -5,12 +5,15 @@
  *      Author: cjustin
  */
 
-#include "Options.h"
+#include "src/Options.h"
 using namespace std;
 
 namespace opt {
 extern int verbose;
-extern int threads;
+extern unsigned threads;
+extern unsigned k;
+extern size_t genomeSize;
+extern double minProp;
 extern string ref;
 extern string var;
 }
