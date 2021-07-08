@@ -31,7 +31,7 @@ using namespace std;
 class FingerPrint {
 public:
 	FingerPrint(const vector<string> &filenames) :
-			m_filenames(filenames), m_totalCounts(0){
+			m_filenames(filenames) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
@@ -63,8 +63,6 @@ public:
 #pragma omp atomic update
 						++m_counts[hv];
 					}
-#pragma omp atomic update
-					++m_totalCounts;
 				}
 				l = kseq_read(seq);
 				index++;
@@ -74,46 +72,58 @@ public:
 		}
 	}
 
-	/*
-	 * 0 = missing alleles
-	 * 1 = homozygous wt
-	 * 2 = homozygous var
-	 * 3 = heterzygous wt/var
-	 */
-	void computeFingerPrint(){
-		double expectedCoverage = opt::genomeSize/m_totalCounts;
+	void printCounts(){
 		for (vector<pair<uint64_t, uint64_t>>::iterator itr =
 				m_allelePairs.begin(); itr != m_allelePairs.end(); ++itr) {
 			double freqAlle1 = m_counts[itr->first];
 			double freqAlle2 = m_counts[itr->second];
-			bool wt, var = false;
-			if(freqAlle1 >= expectedCoverage * opt::minProp){
-				wt = true;
-			}
-			if (freqAlle2 >= expectedCoverage * opt::minProp) {
-				var = true;
-			}
-			if(!wt && !var){
-				cout << "0";
-			}
-			else if(wt && var){
-				cout << "3";
-			}
-			else if(wt){
-				cout << "1";
-			}
-			else if(var){
-				cout << "2";
-			}
+			cout << freqAlle1 << " " << freqAlle2 << endl;
 		}
 		cout << endl;
 	}
+
+//	/*
+//	 * 0 = missing alleles
+//	 * 1 = homozygous wt
+//	 * 2 = homozygous var
+//	 * 3 = heterzygous wt/var
+//	 */
+//	void computeFingerPrint(){
+//		//assume count is not propotional to k-mer count
+//		double expectedCoverage = m_totalCounts;
+//		for (vector<pair<uint64_t, uint64_t>>::iterator itr =
+//				m_allelePairs.begin(); itr != m_allelePairs.end(); ++itr) {
+//			double freqAlle1 = m_counts[itr->first];
+//			double freqAlle2 = m_counts[itr->second];
+//			bool wt, var = false;
+//
+//			if(freqAlle1 >= expectedCoverage * opt::minProp){
+//				wt = true;
+//			}
+//			if (freqAlle2 >= expectedCoverage * opt::minProp) {
+//				var = true;
+//			}
+//			if(!wt && !var){
+//				cout << "0";
+//			}
+//			else if(wt && var){
+//				cout << "3";
+//			}
+//			else if(wt){
+//				cout << "1";
+//			}
+//			else if(var){
+//				cout << "2";
+//			}
+//		}
+//		cout << endl;
+//	}
 
 	virtual ~FingerPrint() {
 	}
 private:
 	const vector<string> &m_filenames;
-	size_t m_totalCounts;
+//	size_t m_totalCounts;
 	tsl::robin_map<uint64_t, size_t> m_counts;
 	vector<pair<uint64_t, uint64_t>> m_allelePairs;
 

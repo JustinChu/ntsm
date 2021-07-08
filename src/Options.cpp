@@ -12,8 +12,6 @@ namespace opt {
 extern int verbose;
 extern unsigned threads;
 extern unsigned k;
-extern size_t genomeSize;
-extern double minProp;
 extern string ref;
 extern string var;
 }

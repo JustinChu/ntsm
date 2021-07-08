@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 
 	FingerPrint fp(inputFiles);
 	fp.computeCounts();
-	fp.computeFingerPrint();
+	fp.printCounts();
 	return 0;
 }
 
