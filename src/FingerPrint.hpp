@@ -72,12 +72,11 @@ public:
 		}
 	}
 
-	void printCounts(){
-		for (vector<pair<uint64_t, uint64_t>>::iterator itr =
-				m_allelePairs.begin(); itr != m_allelePairs.end(); ++itr) {
-			double freqAlle1 = m_counts[itr->first];
-			double freqAlle2 = m_counts[itr->second];
-			cout << m_alleleIDs << "\t" << freqAlle1 << "\t" << freqAlle2 << endl;
+	void printCounts() const{
+		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
+			double freqAlle1 = m_counts[m_allelePairs.at(i).first];
+			double freqAlle2 = m_counts[m_allelePairs.at(i).second];
+			cout << m_alleleIDs.at(i) << "\t" << freqAlle1 << "\t" << freqAlle2 << endl;
 		}
 		cout << endl;
 	}
