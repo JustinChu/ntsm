@@ -77,7 +77,7 @@ public:
 				m_allelePairs.begin(); itr != m_allelePairs.end(); ++itr) {
 			double freqAlle1 = m_counts[itr->first];
 			double freqAlle2 = m_counts[itr->second];
-			cout << freqAlle1 << " " << freqAlle2 << endl;
+			cout << m_alleleIDs << "\t" << freqAlle1 << "\t" << freqAlle2 << endl;
 		}
 		cout << endl;
 	}
@@ -126,6 +126,7 @@ private:
 //	size_t m_totalCounts;
 	tsl::robin_map<uint64_t, size_t> m_counts;
 	vector<pair<uint64_t, uint64_t>> m_allelePairs;
+	vector<string> m_alleleIDs;
 
 	void initCountsHash(){
 		gzFile fp1, fp2;
@@ -147,6 +148,7 @@ private:
 				uint64_t hv1 = (*itr1)[0];
 				uint64_t hv2 = (*itr2)[0];
 				m_allelePairs.emplace_back(make_pair(hv1, hv2));
+				m_alleleIDs.emplace_back(seq1->name.s);
 				assert(m_counts.find(hv1) == m_counts.end());
 				assert(m_counts.find(hv2) == m_counts.end());
 				m_counts[hv1] = 0;
