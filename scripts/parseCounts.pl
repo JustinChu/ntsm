@@ -14,7 +14,7 @@ my $threshold = 3;
 
 while ($line) {
 	chomp($line);
-	my @tempArr = split( /\s/, $line );
+	my @tempArr = split( / /, $line );
 
 	if ( $tempArr[0] > $threshold && $tempArr[2] > $threshold ) {
 		print "3";
