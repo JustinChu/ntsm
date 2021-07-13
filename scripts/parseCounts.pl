@@ -15,21 +15,21 @@ my $threshold = 3;
 while ($line) {
 	chomp($line);
 	my @tempArr = split( /\s/, $line );
-	
-	if($tempArr[0] > $threshold && $tempArr[2] > $threshold){
+
+	if ( $tempArr[0] > $threshold && $tempArr[2] > $threshold ) {
 		print "3";
 	}
-	elsif($tempArr[0] > $threshold){
+	elsif ( $tempArr[0] > $threshold ) {
 		print "1";
 	}
-	elsif($tempArr[1] > $threshold){
+	elsif ( $tempArr[1] > $threshold ) {
 		print "2";
 	}
-	else{
+	else {
 		print "0";
 	}
-	print "\n";
 
 	$line = $fh->getline();
 }
+print "\n";
 $fh->close();
