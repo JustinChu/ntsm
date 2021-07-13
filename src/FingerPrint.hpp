@@ -140,7 +140,7 @@ private:
 		unsigned index = 0;
 		while (l1 >= 0 && l2) {
 			ntHashIterator itr1(seq1->seq.s, 1, opt::k);
-			ntHashIterator itr2(seq1->seq.s, 1, opt::k);
+			ntHashIterator itr2(seq2->seq.s, 1, opt::k);
 			//k-merize and insert
 			//TODO Add some more file and sanity checks
 			for (;itr1 != itr1.end() && itr2 != itr2.end(); ++itr1, ++itr2) {
