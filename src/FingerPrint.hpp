@@ -38,7 +38,7 @@ public:
 	}
 
 	void computeCounts(){
-#pragma omp parallel
+#pragma omp parallel for
 		for (unsigned i = 0; i < m_filenames.size(); ++i) {
 			gzFile fp;
 			fp = gzopen(m_filenames[i].c_str(), "r");
