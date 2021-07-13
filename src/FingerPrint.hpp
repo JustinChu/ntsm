@@ -72,7 +72,7 @@ public:
 		}
 	}
 
-	void printCounts() const{
+	void printCounts(){
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
 			double freqAlle1 = m_counts[m_allelePairs.at(i).first];
 			double freqAlle2 = m_counts[m_allelePairs.at(i).second];
