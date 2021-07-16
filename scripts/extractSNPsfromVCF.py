@@ -45,6 +45,7 @@ class ExtractKmers:
             pos1 = math.ceil(offset - self._k / 2)
             pos2 = pos1 + self._k
             tmpStr = str(fastaFile[self._vcfEntries[id].chr][pos1:pos2])
+            tmpStr = tmpStr.upper()
             if(self._vcfEntries[id].wt != tmpStr[int(self._k / 2)]):
                 print("Wildtype allele does not match")
                 print("ref:" + self._vcfEntries[id].wt)
