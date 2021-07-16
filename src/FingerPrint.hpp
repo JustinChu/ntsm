@@ -146,12 +146,17 @@ private:
 			for (;itr1 != itr1.end() && itr2 != itr2.end(); ++itr1, ++itr2) {
 				uint64_t hv1 = (*itr1)[0];
 				uint64_t hv2 = (*itr2)[0];
-				m_allelePairs.emplace_back(make_pair(hv1, hv2));
-				m_alleleIDs.emplace_back(seq1->name.s);
-				assert(m_counts.find(hv1) == m_counts.end());
-				assert(m_counts.find(hv2) == m_counts.end());
-				m_counts[hv1] = 0;
-				m_counts[hv2] = 0;
+				//check for duplicates
+				if (m_counts.find(hv1) != m_counts.end()
+						|| m_counts.find(hv2) != m_counts.end()) {
+					cerr << seq1->name.s << " is a duplicate" << endl;
+				}
+				else {
+					m_allelePairs.emplace_back(make_pair(hv1, hv2));
+					m_alleleIDs.emplace_back(seq1->name.s);
+					m_counts[hv1] = 0;
+					m_counts[hv2] = 0;
+				}
 			}
 			l1 = kseq_read(seq1);
 			l2 = kseq_read(seq2);
