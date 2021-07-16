@@ -51,6 +51,7 @@ void printHelpDialog(){
 	"  -t, --threads          Number of threads to run.[1]\n"
 	"  -r, --ref              Wildtype reference fasta. [required]\n"
 	"  -a, --var              Variant reference fasta. [required]\n"
+	"  -k, --kmer             Kmer size use. [25]"
 	"  -h, --help             Display this dialog.\n"
 	"  -v, --verbose          Display verbose output.\n"
 	"      --version          Print version information.\n";
@@ -70,15 +71,17 @@ int main(int argc, char *argv[])
 
 	//long form arguments
 	static struct option long_options[] = { {
+		"threads", required_argument, NULL, 't' }, {
 		"ref", required_argument, NULL, 'r' }, {
 		"var", required_argument, NULL, 'a' }, {
+		"kmer", required_argument, NULL, 'k' }, {
 		"help", no_argument, NULL, 'h' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
 		"verbose", no_argument, NULL, 'v' }, {
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "r:a:t:vh", long_options,
+	while ((c = getopt_long(argc, argv, "r:a:t:vhk:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -100,6 +103,15 @@ int main(int argc, char *argv[])
 			stringstream convert(optarg);
 			if (!(convert >> opt::var)) {
 				cerr << "Error - Invalid parameter i: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'k': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::k)) {
+				cerr << "Error - Invalid parameter k: "
 						<< optarg << endl;
 				return 0;
 			}
