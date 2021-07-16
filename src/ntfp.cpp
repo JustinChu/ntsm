@@ -152,9 +152,12 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	double time = omp_get_wtime();
+
 	FingerPrint fp(inputFiles);
 	fp.computeCounts();
 	fp.printCounts();
+	cerr << "Memory: " << omp_get_wtime() - time << " Time:"  << Util::getRSS() << endl;
 	return 0;
 }
 
