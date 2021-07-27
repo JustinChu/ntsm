@@ -157,6 +157,11 @@ private:
 		while (l1 >= 0 && l2) {
 			ntHashIterator itr1(seq1->seq.s, 1, opt::k);
 			ntHashIterator itr2(seq2->seq.s, 1, opt::k);
+			m_alleleIDToKmer[m_alleleIDs.size()] = shared_ptr<
+					vector<pair<uint64_t, uint64_t>>>(
+					new vector<pair<uint64_t, uint64_t>>());
+			m_alleleIDToKmer[m_alleleIDs.size()]->reserve(seq1->seq.l - opt::k + 1);
+
 			//k-merize and insert
 			//TODO Add some more file and sanity checks
 			for (;itr1 != itr1.end() && itr2 != itr2.end(); ++itr1, ++itr2) {
