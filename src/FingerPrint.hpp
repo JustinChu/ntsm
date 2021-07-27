@@ -30,6 +30,9 @@ using namespace std;
 
 class FingerPrint {
 public:
+
+	typedef uint16_t alleleID;
+
 	FingerPrint(const vector<string> &filenames) :
 			m_filenames(filenames) {
 		//read in fasta files
@@ -73,10 +76,22 @@ public:
 	}
 
 	void printCounts(){
+		string tempStr = "";
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
-			double freqAlle1 = m_counts[m_allelePairs.at(i).first];
-			double freqAlle2 = m_counts[m_allelePairs.at(i).second];
-			cout << m_alleleIDs.at(i) << "\t" << freqAlle1 << "\t" << freqAlle2 << endl;
+			const vector<pair<uint64_t, uint64_t>> &allelePair = *m_alleleIDToKmer[i];
+			size_t maxCountWT = 0;
+			size_t maxCountVAR = 0;
+			for(size_t j = 0; j < allelePair.size() ; ++j) {
+				double freqAlle1 = m_counts[allelePair.at(j).first];
+				double freqAlle2 = m_counts[allelePair.at(j).second];
+				if(maxCountWT < freqAlle1){
+					maxCountWT = freqAlle1;
+				}
+				if(maxCountVAR < freqAlle2){
+					maxCountVAR = freqAlle2;
+				}
+			}
+			cout << m_alleleIDs.at(i) << "\t" << maxCountWT << "\t" << maxCountVAR << endl;
 		}
 		cout << endl;
 	}
@@ -124,7 +139,8 @@ private:
 	const vector<string> &m_filenames;
 //	size_t m_totalCounts;
 	tsl::robin_map<uint64_t, size_t> m_counts;
-	vector<pair<uint64_t, uint64_t>> m_allelePairs;
+	tsl::robin_map<alleleID, shared_ptr<vector<pair<uint64_t, uint64_t>>>> m_alleleIDToKmer;
+//	vector<pair<uint64_t, uint64_t>> m_allelePairs;
 	vector<string> m_alleleIDs;
 
 	void initCountsHash(){
@@ -150,14 +166,14 @@ private:
 				if (m_counts.find(hv1) != m_counts.end()
 						|| m_counts.find(hv2) != m_counts.end()) {
 					cerr << seq1->name.s << " is a duplicate" << endl;
-				}
-				else {
-					m_allelePairs.emplace_back(make_pair(hv1, hv2));
-					m_alleleIDs.emplace_back(seq1->name.s);
+				} else {
+					m_alleleIDToKmer[m_alleleIDs.size()]->emplace_back(
+							make_pair(hv1, hv2));
 					m_counts[hv1] = 0;
 					m_counts[hv2] = 0;
 				}
 			}
+			m_alleleIDs.emplace_back(seq1->name.s);
 			l1 = kseq_read(seq1);
 			l2 = kseq_read(seq2);
 			index++;
