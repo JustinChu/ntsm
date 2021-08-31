@@ -1,16 +1,3 @@
-/*
- * SeqGC.cpp
- *
- *  Created on: Dec 14, 2020
- *      Author: cjustin
- */
-
-/*
- * PanGenomeRefBuild.cpp
- *
- *  Created on: Oct. 13, 2020
- *      Author: cjustin
- */
 
 #include <sstream>
 #include <string>
