@@ -30,7 +30,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "htslib/kfunc.h"
+#include "kfunc.h"
 
 /* Log gamma function
  * \log{\Gamma(z)}
