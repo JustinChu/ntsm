@@ -19,6 +19,26 @@ class ExtractKmers:
         self._prefix = prefix
         self._vcfEntries = {}
     
+    #Returns false if bases are not purine to pyrimidine
+    def _checkVariant(self, base1, base2):
+        if(base1 == "A" or base1 == "T"):
+            if(base2 == "A" or base2 == "T"):
+                return False
+            else:
+                return True
+        elif(base1 == "C" or base1 == "G"):
+            if(base2 == "C" or base2 == "G"):
+                return False
+            else:
+                return True
+    
+    #Return false if ordering needs to be reversed (output order not strand)
+    def _orderVariant(self, base1, base2):
+        if(base1 == "A" or base1 == "T"):
+            return True
+        else:
+            return False
+    
     def _parseVCF(self):
         vcfFH = open(self._vcf, 'r')
         #chr1    45508256    rs2275276    A    G    .    .    .  
@@ -35,8 +55,8 @@ class ExtractKmers:
         self._parseVCF()
         #open fasta file
         fastaFile = Fasta(self._fasta)
-        refFH = open(self._prefix + "_ref.fa", 'w')
-        varFH = open(self._prefix + "_var.fa", 'w')
+        refFH = open(self._prefix + "_AT.fa", 'w')
+        varFH = open(self._prefix + "_CG.fa", 'w')
         #for each vcf entry extract wildtype and variant into a string
         for id in self._vcfEntries.keys():
             # print string to repective files
@@ -47,18 +67,27 @@ class ExtractKmers:
             tmpStr = str(fastaFile[self._vcfEntries[id].chr][pos1:pos2])
             tmpStr = tmpStr.upper()
             if(self._vcfEntries[id].wt != tmpStr[int(self._k / 2)]):
-                print("Wildtype allele does not match")
-                print("ref:" + self._vcfEntries[id].wt)
-                print("var:" + self._vcfEntries[id].variant)
-                print("fasta:" + str(fastaFile[self._vcfEntries[id].chr][offset]))
-                print("kmer:" + tmpStr)
+                print("Wildtype allele does not match", file=sys.stderr)
+                print("ref:" + self._vcfEntries[id].wt, file=sys.stderr)
+                print("var:" + self._vcfEntries[id].variant, file=sys.stderr)
+                print("fasta:" + str(fastaFile[self._vcfEntries[id].chr][offset]), file=sys.stderr)
+                print("kmer:" + tmpStr, file=sys.stderr)
                 # exit(1)
-            modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
-            varFH.write(">" + id + "\n")
-            varFH.write(modStr + "\n")
             
-            refFH.write(">" + id + "\n")
-            refFH.write(tmpStr + "\n")
+            if(self._checkVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
+                print("Warning: " + id + " is not a purine/pyrimidine variant", file=sys.stderr)
+                continue
+            modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
+            if(self._orderVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):       
+                varFH.write(">" + id + "\n")
+                varFH.write(modStr + "\n")
+                refFH.write(">" + id + "\n")
+                refFH.write(tmpStr + "\n")
+            else:
+                refFH.write(">" + id + "\n")
+                refFH.write(tmpStr + "\n")
+                varFH.write(">" + id + "\n")
+                varFH.write(modStr + "\n")
         refFH.close()
         varFH.close()
         
