@@ -66,6 +66,6 @@ Example:
 ntfpEval K19_31_counts1.txt K19_31_counts2.txt K19_31_counts3.txt > summary.tsv
 ```
 
-A tsv file is produced that contains all combinations and p-values denoting the chance that the samples come from a different origin.
+A tsv file is produced that contains all combinations of geometric mean of Fisher's exact tests on all k-mer sites (p-values).
 
 
