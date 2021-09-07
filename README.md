@@ -1,9 +1,9 @@
 # Sequence Data Similarity Detection / Nucleotide Fingerprinter
-##Summary
+## Summary
 
 This tools counts the number of specific k-mers within sequence data. The counts can then be compare to other counts to determine to compute the probability that sample are of the same origin to discover incongruent samples or sample swaps.
 
-##Dependencies
+## Dependencies
 
 * Python (Tested on 3.8.5)
 * pyfaidx python module
@@ -11,7 +11,7 @@ This tools counts the number of specific k-mers within sequence data. The counts
 * zlibdev
 * Autotools (if directly cloning from repo)
 
-##Installation
+## Installation
 
 If cloning directly from the repository make sure you get the required submodules:
 ```bash
@@ -30,9 +30,9 @@ To install in a specified directory:
 ./configure --prefix=/PATH && make install
 ```
 
-##Usage
+## Usage
 
-#####Generating k-mers from fasta file:
+##### Generating k-mers from fasta file:
 
 Given a VCF file and a reference genome you can produce fasta files with k-mers that one can use to create a fingerprinting. We have provided a set for human data based on similar criterion found in SNP microarrays.
 
@@ -44,7 +44,7 @@ python python scripts/extractSNPsfromVCF.py -p prefix_31 -v snps.vcf -f referenc
 
 Creates 2 fasta files ( with the 31-mers specified in the VCF file. All non C/G <-> A/T conversions are ignored.
 
-#####Counting the k-mers:
+##### Counting the k-mers:
 
 Using these set of k-mers we can then count all of these k-mers within a fastq file. Files may be gziped and multiple threads can be used.
 
@@ -58,7 +58,7 @@ Creates count file using 2 threads. A sliding window using 19-mers is used in th
 
 You can specify the counts of each k-mer within
 
-#####Evaluating the samples:
+##### Evaluating the samples:
 
 Example:
 
