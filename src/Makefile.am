@@ -1,4 +1,4 @@
-bin_PROGRAMS = ntfp
+bin_PROGRAMS = ntfp ntfpEval
 
 ntfp_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
@@ -12,3 +12,14 @@ ntfp_LDFLAGS = $(OPENMP_CXXFLAGS) \
 ntfp_LDADD = -lz
 
 ntfp_SOURCES = ntfp.cpp
+
+ntfpEval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+
+ntfpEval_CPPFLAGS = -I$(top_srcdir)/src \
+	-I$(top_srcdir)/vendor \
+	-I$(top_srcdir)
+		
+ntfpEval_LDFLAGS = $(OPENMP_CXXFLAGS) \
+	-pthread
+
+ntfpEval_SOURCES = ntfpEval.cpp
