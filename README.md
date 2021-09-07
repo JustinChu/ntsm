@@ -56,7 +56,22 @@ ntfp -k 19 -t 2 -r prefix_31_AT.fa -a prefix_31_GC.fa sample_part1.fq sample_par
 
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
 
-You can specify the counts of each k-mer within
+Outout Example:
+
+```
+rs16824588	26	0
+rs1181883	80	12
+rs200458	27	29
+rs228648	16	14
+rs848209	33	0
+rs11203366	7	16
+rs2240335	25	0
+rs1541185	21	18
+rs2254358	0	35
+rs6678540	12	15
+rs2294228	0	29
+```
+
 
 ##### Evaluating the samples:
 
@@ -67,5 +82,28 @@ ntfpEval K19_31_counts1.txt K19_31_counts2.txt K19_31_counts3.txt > summary.tsv
 ```
 
 A tsv file is produced that contains all combinations of geometric mean of Fisher's exact tests on all k-mer sites (p-values).
+
+Output Example:
+```
+K19_31_HG002_CCS1.txt	K19_31_HG002_CCS2.txt	0.541319
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC1.txt	0.162735
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC2.txt	0.342228
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC3.txt	0.288665
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC4.txt	0.473151
+K19_31_HG002_CCS1.txt	K19_31_HG002_NP.txt	0.134269
+K19_31_HG002_CCS1.txt	K19_31_HG002_SR1.txt	0.503195
+K19_31_HG002_CCS1.txt	K19_31_HG002_SR2.txt	0.478716
+K19_31_HG002_CCS1.txt	K19_31_NA12878_CCS1.txt	0.000272751
+K19_31_HG002_CCS1.txt	K19_31_NA12878_HC1.txt	9.68865e-05
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR1.txt	5.47665e-05
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR2.txt	0.000114591
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR3.txt	0.000190844
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR4.txt	0.000222317
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR5.txt	0.000468057
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR6.txt	0.000474764
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR7.txt	0.000582513
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR8.txt	0.000174436
+...
+```
 
 
