@@ -19,18 +19,18 @@ class ExtractKmers:
         self._prefix = prefix
         self._vcfEntries = {}
     
-    #Returns false if bases are not purine to pyrimidine
+    #Returns True if bases are not purine to pyrimidine
     def _checkVariant(self, base1, base2):
         if(base1 == "A" or base1 == "T"):
             if(base2 == "A" or base2 == "T"):
-                return False
-            else:
                 return True
+            else:
+                return False
         elif(base1 == "C" or base1 == "G"):
             if(base2 == "C" or base2 == "G"):
-                return False
-            else:
                 return True
+            else:
+                return False
     
     #Return false if ordering needs to be reversed (output order not strand)
     def _orderVariant(self, base1, base2):
@@ -75,19 +75,18 @@ class ExtractKmers:
                 # exit(1)
             
             if(self._checkVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
-                print("Warning: " + id + " is not a purine/pyrimidine variant", file=sys.stderr)
+                print("Warning: " + id +" " +self._vcfEntries[id].variant + " " + self._vcfEntries[id].wt 
+                      + " is not a purine <-> pyrimidine variant. Ignoring.", file=sys.stderr)
                 continue
             modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
-            if(self._orderVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):       
-                varFH.write(">" + id + "\n")
+            varFH.write(">" + id + "\n")
+            refFH.write(">" + id + "\n")            
+            if(self._orderVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
                 varFH.write(modStr + "\n")
-                refFH.write(">" + id + "\n")
                 refFH.write(tmpStr + "\n")
             else:
-                refFH.write(">" + id + "\n")
-                refFH.write(tmpStr + "\n")
-                varFH.write(">" + id + "\n")
-                varFH.write(modStr + "\n")
+                varFH.write(tmpStr + "\n")
+                refFH.write(modStr + "\n")
         refFH.close()
         varFH.close()
         
