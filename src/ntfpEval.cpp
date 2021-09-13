@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 	CompareCounts comp(inputFiles);
 	comp.runFET();
 
-	cerr << "Memory: " << omp_get_wtime() - time << " Time:"  << Util::getRSS() << endl;
+	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
 	return 0;
 }
 
