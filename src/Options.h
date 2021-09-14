@@ -25,5 +25,7 @@ unsigned k = 25;
 //double minAlleleCount = 3;
 string var = "";
 string ref = "";
+
+double scoreThresh= 0.1;
 }
 #endif

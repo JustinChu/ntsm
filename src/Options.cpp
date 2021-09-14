@@ -14,6 +14,8 @@ extern unsigned threads;
 extern unsigned k;
 extern string ref;
 extern string var;
+
+extern double scoreThresh;
 }
 
 

@@ -35,7 +35,8 @@ void printVersion()
 void printHelpDialog(){
 	const char dialog[] =
 	"Usage: " PROGRAM " [FILES...]\n"
-	"  -t, --threads          Number of threads to run.[1]\n"
+	"  -s, --score_thresh     Similarity threshold.[0.1]\n"
+//	"  -t, --threads          Number of threads to run.[1]\n"
 	"  -h, --help             Display this dialog.\n"
 	"  -v, --verbose          Display verbose output.\n"
 	"      --version          Print version information.\n";
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
 
 	//long form arguments
 	static struct option long_options[] = { {
+		"score_thresh", required_argument, NULL, 's' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"help", no_argument, NULL, 'h' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
@@ -62,13 +64,22 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vh", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		case 'h': {
 			printHelpDialog();
+			break;
+		}
+		case 's': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::scoreThresh)) {
+				cerr << "Error - Invalid parameter s: "
+						<< optarg << endl;
+				return 0;
+			}
 			break;
 		}
 		case 't': {
