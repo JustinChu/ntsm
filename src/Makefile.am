@@ -1,25 +1,25 @@
-bin_PROGRAMS = ntSeqMatchCount ntSeqMatchEval
+bin_PROGRAMS = ntsmCount ntsmEval
 
-ntfp_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+ntsmCount_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
-ntfp_CPPFLAGS = -I$(top_srcdir)/src \
+ntsmCount_CPPFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/vendor \
 	-I$(top_srcdir)
 		
-ntfp_LDFLAGS = $(OPENMP_CXXFLAGS) \
+ntsmCount_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-pthread
 
-ntfp_LDADD = -lz
+ntsmCount_LDADD = -lz
 
-ntfp_SOURCES = ntSeqMatchCount.cpp
+ntsmCount_SOURCES = ntSeqMatchCount.cpp
 
-ntfpEval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+ntsmEval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
-ntfpEval_CPPFLAGS = -I$(top_srcdir)/src \
+ntsmEval_CPPFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/vendor \
 	-I$(top_srcdir)
 		
-ntfpEval_LDFLAGS = $(OPENMP_CXXFLAGS) \
+ntsmEval_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-pthread
 
-ntfpEval_SOURCES = ntSeqMatchEval.cpp
+ntsmEval_SOURCES = ntSeqMatchEval.cpp
