@@ -1,4 +1,4 @@
-# Sequence Data Similarity Detection / Nucleotide Fingerprinter
+# ntsm - Nucleotide Sequence Matcher
 ## Summary
 
 This tools counts the number of specific k-mers within sequence data. The counts can then be compare to other counts to determine to compute the probability that sample are of the same origin to discover incongruent samples or sample swaps.
