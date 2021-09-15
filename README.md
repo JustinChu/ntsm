@@ -39,7 +39,7 @@ Given a VCF file and a reference genome you can produce fasta files with k-mers 
 Example:
 
 ```bash
-python python scripts/extractSNPsfromVCF.py -p prefix_31 -v snps.vcf -f reference.fa -k 31
+python scripts/extractSNPsfromVCF.py -p prefix_31 -v snps.vcf -f reference.fa -k 31
 ```
 
 Creates 2 fasta files ( with the 31-mers specified in the VCF file. All non C/G <-> A/T conversions are ignored.
@@ -51,7 +51,7 @@ Using these set of k-mers we can then count all of these k-mers within a fastq f
 Example:
 
 ```bash
-ntfp -k 19 -t 2 -r prefix_31_AT.fa -a prefix_31_GC.fa sample_part1.fq sample_part2.fq > K19_31_counts.txt
+ntfp -k 19 -t 2 -r prefix_31_AT.fa -a prefix_31_GC.fa <(pigz -cd sample_part1.fq) <(pigz -cd sample_part2.fq) > K19_31_counts.txt
 ```
 
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
@@ -103,7 +103,6 @@ K19_31_HG002_CCS1.txt	K19_31_NA12878_SR5.txt	0.000468057
 K19_31_HG002_CCS1.txt	K19_31_NA12878_SR6.txt	0.000474764
 K19_31_HG002_CCS1.txt	K19_31_NA12878_SR7.txt	0.000582513
 K19_31_HG002_CCS1.txt	K19_31_NA12878_SR8.txt	0.000174436
-...
 ```
 
 

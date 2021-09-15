@@ -1,4 +1,4 @@
-bin_PROGRAMS = ntfp ntfpEval
+bin_PROGRAMS = ntSeqMatchCount ntSeqMatchEval
 
 ntfp_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
@@ -11,7 +11,7 @@ ntfp_LDFLAGS = $(OPENMP_CXXFLAGS) \
 
 ntfp_LDADD = -lz
 
-ntfp_SOURCES = ntfp.cpp
+ntfp_SOURCES = ntSeqMatchCount.cpp
 
 ntfpEval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
@@ -22,4 +22,4 @@ ntfpEval_CPPFLAGS = -I$(top_srcdir)/src \
 ntfpEval_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-pthread
 
-ntfpEval_SOURCES = ntfpEval.cpp
+ntfpEval_SOURCES = ntSeqMatchEval.cpp

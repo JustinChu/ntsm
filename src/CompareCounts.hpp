@@ -57,11 +57,24 @@ public:
 
 	void runFET() {
 		//TODO parallelize loop -> may need to manually collapse loop
+		string temp = "";
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
 				double pVal = runCombinedPval(i, j);
-				cout << m_filenames[i] << "\t" << m_filenames[j] << "\t" << pVal
-						<< endl;
+				temp += m_filenames[i];
+				temp += "\t";
+				temp += m_filenames[j];
+				temp += "\t";
+				temp += pVal;
+				if (pVal < opt::scoreThresh) {
+					temp += "\tPass";
+				} else {
+					temp += "\tFail";
+				}
+
+				temp += "\n";
+				cout << temp;
+				temp.clear();
 			}
 		}
 	}
