@@ -35,7 +35,8 @@ void printVersion()
 void printHelpDialog(){
 	const char dialog[] =
 	"Usage: " PROGRAM " [FILES...]\n"
-	"  -s, --score_thresh     Similarity threshold.[0.1]\n"
+	"  -s, --score_thresh     Threshold to consider different given geometric\n"
+	"                         mean of Fisher's exact tests on each locus [0.05]\n"
 //	"  -t, --threads          Number of threads to run.[1]\n"
 	"  -h, --help             Display this dialog.\n"
 	"  -v, --verbose          Display verbose output.\n"

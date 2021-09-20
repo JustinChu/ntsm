@@ -67,9 +67,9 @@ public:
 				temp += "\t";
 				temp += to_string(pVal);
 				if (pVal < opt::scoreThresh) {
-					temp += "\tPass";
+					temp += "\tDifferent";
 				} else {
-					temp += "\tFail";
+					temp += "\tSimilar";
 				}
 
 				temp += "\n";
