@@ -65,7 +65,7 @@ public:
 				temp += "\t";
 				temp += m_filenames[j];
 				temp += "\t";
-				temp += pVal;
+				temp += to_string(pVal);
 				if (pVal < opt::scoreThresh) {
 					temp += "\tPass";
 				} else {
