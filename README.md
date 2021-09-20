@@ -1,4 +1,4 @@
-# ntsm - Nucleotide Sequence Matcher
+# ntsm - Nucleotide Sequence/Sample Matcher
 ## Summary
 
 This tools counts the number of specific k-mers within sequence data. The counts can then be compare to other counts to determine to compute the probability that sample are of the same origin to discover incongruent samples or sample swaps.
@@ -81,28 +81,24 @@ Example:
 ntfpEval K19_31_counts1.txt K19_31_counts2.txt K19_31_counts3.txt > summary.tsv
 ```
 
-A tsv file is produced that contains all combinations of geometric mean of Fisher's exact tests on all k-mer sites (p-values).
+A tsv file is produced that contains all combinations of geometric mean of Fisher's exact tests on all loci tested (p-values).
 
 Output Example:
 ```
-K19_31_HG002_CCS1.txt	K19_31_HG002_CCS2.txt	0.541319
-K19_31_HG002_CCS1.txt	K19_31_HG002_HC1.txt	0.162735
-K19_31_HG002_CCS1.txt	K19_31_HG002_HC2.txt	0.342228
-K19_31_HG002_CCS1.txt	K19_31_HG002_HC3.txt	0.288665
-K19_31_HG002_CCS1.txt	K19_31_HG002_HC4.txt	0.473151
-K19_31_HG002_CCS1.txt	K19_31_HG002_NP.txt	0.134269
-K19_31_HG002_CCS1.txt	K19_31_HG002_SR1.txt	0.503195
-K19_31_HG002_CCS1.txt	K19_31_HG002_SR2.txt	0.478716
-K19_31_HG002_CCS1.txt	K19_31_NA12878_CCS1.txt	0.000272751
-K19_31_HG002_CCS1.txt	K19_31_NA12878_HC1.txt	9.68865e-05
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR1.txt	5.47665e-05
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR2.txt	0.000114591
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR3.txt	0.000190844
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR4.txt	0.000222317
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR5.txt	0.000468057
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR6.txt	0.000474764
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR7.txt	0.000582513
-K19_31_HG002_CCS1.txt	K19_31_NA12878_SR8.txt	0.000174436
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC1.txt	0.162735	Similar
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC2.txt	0.342228	Similar
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC3.txt	0.288665	Similar
+K19_31_HG002_CCS1.txt	K19_31_HG002_HC4.txt	0.473151	Similar
+K19_31_HG002_CCS1.txt	K19_31_HG002_NP.txt	0.134269	Similar
+K19_31_HG002_CCS1.txt	K19_31_HG002_SR1.txt	0.503195	Similar
+K19_31_HG002_CCS1.txt	K19_31_HG002_SR2.txt	0.478716	Similar
+K19_31_HG002_CCS1.txt	K19_31_NA12878_CCS1.txt	0.000273	Different
+K19_31_HG002_CCS1.txt	K19_31_NA12878_HC1.txt	0.000097	Different
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR1.txt	0.000045	Different
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR2.txt	0.000115	Different
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR3.txt	0.000191	Different
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR4.txt	0.000222	Different
+K19_31_HG002_CCS1.txt	K19_31_NA12878_SR5.txt	0.000468	Different
 ```
 
 
