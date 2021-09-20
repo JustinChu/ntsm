@@ -4,5 +4,5 @@ SUBDIRS = \
 dist_doc_DATA = \
 	README.md
 	
-EXTRA_DIST = autogen.sh \
-	configure.ac
+EXTRA_DIST = vendor
+	

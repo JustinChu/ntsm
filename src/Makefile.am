@@ -11,7 +11,11 @@ ntsmCount_LDFLAGS = $(OPENMP_CXXFLAGS) \
 
 ntsmCount_LDADD = -lz
 
-ntsmCount_SOURCES = ntSeqMatchCount.cpp
+ntsmCount_SOURCES = ntSeqMatchCount.cpp \
+	FingerPrint.hpp \
+	Options.cpp Options.h \
+	Util.h
+	
 
 ntsmEval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
@@ -22,4 +26,7 @@ ntsmEval_CPPFLAGS = -I$(top_srcdir)/src \
 ntsmEval_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-pthread
 
-ntsmEval_SOURCES = ntSeqMatchEval.cpp
+ntsmEval_SOURCES = ntSeqMatchEval.cpp \
+	CompareCounts.hpp \
+	Options.cpp Options.h \
+	Util.h
