@@ -51,7 +51,7 @@ Using these set of k-mers we can then count all of these k-mers within a fastq f
 Example:
 
 ```bash
-ntfp -k 19 -t 2 -r prefix_31_AT.fa -a prefix_31_GC.fa <(pigz -cd sample_part1.fq) <(pigz -cd sample_part2.fq) > K19_31_counts.txt
+ntsmCount -k 19 -t 2 -r prefix_31_AT.fa -a prefix_31_GC.fa <(pigz -cd sample_part1.fq) <(pigz -cd sample_part2.fq) > K19_31_counts.txt
 ```
 
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
@@ -72,13 +72,12 @@ rs6678540	12	15
 rs2294228	0	29
 ```
 
-
 ##### Evaluating the samples:
 
 Example:
 
 ```bash
-ntfpEval K19_31_counts1.txt K19_31_counts2.txt K19_31_counts3.txt > summary.tsv
+ntsmEval K19_31_counts1.txt K19_31_counts2.txt K19_31_counts3.txt > summary.tsv
 ```
 
 A tsv file is produced that contains all combinations of geometric mean of Fisher's exact tests on all loci tested (p-values).
