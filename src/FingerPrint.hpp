@@ -17,7 +17,7 @@
 #include "Options.h"
 
 #include "vendor/tsl/robin_map.h"
-#include "vendor/ntHash/ntHashIterator.hpp"
+#include "vendor/KseqHashIterator.hpp"
 #include "vendor/kseq.h"
 #ifndef KSEQ_INIT_NEW
 #define KSEQ_INIT_NEW
@@ -58,13 +58,11 @@ public:
 			unsigned index = 0;
 			while (l >= 0) {
 				//k-merize and insert
-				for (ntHashIterator itr(seq->seq.s, 1, opt::k);
+				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
 						itr != itr.end(); ++itr) {
-					//if kmer exists inside set
-					uint64_t hv = (*itr)[0];
-					if(m_counts.find(hv) != m_counts.end()){
+					if(m_counts.find(*itr) != m_counts.end()){
 #pragma omp atomic update
-						++m_counts[hv];
+						++m_counts[*itr];
 					}
 				}
 				l = kseq_read(seq);
@@ -155,8 +153,8 @@ private:
 		int l2 = kseq_read(seq2);
 		unsigned index = 0;
 		while (l1 >= 0 && l2) {
-			ntHashIterator itr1(seq1->seq.s, 1, opt::k);
-			ntHashIterator itr2(seq2->seq.s, 1, opt::k);
+			KseqHashIterator itr1(seq1->seq.s, seq1->seq.l, opt::k);
+			KseqHashIterator itr2(seq2->seq.s, seq2->seq.l, opt::k);
 			m_alleleIDToKmer[m_alleleIDs.size()] = shared_ptr<
 					vector<pair<uint64_t, uint64_t>>>(
 					new vector<pair<uint64_t, uint64_t>>());
@@ -165,8 +163,8 @@ private:
 			//k-merize and insert
 			//TODO Add some more file and sanity checks
 			for (;itr1 != itr1.end() && itr2 != itr2.end(); ++itr1, ++itr2) {
-				uint64_t hv1 = (*itr1)[0];
-				uint64_t hv2 = (*itr2)[0];
+				uint64_t hv1 = *itr1;
+				uint64_t hv2 = *itr2;
 				//check for duplicates
 				if (m_counts.find(hv1) != m_counts.end()
 						|| m_counts.find(hv2) != m_counts.end()) {

@@ -1,4 +1,3 @@
-
 #include <sstream>
 #include <string>
 #include <vector>
@@ -21,34 +20,33 @@ using namespace std;
 
 #define PROGRAM "ntsmCount"
 
-void printVersion()
-{
-	const char VERSION_MESSAGE[] = PROGRAM " (" PACKAGE_NAME ") " GIT_REVISION "\n"
-	"Written by Justin Chu <cjustin@ds.dfci.harvard.edu>\n"
-	"\n"
-	"Copyright 2020 Dana-Farber Cancer Institute\n";
+void printVersion() {
+	const char VERSION_MESSAGE[] =
+			PROGRAM " (" PACKAGE_NAME ") " GIT_REVISION "\n"
+			"Written by Justin Chu <cjustin@ds.dfci.harvard.edu>\n"
+			"\n"
+			"Copyright 2020 Dana-Farber Cancer Institute\n";
 	cerr << VERSION_MESSAGE << endl;
 	exit(EXIT_SUCCESS);
 }
 
-void printHelpDialog(){
+void printHelpDialog() {
 	const char dialog[] =
 //	"Usage: " PROGRAM " build [OPTION]... [FASTA]...\n"
-	"Usage: " PROGRAM " -r [FASTA] -a [FASTA] [OPTION]... [FILES...]\n"
-	"  -t, --threads          Number of threads to run.[1]\n"
-	"  -r, --ref              Wildtype reference fasta. [required]\n"
-	"  -a, --var              Variant reference fasta. [required]\n"
-	"  -k, --kmer             Kmer size use. [25]"
-	"  -h, --help             Display this dialog.\n"
-	"  -v, --verbose          Display verbose output.\n"
-	"      --version          Print version information.\n";
+			"Usage: " PROGRAM " -r [FASTA] -a [FASTA] [OPTION]... [FILES...]\n"
+			"  -t, --threads          Number of threads to run.[1]\n"
+			"  -r, --ref              Wildtype reference fasta. [required]\n"
+			"  -a, --var              Variant reference fasta. [required]\n"
+			"  -k, --kmer             Kmer size use. [25]"
+			"  -h, --help             Display this dialog.\n"
+			"  -v, --verbose          Display verbose output.\n"
+			"      --version          Print version information.\n";
 
 	cerr << dialog << endl;
 	exit(EXIT_SUCCESS);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	//switch statement variable
 	int c;
 
@@ -57,20 +55,16 @@ int main(int argc, char *argv[])
 	int OPT_VERSION = 0;
 
 	//long form arguments
-	static struct option long_options[] = { {
-		"threads", required_argument, NULL, 't' }, {
-		"ref", required_argument, NULL, 'r' }, {
-		"var", required_argument, NULL, 'a' }, {
-		"kmer", required_argument, NULL, 'k' }, {
-		"help", no_argument, NULL, 'h' }, {
-		"version", no_argument, &OPT_VERSION, 1 }, {
-		"verbose", no_argument, NULL, 'v' }, {
-		NULL, 0, NULL, 0 } };
+	static struct option long_options[] = { { "threads", required_argument,
+			NULL, 't' }, { "ref", required_argument, NULL, 'r' }, { "var",
+			required_argument, NULL, 'a' }, { "kmer", required_argument, NULL,
+			'k' }, { "help", no_argument, NULL, 'h' }, { "version", no_argument,
+			&OPT_VERSION, 1 }, { "verbose", no_argument, NULL, 'v' }, {
+	NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
 	while ((c = getopt_long(argc, argv, "r:a:t:vhk:", long_options,
-			&option_index)) != -1)
-	{
+			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		case 'h': {
@@ -80,8 +74,7 @@ int main(int argc, char *argv[])
 		case 'r': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::ref)) {
-				cerr << "Error - Invalid parameter i: "
-						<< optarg << endl;
+				cerr << "Error - Invalid parameter i: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -89,8 +82,7 @@ int main(int argc, char *argv[])
 		case 'a': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::var)) {
-				cerr << "Error - Invalid parameter i: "
-						<< optarg << endl;
+				cerr << "Error - Invalid parameter i: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -98,8 +90,7 @@ int main(int argc, char *argv[])
 		case 'k': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::k)) {
-				cerr << "Error - Invalid parameter k: "
-						<< optarg << endl;
+				cerr << "Error - Invalid parameter k: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -107,8 +98,7 @@ int main(int argc, char *argv[])
 		case 't': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::threads)) {
-				cerr << "Error - Invalid parameter t: "
-						<< optarg << endl;
+				cerr << "Error - Invalid parameter t: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -130,7 +120,12 @@ int main(int argc, char *argv[])
 #endif
 
 	if (OPT_VERSION) {
+		cerr << "k cannot be greater than 32" << endl;
 		printVersion();
+	}
+
+	if (opt::k > 32) {
+		die = true;
 	}
 
 	vector<string> inputFiles;
@@ -156,10 +151,8 @@ int main(int argc, char *argv[])
 	FingerPrint fp(inputFiles);
 	fp.computeCounts();
 	fp.printCounts();
-	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
+	cerr << "Time: " << omp_get_wtime() - time << "s Memory:" << Util::getRSS()
+			<< "kbytes" << endl;
 	return 0;
 }
-
-
-
 
