@@ -29,6 +29,9 @@ public:
 			m_seq(seq), m_len(strLen), m_k(k), m_mask((1ULL << k * 2) - 1), m_shift(
 					(k - 1) * 2), m_pos(0) {
 		init();
+		while (m_subStrLen < m_k) {
+			step();
+		}
 	}
 
 	/** get pointer to hash value for current k-mer */

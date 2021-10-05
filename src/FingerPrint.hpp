@@ -168,7 +168,7 @@ private:
 				//check for duplicates
 				if (m_counts.find(hv1) != m_counts.end()
 						|| m_counts.find(hv2) != m_counts.end()) {
-					cerr << seq1->name.s << " is a duplicate" << endl;
+					cerr << seq1->name.s << " has a k-mer collision" << endl;
 				} else {
 					m_alleleIDToKmer[m_alleleIDs.size()]->emplace_back(
 							make_pair(hv1, hv2));
