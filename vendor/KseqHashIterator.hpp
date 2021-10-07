@@ -29,9 +29,7 @@ public:
 			m_seq(seq), m_len(strLen), m_k(k), m_mask((1ULL << k * 2) - 1), m_shift(
 					(k - 1) * 2), m_pos(0) {
 		init();
-		while (m_subStrLen < m_k) {
-			step();
-		}
+		step();
 	}
 
 	/** get pointer to hash value for current k-mer */
@@ -51,14 +49,7 @@ public:
 
 	/** pre-increment operator */
 	KseqHashIterator& operator++() {
-		if (m_pos >= m_len - m_k + 1) {
-			m_pos = std::numeric_limits<uint64_t>::max();
-			return *this;
-		}
 		step();
-		while (m_subStrLen < m_k) {
-			step();
-		}
 		return *this;
 	}
 
@@ -90,15 +81,20 @@ private:
 	}
 
 	void step() {
-		int c = s_seq_nt4_table[(uint8_t) m_seq[m_pos++]];
-		if (c < 4) { // not an "N" base
-			m_ntFW = (m_ntFW << 2 | c) & m_mask;       // forward strand
-			m_ntRV = m_ntRV >> 2 | (uint64_t) (3 - c) << m_shift; // reverse strand
-			if (++m_subStrLen >= m_k) { // we find a k-mer
-				m_hashVal = hash64(m_ntFW < m_ntRV ? m_ntFW : m_ntRV, m_mask);
-			}
-		} else
-			init(); // if there is an "N", restart
+		while (m_pos >= m_len - m_k + 1) {
+			int c = s_seq_nt4_table[(uint8_t) m_seq[m_pos++]];
+			if (c < 4) { // not an "N" base
+				m_ntFW = (m_ntFW << 2 | c) & m_mask;       // forward strand
+				m_ntRV = m_ntRV >> 2 | (uint64_t) (3 - c) << m_shift; // reverse strand
+				if (++m_subStrLen >= m_k) { // we find a k-mer
+					m_hashVal = hash64(m_ntFW < m_ntRV ? m_ntFW : m_ntRV,
+							m_mask);
+					return;
+				}
+			} else
+				init(); // if there is an "N", restart
+		}
+		m_pos = std::numeric_limits<uint64_t>::max();
 	}
 
 	const unsigned char s_seq_nt4_table[256] = { // translate ACGT to 0123
