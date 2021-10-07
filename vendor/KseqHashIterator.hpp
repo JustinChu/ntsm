@@ -81,7 +81,7 @@ private:
 	}
 
 	void step() {
-		while (m_pos >= m_len - m_k + 1) {
+		while (m_subStrLen < m_k && m_pos < m_len ) {
 			int c = s_seq_nt4_table[(uint8_t) m_seq[m_pos++]];
 			if (c < 4) { // not an "N" base
 				m_ntFW = (m_ntFW << 2 | c) & m_mask;       // forward strand
