@@ -29,7 +29,7 @@ public:
 			m_seq(seq), m_len(strLen), m_k(k), m_mask((1ULL << k * 2) - 1), m_shift(
 					(k - 1) * 2), m_pos(0) {
 		init();
-		step();
+		next();
 	}
 
 	/** get pointer to hash value for current k-mer */
@@ -49,7 +49,7 @@ public:
 
 	/** pre-increment operator */
 	KseqHashIterator& operator++() {
-		step();
+		next();
 		return *this;
 	}
 
@@ -80,8 +80,15 @@ private:
 		m_hashVal = 0;
 	}
 
+	void next() {
+		step();
+		while (m_subStrLen < m_k) {
+			step();
+		}
+	}
+
 	void step() {
-		while (m_subStrLen < m_k && m_pos < m_len ) {
+		if (m_pos < m_len) {
 			int c = s_seq_nt4_table[(uint8_t) m_seq[m_pos++]];
 			if (c < 4) { // not an "N" base
 				m_ntFW = (m_ntFW << 2 | c) & m_mask;       // forward strand
@@ -94,7 +101,9 @@ private:
 			} else
 				init(); // if there is an "N", restart
 		}
-		m_pos = std::numeric_limits<uint64_t>::max();
+		else{
+			m_pos = std::numeric_limits<uint64_t>::max();
+		}
 	}
 
 	const unsigned char s_seq_nt4_table[256] = { // translate ACGT to 0123
