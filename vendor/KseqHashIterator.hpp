@@ -82,7 +82,8 @@ private:
 
 	void next() {
 		step();
-		while (m_subStrLen < m_k) {
+		while (m_subStrLen < m_k
+				&& m_pos != std::numeric_limits<uint64_t>::max()) {
 			step();
 		}
 	}
