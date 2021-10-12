@@ -32,7 +32,6 @@ void printVersion() {
 
 void printHelpDialog() {
 	const char dialog[] =
-//	"Usage: " PROGRAM " build [OPTION]... [FASTA]...\n"
 			"Usage: " PROGRAM " -r [FASTA] -a [FASTA] [OPTION]... [FILES...]\n"
 			"  -t, --threads          Number of threads to run per file.[1]\n"
 //			"  -c, --con_thread       Number of threads in consumer threading.\n"
