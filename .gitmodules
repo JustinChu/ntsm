@@ -1,3 +1,0 @@
-[submodule "vendor/ntHash"]
-	path = vendor/ntHash
-	url = https://github.com/bcgsc/ntHash
