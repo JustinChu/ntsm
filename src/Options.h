@@ -26,6 +26,6 @@ unsigned k = 25;
 string var = "";
 string ref = "";
 
-double scoreThresh= 0.05;
+double scoreThresh= 0.01;
 }
 #endif
