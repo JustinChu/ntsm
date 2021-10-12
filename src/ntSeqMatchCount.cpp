@@ -39,7 +39,6 @@ void printHelpDialog() {
 //			"                         In this mode the number of threads used\n"
 //			"                         will be equal to the number of files\n"
 //			"                         plus the number of producer threads.[0]\n"
-			"  -s, --score            Score threshold for combined FETs.[0.001]\n"
 			"  -r, --ref              Wildtype reference fasta. [required]\n"
 			"  -a, --var              Variant reference fasta. [required]\n"
 			"  -k, --kmer             Kmer size use. [25]"
@@ -61,12 +60,10 @@ int main(int argc, char *argv[]) {
 
 	//long form arguments
 	static struct option long_options[] = { { "threads", required_argument,
-	NULL, 't' }, { "score", required_argument, NULL, 's' }, { "ref",
-	required_argument, NULL, 'r' }, { "var",
+			NULL, 't' }, { "ref", required_argument, NULL, 'r' }, { "var",
 	required_argument, NULL, 'a' }, { "kmer", required_argument, NULL, 'k' }, {
-			"help", no_argument,
-			NULL, 'h' }, { "version", no_argument, &OPT_VERSION, 1 }, {
-			"verbose", no_argument, NULL, 'v' }, {
+			"help", no_argument, NULL, 'h' }, { "version", no_argument,
+			&OPT_VERSION, 1 }, { "verbose", no_argument, NULL, 'v' }, {
 	NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
@@ -76,14 +73,6 @@ int main(int argc, char *argv[]) {
 		switch (c) {
 		case 'h': {
 			printHelpDialog();
-			break;
-		}
-		case 's': {
-			stringstream convert(optarg);
-			if (!(convert >> opt::scoreThresh)) {
-				cerr << "Error - Invalid parameter s: " << optarg << endl;
-				return 0;
-			}
 			break;
 		}
 		case 'r': {
