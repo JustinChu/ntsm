@@ -101,6 +101,24 @@ private:
 		return(exp(sumLogPVal/m_counts[index1]->size()));
 	}
 
+	double runCombinedPvalFishersMethod(unsigned index1, unsigned index2) {
+		double sumLogPVal = 0.0;
+		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
+			double fisher_left_p, fisher_right_p, fisher_twosided_p;
+			kt_fisher_exact(m_counts[index1]->at(i).first,
+					m_counts[index2]->at(i).first,
+					m_counts[index1]->at(i).second,
+					m_counts[index2]->at(i).second, &fisher_left_p,
+					&fisher_right_p, &fisher_twosided_p);
+			sumLogPVal += log(fisher_twosided_p);
+		}
+		return(-2*sumLogPVal);
+	}
+
+	double chiSqToPVal(double value, unsigned df){
+
+	}
+
 };
 
 #endif /* SRC_COMPARECOUNTS_HPP_ */
