@@ -34,7 +34,7 @@ public:
 	typedef uint16_t alleleID;
 
 	FingerPrint(const vector<string> &filenames) :
-			m_filenames(filenames) {
+			m_filenames(filenames), m_totalBases(0) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
@@ -65,6 +65,8 @@ public:
 						++m_counts[*itr];
 					}
 				}
+#pragma omp atomic update
+				m_totalBases += seq->seq.l;
 				l = kseq_read(seq);
 				index++;
 			}
@@ -92,6 +94,10 @@ public:
 			cout << m_alleleIDs.at(i) << "\t" << maxCountWT << "\t" << maxCountVAR << endl;
 		}
 		cout << endl;
+	}
+
+	uint64_t getTotalCounts(){
+		return m_totalBases;
 	}
 
 //	/*
@@ -140,6 +146,7 @@ private:
 	tsl::robin_map<alleleID, shared_ptr<vector<pair<uint64_t, uint64_t>>>> m_alleleIDToKmer;
 //	vector<pair<uint64_t, uint64_t>> m_allelePairs;
 	vector<string> m_alleleIDs;
+	uint64_t m_totalBases;
 
 	void initCountsHash(){
 		gzFile fp1, fp2;

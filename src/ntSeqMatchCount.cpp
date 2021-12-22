@@ -154,6 +154,7 @@ int main(int argc, char *argv[]) {
 	FingerPrint fp(inputFiles);
 	fp.computeCounts();
 	fp.printCounts();
+	cerr << "Total Bases Considered: " << fp.getTotalCounts() << endl;
 	cerr << "Time: " << omp_get_wtime() - time << "s Memory:" << Util::getRSS()
 			<< "kbytes" << endl;
 	return 0;
