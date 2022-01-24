@@ -30,6 +30,7 @@ public:
 			m_counts.push_back(
 					shared_ptr<vector<pair<unsigned, unsigned>>>(
 							new vector<pair<unsigned, unsigned>>));
+			m_totalCounts.push_back(0);
 			ifstream fh(itr->c_str());
 			string line;
 			if (fh.is_open()) {
@@ -49,6 +50,8 @@ public:
 								line.substr(0, pos).c_str());
 						m_counts.back()->push_back(
 								std::make_pair(count1, count2));
+						m_totalCounts.back() += count1;
+						m_totalCounts.back() += count2;
 					}
 				}
 			}
@@ -67,10 +70,13 @@ public:
 				temp += "\t";
 				temp += to_string(pVal);
 				if (pVal < opt::scoreThresh) {
-					temp += "\tDifferent";
+					temp += "\tY\t";
 				} else {
-					temp += "\tSimilar";
+					temp += "\tN\t";
 				}
+				temp += to_string(double(m_totalCounts[i])/double(m_counts[0]->size()));
+				temp += "\t";
+				temp += to_string(double(m_totalCounts[j])/double(m_counts[0]->size()));
 
 				temp += "\n";
 				cout << temp;
@@ -86,19 +92,27 @@ public:
 private:
 	const vector<string> &m_filenames;
 	vector<shared_ptr<vector<pair<unsigned, unsigned>>>> m_counts;
+	vector<uint64_t> m_totalCounts;
 
 	double runCombinedPval(unsigned index1, unsigned index2) {
 		double sumLogPVal = 0.0;
+		unsigned totalCount = 0;
 		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
-			double fisher_left_p, fisher_right_p, fisher_twosided_p;
-			kt_fisher_exact(m_counts[index1]->at(i).first,
-					m_counts[index2]->at(i).first,
-					m_counts[index1]->at(i).second,
-					m_counts[index2]->at(i).second, &fisher_left_p,
-					&fisher_right_p, &fisher_twosided_p);
-			sumLogPVal += log(fisher_twosided_p);
+			if ((m_counts[index1]->at(i).first + m_counts[index1]->at(i).second
+					>= opt::covThresh)
+					&& (m_counts[index2]->at(i).first
+							+ m_counts[index2]->at(i).second >= opt::covThresh)) {
+				double fisher_left_p, fisher_right_p, fisher_twosided_p;
+				kt_fisher_exact(m_counts[index1]->at(i).first,
+						m_counts[index2]->at(i).first,
+						m_counts[index1]->at(i).second,
+						m_counts[index2]->at(i).second, &fisher_left_p,
+						&fisher_right_p, &fisher_twosided_p);
+				sumLogPVal += log(fisher_twosided_p);
+				totalCount++;
+			}
 		}
-		return(exp(sumLogPVal/m_counts[index1]->size()));
+		return(exp(sumLogPVal/totalCount));
 	}
 
 };

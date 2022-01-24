@@ -18,6 +18,7 @@ extern string ref;
 extern string var;
 
 extern double scoreThresh;
+extern double covThresh;
 }
 
 

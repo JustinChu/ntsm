@@ -58,6 +58,7 @@ int main(int argc, char *argv[])
 	//long form arguments
 	static struct option long_options[] = { {
 		"score_thresh", required_argument, NULL, 's' }, {
+		"match", required_argument, NULL, 'c' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"help", no_argument, NULL, 'h' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -78,6 +79,15 @@ int main(int argc, char *argv[])
 			stringstream convert(optarg);
 			if (!(convert >> opt::scoreThresh)) {
 				cerr << "Error - Invalid parameter s: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'c': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::covThresh)) {
+				cerr << "Error - Invalid parameter c: "
 						<< optarg << endl;
 				return 0;
 			}
