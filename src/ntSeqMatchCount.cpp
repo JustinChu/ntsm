@@ -34,6 +34,8 @@ void printHelpDialog() {
 	const char dialog[] =
 			"Usage: " PROGRAM " -r [FASTA] -a [FASTA] [OPTION]... [FILES...]\n"
 			"  -t, --threads          Number of threads to run per file.[1]\n"
+			"  -m, --maxCov           k-mer coverage threshold for early\n"
+			"                         termination [inf].\n"
 //			"  -c, --con_thread       Number of threads in consumer threading.\n"
 //			"                         In this mode the number of threads used\n"
 //			"                         will be equal to the number of files\n"
@@ -58,15 +60,18 @@ int main(int argc, char *argv[]) {
 	int OPT_VERSION = 0;
 
 	//long form arguments
-	static struct option long_options[] = { { "threads", required_argument,
-			NULL, 't' }, { "ref", required_argument, NULL, 'r' }, { "var",
-	required_argument, NULL, 'a' }, { "kmer", required_argument, NULL, 'k' }, {
-			"help", no_argument, NULL, 'h' }, { "version", no_argument,
-			&OPT_VERSION, 1 }, { "verbose", no_argument, NULL, 'v' }, {
-	NULL, 0, NULL, 0 } };
+	static struct option long_options[] = { { "threads", required_argument, NULL, 't' },
+			{ "maxCov", required_argument, NULL, 'm' },
+			{ "ref", required_argument, NULL, 'r' },
+			{ "var",required_argument, NULL, 'a' },
+			{ "kmer", required_argument, NULL, 'k' },
+			{ "help", no_argument, NULL, 'h' },
+			{ "version", no_argument,&OPT_VERSION, 1 },
+			{ "verbose", no_argument, NULL, 'v' },
+			{NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "r:a:t:vhk:", long_options,
+	while ((c = getopt_long(argc, argv, "r:a:t:vhk:m:", long_options,
 			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
@@ -77,7 +82,15 @@ int main(int argc, char *argv[]) {
 		case 'r': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::ref)) {
-				cerr << "Error - Invalid parameter i: " << optarg << endl;
+				cerr << "Error - Invalid parameter r: " << optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'm': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::covThresh)) {
+				cerr << "Error - Invalid parameter m: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -85,7 +98,7 @@ int main(int argc, char *argv[]) {
 		case 'a': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::var)) {
-				cerr << "Error - Invalid parameter i: " << optarg << endl;
+				cerr << "Error - Invalid parameter a: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -155,6 +168,7 @@ int main(int argc, char *argv[]) {
 	fp.computeCounts();
 	fp.printCounts();
 	cerr << "Total Bases Considered: " << fp.getTotalCounts() << endl;
+	cerr << "Total k-mers Recorded: " << fp.getTotalKmerCounts() << endl;
 	cerr << "Time: " << omp_get_wtime() - time << "s Memory:" << Util::getRSS()
 			<< "kbytes" << endl;
 	return 0;

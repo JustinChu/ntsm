@@ -34,10 +34,13 @@ public:
 	typedef uint16_t alleleID;
 
 	FingerPrint(const vector<string> &filenames) :
-			m_filenames(filenames), m_totalBases(0) {
+			m_filenames(filenames), m_totalCounts(0), m_maxCounts(0), m_totalBases(0) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
+		if(opt::covThresh != 0){
+			m_maxCounts = (m_counts.size() * opt::covThresh)/2;
+		}
 	}
 
 	void computeCounts(){
@@ -63,12 +66,18 @@ public:
 					if(m_counts.find(*itr) != m_counts.end()){
 #pragma omp atomic update
 						++m_counts[*itr];
+#pragma omp atomic update
+						++m_totalCounts;
 					}
 				}
 #pragma omp atomic update
 				m_totalBases += seq->seq.l;
 				l = kseq_read(seq);
 				index++;
+				//terminate early
+				if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
+					break;
+				}
 			}
 			kseq_destroy(seq);
 			gzclose(fp);
@@ -94,6 +103,10 @@ public:
 			cout << m_alleleIDs.at(i) << "\t" << maxCountWT << "\t" << maxCountVAR << endl;
 		}
 		cout << endl;
+	}
+
+	uint64_t getTotalKmerCounts(){
+		return m_totalCounts;
 	}
 
 	uint64_t getTotalCounts(){
@@ -141,12 +154,15 @@ public:
 	}
 private:
 	const vector<string> &m_filenames;
-//	size_t m_totalCounts;
+	size_t m_totalCounts;
+	size_t m_maxCounts;
 	tsl::robin_map<uint64_t, size_t> m_counts;
 	tsl::robin_map<alleleID, shared_ptr<vector<pair<uint64_t, uint64_t>>>> m_alleleIDToKmer;
 //	vector<pair<uint64_t, uint64_t>> m_allelePairs;
 	vector<string> m_alleleIDs;
 	uint64_t m_totalBases;
+
+	static const unsigned interval = 65536; //interval to be used when considering
 
 	void initCountsHash(){
 		gzFile fp1, fp2;
@@ -203,6 +219,5 @@ private:
 			std::cerr << "Opening " << opt::ref.c_str() << std::endl;
 		}
 	}
-
 };
 #endif /* SRC_FINGERPRINT_HPP_ */
