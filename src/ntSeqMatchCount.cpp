@@ -42,7 +42,7 @@ void printHelpDialog() {
 //			"                         plus the number of producer threads.[0]\n"
 			"  -r, --ref              Wildtype reference fasta. [required]\n"
 			"  -a, --var              Variant reference fasta. [required]\n"
-			"  -k, --kmer             Kmer size use. [25]"
+			"  -k, --kmer             Kmer size use. [25]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
 			"      --version          Print version information.\n";
