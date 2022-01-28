@@ -17,6 +17,7 @@
 #include "Options.h"
 
 #include "vendor/tsl/robin_map.h"
+#include "vendor/tsl/robin_set.h"
 #include "vendor/KseqHashIterator.hpp"
 #include "vendor/kseq.h"
 #ifndef KSEQ_INIT_NEW
