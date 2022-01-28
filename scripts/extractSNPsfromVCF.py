@@ -54,7 +54,7 @@ class ExtractKmers:
                     idCounter += 1
                 #store chr, pos, variant
                 info = VCFEntry(tmpArr[0], tmpArr[1], tmpArr[3], tmpArr[4])
-                self._vcfEntries[snpID] = info
+                self._vcfEntries[str(snpID)] = info
             
     def extract(self):
         self._parseVCF()
