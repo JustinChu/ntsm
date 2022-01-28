@@ -168,8 +168,20 @@ private:
 		gzFile fp1, fp2;
 		fp1 = gzopen(opt::ref.c_str(), "r");
 		fp2 = gzopen(opt::var.c_str(), "r");
-		validateFile(fp1);
-		validateFile(fp2);
+		if (fp1 == Z_NULL) {
+			std::cerr << "file " << opt::ref.c_str() << " cannot be opened"
+					<< std::endl;
+			exit(1);
+		} else if (opt::verbose) {
+			std::cerr << "Opening " << opt::ref.c_str() << std::endl;
+		}
+		if (fp2 == Z_NULL) {
+			std::cerr << "file " << opt::var.c_str() << " cannot be opened"
+					<< std::endl;
+			exit(1);
+		} else if (opt::verbose) {
+			std::cerr << "Opening " << opt::var.c_str() << std::endl;
+		}
 		kseq_t *seq1 = kseq_init(fp1);
 		kseq_t *seq2 = kseq_init(fp2);
 		int l1 = kseq_read(seq1);
@@ -208,16 +220,6 @@ private:
 		kseq_destroy(seq2);
 		gzclose(fp1);
 		gzclose(fp2);
-	}
-
-	void validateFile(gzFile &fp){
-		if (fp == Z_NULL) {
-			std::cerr << "file " << opt::ref.c_str() << " cannot be opened"
-					<< std::endl;
-			exit(1);
-		} else if (opt::verbose) {
-			std::cerr << "Opening " << opt::ref.c_str() << std::endl;
-		}
 	}
 };
 #endif /* SRC_FINGERPRINT_HPP_ */
