@@ -12,11 +12,12 @@ class VCFEntry:
         self.variant = variant
 
 class ExtractKmers:
-    def __init__(self, vcf, fasta, k, prefix):
+    def __init__(self, vcf, fasta, k, prefix, ignore):
         self._vcf = vcf
         self._fasta = fasta
         self._k = k
         self._prefix = prefix
+        self._ignore = ignore
         self._vcfEntries = {}
     
     #Returns True if bases are not purine to pyrimidine
@@ -81,8 +82,9 @@ class ExtractKmers:
             
             if(self._checkVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
                 print("Warning: " + id +" " +self._vcfEntries[id].variant + " " + self._vcfEntries[id].wt 
-                      + " is not a purine <-> pyrimidine variant. Ignoring.", file=sys.stderr)
-                continue
+                      + " is not a purine <-> pyrimidine variant.", file=sys.stderr)
+                if(self._ignore):
+                    continue
             modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
             varFH.write(">" + id + "\n")
             refFH.write(">" + id + "\n")            
@@ -102,9 +104,10 @@ def main():
     parser.add_argument("-f", '--fa', type=str, dest='fasta', help='fasta file with fai index')
     parser.add_argument("-k", '--kmer', type=int, dest='kmer', help='kmer size', default=25)
     parser.add_argument("-p", '--prefix', type=str, dest='prefix', help='output prefix', default = "")
+    parser.add_argument("-i", '--ignoreReq', action='store_false', dest='ignore', help='ignore AT to CG conversion requirements', default = True)
 
     args = parser.parse_args()
-    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.prefix)
+    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.prefix, args.ignore)
     extractor.extract()
     
 
