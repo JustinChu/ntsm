@@ -24,8 +24,6 @@
 KSEQ_INIT(gzFile, gzread)
 #endif /*KSEQ_INIT_NEW*/
 
-//TODO current implementation may be incorrect due to hash collisions
-
 using namespace std;
 
 class FingerPrint {
@@ -168,6 +166,7 @@ private:
 		gzFile fp1, fp2;
 		fp1 = gzopen(opt::ref.c_str(), "r");
 		fp2 = gzopen(opt::var.c_str(), "r");
+		tsl::robin_set<uint64_t> dupes;
 		if (fp1 == Z_NULL) {
 			std::cerr << "file " << opt::ref.c_str() << " cannot be opened"
 					<< std::endl;
@@ -204,6 +203,7 @@ private:
 				if (m_counts.find(hv1) != m_counts.end()
 						|| m_counts.find(hv2) != m_counts.end()) {
 					cerr << seq1->name.s << " has a k-mer collision" << endl;
+					dupes.insert(hv1);
 				} else {
 					m_alleleIDToKmer[m_alleleIDs.size()]->emplace_back(
 							make_pair(hv1, hv2));
@@ -220,6 +220,11 @@ private:
 		kseq_destroy(seq2);
 		gzclose(fp1);
 		gzclose(fp2);
+		//remove dupes
+		for (tsl::robin_set<uint64_t>::iterator itr = dupes.begin();
+				itr != dupes.end(); ++itr) {
+			m_counts.erase(*itr);
+		}
 	}
 };
 #endif /* SRC_FINGERPRINT_HPP_ */
