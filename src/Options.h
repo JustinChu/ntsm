@@ -27,7 +27,7 @@ string var = "";
 string ref = "";
 
 double scoreThresh= 0.01;
-double covThresh= 1;
+double covThresh= 0;
 
 
 }
