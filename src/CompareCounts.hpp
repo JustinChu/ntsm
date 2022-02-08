@@ -22,15 +22,18 @@ class CompareCounts {
 public:
 	CompareCounts(const vector<string> &filenames) :
 			m_filenames(filenames) {
+
+		vector<uint64_t> maxCounts;
+		vector<shared_ptr<vector<pair<unsigned, unsigned>>>> counts;
+
 		//load in counts
 		//open file
 		//TODO parallelize loop -> may need to preallocate size of count vector
 		for (vector<string>::const_iterator itr = m_filenames.begin();
 				itr != m_filenames.end(); ++itr) {
-			m_counts.push_back(
+			counts.push_back(
 					shared_ptr<vector<pair<unsigned, unsigned>>>(
 							new vector<pair<unsigned, unsigned>>));
-			m_totalCounts.push_back(0);
 			ifstream fh(itr->c_str());
 			string line;
 			if (fh.is_open()) {
@@ -48,11 +51,45 @@ public:
 						pos = line.find(delimiter);
 						unsigned count2 = std::stoi(
 								line.substr(0, pos).c_str());
-						m_counts.back()->push_back(
+
+						if(maxCounts.size() >= counts.back()->size()){
+							if(maxCounts[counts.back()->size()] < count1){
+								maxCounts[counts.back()->size()] = count1;
+							}
+							if(maxCounts[counts.back()->size()] < count2){
+								maxCounts[counts.back()->size()] = count2;
+							}
+						}
+						else{
+							maxCounts.push_back(count1);
+							assert(maxCounts.size() == counts.back()->size());
+							if(maxCounts[counts.back()->size()] < count2){
+								maxCounts[counts.back()->size()] = count2;
+							}
+						}
+
+						counts.back()->push_back(
 								std::make_pair(count1, count2));
-						m_totalCounts.back() += count1;
-						m_totalCounts.back() += count2;
 					}
+				}
+			}
+		}
+
+		//remove counts that exceed limits
+		for (vector<shared_ptr<vector<pair<unsigned, unsigned>>>>::iterator i =
+				counts.begin(); i != counts.end(); ++i) {
+			m_totalCounts.push_back(0);
+			m_counts.push_back(
+					shared_ptr<vector<pair<unsigned, unsigned>>>(
+							new vector<pair<unsigned, unsigned>>));
+			for (size_t j = 0; j > maxCounts.size(); ++j) {
+				unsigned count1 = (*i)->at(j).first();
+				unsigned count2 = (*i)->at(j).second();
+
+				if (opt::maxCov && count1 + count2 < opt::maxCov) {
+					m_counts.back()->push_back(std::make_pair(count1, count2))
+					m_totalCounts.back() += count1;
+					m_totalCounts.back() += count2;
 				}
 			}
 		}

@@ -28,6 +28,7 @@ string ref = "";
 
 double scoreThresh= 0.01;
 double covThresh= 0;
+double maxCov= 0;
 
 
 }
