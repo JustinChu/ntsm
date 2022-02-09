@@ -87,7 +87,7 @@ public:
 				unsigned count2 = (*i)->at(j).second;
 
 				if (opt::maxCov && count1 + count2 < opt::maxCov) {
-					m_counts.back()->push_back(std::make_pair(count1, count2))
+					m_counts.back()->push_back(std::make_pair(count1, count2));
 					m_totalCounts.back() += count1;
 					m_totalCounts.back() += count2;
 				}
