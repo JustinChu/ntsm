@@ -83,8 +83,8 @@ public:
 					shared_ptr<vector<pair<unsigned, unsigned>>>(
 							new vector<pair<unsigned, unsigned>>));
 			for (size_t j = 0; j > maxCounts.size(); ++j) {
-				unsigned count1 = (*i)->at(j).first();
-				unsigned count2 = (*i)->at(j).second();
+				unsigned count1 = (*i)->at(j).first;
+				unsigned count2 = (*i)->at(j).second;
 
 				if (opt::maxCov && count1 + count2 < opt::maxCov) {
 					m_counts.back()->push_back(std::make_pair(count1, count2))
