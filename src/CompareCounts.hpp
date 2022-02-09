@@ -53,21 +53,20 @@ public:
 								line.substr(0, pos).c_str());
 
 						if(maxCounts.size() >= counts.back()->size()){
-							if(maxCounts[counts.back()->size()] < count1){
-								maxCounts[counts.back()->size()] = count1;
+							if(maxCounts[counts.back()->size() - 1] < count1){
+								maxCounts[counts.back()->size() - 1] = count1;
 							}
-							if(maxCounts[counts.back()->size()] < count2){
-								maxCounts[counts.back()->size()] = count2;
+							if(maxCounts[counts.back()->size() - 1] < count2){
+								maxCounts[counts.back()->size() - 1] = count2;
 							}
 						}
 						else{
 							maxCounts.push_back(count1);
 							assert(maxCounts.size() == counts.back()->size());
-							if(maxCounts[counts.back()->size()] < count2){
-								maxCounts[counts.back()->size()] = count2;
+							if(maxCounts[counts.back()->size() - 1] < count2){
+								maxCounts[counts.back()->size() - 1] = count2;
 							}
 						}
-
 						counts.back()->push_back(
 								std::make_pair(count1, count2));
 					}
