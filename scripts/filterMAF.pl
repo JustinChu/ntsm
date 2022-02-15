@@ -40,7 +40,7 @@ while ($line) {
 						$highestNT           = $ntArr[$i];
 					}
 					elsif ( $allele > $secondHighestAllele ) {
-						$secondHighestAllele = $highestAllele;
+						$secondHighestAllele = $allele;
 						$secondNT            = $ntArr[$i];
 					}
 				}
