@@ -63,6 +63,8 @@ class ExtractKmers:
         fastaFile = Fasta(self._fasta)
         refFH = open(self._prefix + "_AT.fa", 'w')
         varFH = open(self._prefix + "_CG.fa", 'w')
+        
+        removeCount = 0
         #for each vcf entry extract wildtype and variant into a string
         for id in self._vcfEntries.keys():
             # print string to repective files
@@ -78,11 +80,13 @@ class ExtractKmers:
                 print("var:" + self._vcfEntries[id].variant, file=sys.stderr)
                 print("fasta:" + str(fastaFile[self._vcfEntries[id].chr][offset]), file=sys.stderr)
                 print("kmer:" + tmpStr, file=sys.stderr)
-                # exit(1)
+                removeCount += 1
+                continue
             
             if(self._checkVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
                 print("Warning: " + id +" " +self._vcfEntries[id].variant + " " + self._vcfEntries[id].wt 
                       + " is not a purine <-> pyrimidine variant.", file=sys.stderr)
+                removeCount += 1
                 if(self._ignore):
                     continue
             modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
@@ -96,6 +100,7 @@ class ExtractKmers:
                 refFH.write(modStr + "\n")
         refFH.close()
         varFH.close()
+        print("Removed " + str(removeCount) + " SNPs.", file=sys.stderr)
         
         
 def main():
