@@ -11,7 +11,6 @@ my $fh        = new IO::File( $ARGV[0], "r" );
 my $line      = $fh->getline();
 my $threshold = 0.05;
 
-my $sum   = 0;
 my $count = 0;
 
 while ($line) {
@@ -27,8 +26,8 @@ while ($line) {
 
 			my $highestAllele       = 0;
 			my $secondHighestAllele = 0;
-			my $highestNT           = $ntArr[0];
-			my $secondNT            = $ntArr[1];
+			my $highestNT           = $lineArr[3];
+			my $secondNT            = $ntArr[0];
 
 			for ( my $i = 0 ; $i < scalar(@alleleArr) ; ++$i ) {
 				my $allele = $alleleArr[$i];
@@ -45,19 +44,33 @@ while ($line) {
 					}
 				}
 			}
-			$lineArr[3] = $highestNT;
-			$lineArr[4] = $secondNT;
+			if($lineArr[3] eq $highestNT){
+				$lineArr[4] = $secondNT;
+			}
+			else{
+				unless($lineArr[3] eq $secondNT){
+					print STDERR "Reference Allele is not in high abundance:" . $line . "\n";
+					exit(1);
+				}
+				$lineArr[4] = $highestNT;
+			}
 
 			if ( $secondHighestAllele > $threshold ) {
+				if($secondHighestAllele > 0.5){
+					print STDERR "Allele Frequency error: " . $line . "\n";
+				}
 				local $" = "\t";
 				print "@lineArr\n";
 			}
+			else{
+				$count++;
+			}
 		}
 		else {
-			print STDERR $line . "\n";
+			print STDERR 'Unparsed Line: ' . $line . "\n";
 		}
 	}
-	$count++;
 	$line = $fh->getline();
 }
 $fh->close();
+print STDERR 'Total Removed: ' . $count . "\n";
