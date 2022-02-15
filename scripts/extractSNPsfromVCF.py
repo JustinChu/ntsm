@@ -53,6 +53,10 @@ class ExtractKmers:
                 if snpID == '.':
                     snpID = idCounter
                     idCounter += 1
+                #throw an error if multiple alleles are listed in alternate
+                if len(tmpArr[4]) > 1:
+                    print("Error: Multiple alternate alleles found in VCF", file=sys.stderr)
+                    exit(1)
                 #store chr, pos, variant
                 info = VCFEntry(tmpArr[0], tmpArr[1], tmpArr[3], tmpArr[4])
                 self._vcfEntries[str(snpID)] = info
