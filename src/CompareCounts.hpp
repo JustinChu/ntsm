@@ -51,7 +51,8 @@ public:
 						pos = line.find(delimiter);
 						unsigned count2 = std::stoi(
 								line.substr(0, pos).c_str());
-
+						counts.back()->push_back(
+								std::make_pair(count1, count2));
 						if(maxCounts.size() >= counts.back()->size()){
 							if(maxCounts[counts.back()->size() - 1] < count1){
 								maxCounts[counts.back()->size() - 1] = count1;
@@ -67,8 +68,6 @@ public:
 								maxCounts[counts.back()->size() - 1] = count2;
 							}
 						}
-						counts.back()->push_back(
-								std::make_pair(count1, count2));
 					}
 				}
 			}
@@ -81,11 +80,11 @@ public:
 			m_counts.push_back(
 					shared_ptr<vector<pair<unsigned, unsigned>>>(
 							new vector<pair<unsigned, unsigned>>));
-			for (size_t j = 0; j > maxCounts.size(); ++j) {
+			for (size_t j = 0; j < maxCounts.size(); ++j) {
 				unsigned count1 = (*i)->at(j).first;
 				unsigned count2 = (*i)->at(j).second;
 
-				if (opt::maxCov && count1 + count2 < opt::maxCov) {
+				if (!opt::maxCov || maxCounts[j] < opt::maxCov) {
 					m_counts.back()->push_back(std::make_pair(count1, count2));
 					m_totalCounts.back() += count1;
 					m_totalCounts.back() += count2;
