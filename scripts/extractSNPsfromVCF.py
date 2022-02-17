@@ -12,12 +12,13 @@ class VCFEntry:
         self.variant = variant
 
 class ExtractKmers:
-    def __init__(self, vcf, fasta, k, prefix, ignore):
+    def __init__(self, vcf, fasta, k, prefix, ignore, subKmer):
         self._vcf = vcf
         self._fasta = fasta
         self._k = k
         self._prefix = prefix
         self._ignore = ignore
+        self._subKmer = subKmer
         self._vcfEntries = {}
     
     #Returns True if bases are not purine to pyrimidine
@@ -102,6 +103,15 @@ class ExtractKmers:
             else:
                 varFH.write(tmpStr + "\n")
                 refFH.write(modStr + "\n")
+            #sub k-mer stuff here
+            if self._subKmer != 0:
+                for pos in range(0, len(modStr) - self._subKmer):
+                    print(">" + id + "|" + str(pos) + "|AT")
+                    print(tmpStr[pos:pos + self._subKmer])
+                    print(">" + id + "|" + str(pos) + "|CG")
+                    print(modStr[pos:pos + self._subKmer])
+                
+            
         refFH.close()
         varFH.close()
         print("Removed " + str(removeCount) + " SNPs.", file=sys.stderr)
@@ -114,9 +124,10 @@ def main():
     parser.add_argument("-k", '--kmer', type=int, dest='kmer', help='kmer size', default=25)
     parser.add_argument("-p", '--prefix', type=str, dest='prefix', help='output prefix', default = "")
     parser.add_argument("-i", '--ignoreReq', action='store_false', dest='ignore', help='ignore AT to CG conversion requirements', default = True)
+    parser.add_argument("-s", '--subKmer', type=int, dest='subKmer', help='Sub kmer size, only needed kmer overlap integrity purposes', default=0)
 
     args = parser.parse_args()
-    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.prefix, args.ignore)
+    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.prefix, args.ignore, args.subKmer)
     extractor.extract()
     
 
