@@ -105,7 +105,7 @@ class ExtractKmers:
                 refFH.write(modStr + "\n")
             #sub k-mer stuff here
             if self._subKmer != 0:
-                for pos in range(0, len(modStr) - self._subKmer):
+                for pos in range(0, len(modStr) - self._subKmer + 1):
                     print(">" + id + "|" + str(pos) + "|AT")
                     print(tmpStr[pos:pos + self._subKmer])
                     print(">" + id + "|" + str(pos) + "|CG")
