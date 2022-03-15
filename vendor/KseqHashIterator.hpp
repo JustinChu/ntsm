@@ -57,6 +57,10 @@ public:
 		return KseqHashIterator();
 	}
 
+	uint64_t getPos(){
+		return m_pos;
+	}
+
 	~KseqHashIterator() {
 	}
 
