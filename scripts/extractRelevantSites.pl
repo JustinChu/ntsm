@@ -47,7 +47,7 @@ while ($line) {
 		if ( exists( $chrPosToRSID{$id} ) ) {
 			print $chrPosToRSID{$id};
 			for ( my $i = 9 ; $i < scalar(@tempArr) ; ++$i ) {
-				print "\t". $tempArr[$1];
+				print "\t". $tempArr[$i];
 			}
 			print "\n";
 			$count++;
