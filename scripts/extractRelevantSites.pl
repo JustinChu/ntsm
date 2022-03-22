@@ -43,7 +43,7 @@ my $count = 0;
 while ($line) {
 	if ($line) {
 		chomp($line);
-		my @tempArr = split( /\s/, $line );
+		my @tempArr = split( /\t/, $line );
 		my $id      = $tempArr[0] . "\t" . $tempArr[1];
 		if ( exists( $chrPosToRSID{$id} ) ) {
 			print $chrPosToRSID{$id};
