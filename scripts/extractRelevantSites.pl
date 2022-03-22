@@ -47,16 +47,16 @@ while ($line) {
 		my $id      = $tempArr[0] . "\t" . $tempArr[1];
 		if ( exists( $chrPosToRSID{$id} ) ) {
 			print $chrPosToRSID{$id};
-			for ( my $i = 9 ; $i < scalar(@tempArr) ; ++$i ) {
+			for ( my $i = 9 ; $i < scalar(@tempArr); ++$i ) {
 				if ($tempArr[$i] eq "1|0")
 				{
 					print "\t1";
 				}
-				if ($tempArr[$i] eq "1|1")
+				elsif ($tempArr[$i] eq "1|1")
 				{
 					print "\t.5";
 				}
-				if ($tempArr[$i] eq "0|1")
+				elsif ($tempArr[$i] eq "0|1")
 				{
 					print "\t0";
 				}
