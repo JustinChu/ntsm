@@ -34,7 +34,7 @@ while ($line) {
 $fh2->close();
 
 #main list VCF
-my $fh3 = new IO::File( $ARGV[1], "r" );
+my $fh3 = new IO::File( $ARGV[2], "r" );
 $line = $fh3->getline();
 
 my $count = 0;
