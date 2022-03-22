@@ -28,6 +28,7 @@ my $fh2 = new IO::File( $ARGV[1], "r" );
 $line = $fh2->getline();
 
 while ($line) {
+	chomp($line);
 	print "rsID\t" . $line . "\n";
 	$line = $fh2->getline();
 }
