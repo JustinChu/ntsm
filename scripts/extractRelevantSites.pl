@@ -47,7 +47,7 @@ while ($line) {
 		my @tempArr = split( /\t/, $line );
 		my $id      = $tempArr[0] . "\t" . $tempArr[1];
 		if ( exists( $chrPosToRSID{$id} ) ) {
-			if ( $chrPosToVar{$id} == $tempArr[4] ) {
+			if ( $chrPosToVar{$id} eq $tempArr[4] ) {
 				print $chrPosToRSID{$id};
 				for ( my $i = 9 ; $i < scalar(@tempArr) ; ++$i ) {
 					if ( $tempArr[$i] eq "1|1" ) {
