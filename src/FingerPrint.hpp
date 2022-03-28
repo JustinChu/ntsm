@@ -207,10 +207,11 @@ private:
 			int l = kseq_read(seq);
 			unsigned index = 0;
 			while (l >= 0) {
-				m_alleleIDToKmerRef[index] = shared_ptr<
-						vector<uint64_t>>(new vector<uint64_t>());
+				assert(index == m_alleleIDToKmerRef.size());
+				m_alleleIDToKmerRef.emplace_back(
+						shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
 //				unsigned count = 0;
-				//k-merize and insert
+				//k-merize and
 				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
 						itr != itr.end(); ++itr) {
 					uint64_t hv = *itr;
@@ -242,8 +243,9 @@ private:
 		int l = kseq_read(seq);
 		unsigned index = 0;
 		while (l >= 0) {
-			m_alleleIDToKmerVar[index] = shared_ptr<
-					vector<uint64_t>>(new vector<uint64_t>());
+			assert(index == m_alleleIDToKmerVar.size());
+			m_alleleIDToKmerVar.emplace_back(
+					shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
 			//k-merize and insert
 //			unsigned count = 0;
 			for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
@@ -268,7 +270,7 @@ private:
 			index++;
 		}
 		kseq_destroy(seq);
-		gzclose(fp1);
+		gzclose(fp2);
 
 		//remove dupes
 		for (tsl::robin_set<uint64_t>::iterator itr = dupes.begin();
