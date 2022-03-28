@@ -169,6 +169,7 @@ int main(int argc, char *argv[]) {
 	fp.printCounts();
 	cerr << "Total Bases Considered: " << fp.getTotalCounts() << endl;
 	cerr << "Total k-mers Recorded: " << fp.getTotalKmerCounts() << endl;
+	cerr << "Distinct k-mers: " << fp.getDistinctKmerCount() << endl;
 	cerr << "Time: " << omp_get_wtime() - time << "s Memory:" << Util::getRSS()
 			<< "kbytes" << endl;
 	return 0;

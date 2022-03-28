@@ -130,6 +130,10 @@ public:
 		return m_totalBases;
 	}
 
+	unsigned getDistinctKmerCount(){
+		return m_counts.size();
+	}
+
 //	/*
 //	 * 0 = missing alleles
 //	 * 1 = homozygous wt
@@ -180,8 +184,7 @@ private:
 	vector<string> m_alleleIDs;
 	uint64_t m_totalBases;
 //	unsigned m_maxSiteSize;
-
-	static const unsigned interval = 65536; //interval to be used when considering
+//	static const unsigned interval = 65536;
 
 	void initCountsHash(){
 		gzFile fp1, fp2;
