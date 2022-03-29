@@ -110,15 +110,16 @@ public:
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
 			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
 			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
-			cout << m_alleleIDs.at(i) << "\tR";
-			for(size_t j = 0; j < allele1.size() ; ++j) {
-				cout << "\t" << m_counts[allele1.at(j)];
+			cout << m_alleleIDs.at(i) << "\tR\t";
+			for (size_t j = 0; j < allele1.size() - 1; ++j) {
+				cout << m_counts[allele1.at(j)] << ",";
 			}
-			cout << endl << m_alleleIDs.at(i) << "\tV";
-			for(size_t j = 0; j < allele2.size() ; ++j) {
-				cout << "\t" << m_counts[allele2.at(j)];
+			cout << m_counts[allele1.back()] << endl << m_alleleIDs.at(i)
+					<< "\tV\t";
+			for (size_t j = 0; j < allele2.size() - 1; ++j) {
+				cout << m_counts[allele2.at(j)] << ",";
 			}
-			cout << endl;
+			cout << m_counts[allele2.back()] << endl;
 		}
 	}
 
