@@ -40,6 +40,8 @@ void printHelpDialog() {
 //			"                         In this mode the number of threads used\n"
 //			"                         will be equal to the number of files\n"
 //			"                         plus the number of producer threads.[0]\n"
+			"  -d, --dupes            Allow shared k-mers between sites to be\n"
+			"                         counted.\n"
 			"  -r, --ref              Wildtype reference fasta. [required]\n"
 			"  -a, --var              Variant reference fasta. [required]\n"
 			"  -k, --kmer             Kmer size use. [25]\n"
@@ -62,6 +64,7 @@ int main(int argc, char *argv[]) {
 	//long form arguments
 	static struct option long_options[] = { { "threads", required_argument, NULL, 't' },
 			{ "maxCov", required_argument, NULL, 'm' },
+			{ "dupes", required_argument, NULL, 'd' },
 			{ "ref", required_argument, NULL, 'r' },
 			{ "var",required_argument, NULL, 'a' },
 			{ "kmer", required_argument, NULL, 'k' },
@@ -71,12 +74,16 @@ int main(int argc, char *argv[]) {
 			{NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "r:a:t:vhk:m:", long_options,
+	while ((c = getopt_long(argc, argv, "r:a:t:vhk:m:d", long_options,
 			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		case 'h': {
 			printHelpDialog();
+			break;
+		}
+		case 'd': {
+			opt::dupes = true;
 			break;
 		}
 		case 'r': {

@@ -20,6 +20,7 @@ extern string var;
 extern double scoreThresh;
 extern double covThresh;
 extern double maxCov;
+extern dupes dupes;
 }
 
 

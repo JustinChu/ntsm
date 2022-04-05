@@ -107,19 +107,33 @@ public:
 	}
 
 	void printCounts(){
+		string tempStr;
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
+			tempStr.clear();
 			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
 			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
-			cout << m_alleleIDs.at(i) << "\tR\t";
-			for (size_t j = 0; j < allele1.size() - 1; ++j) {
-				cout << m_counts[allele1.at(j)] << ",";
+			tempStr += m_alleleIDs.at(i);
+			tempStr += "\tR\t";
+			for (size_t j = 0; j < allele1.size(); ++j) {
+				if(m_counts.find(allele1.at(j)) != m_counts.end()){
+					tempStr += std::to_string(m_counts[allele1.at(j)]);
+					tempStr += ",";
+				}
 			}
-			cout << m_counts[allele1.back()] << endl << m_alleleIDs.at(i)
-					<< "\tV\t";
-			for (size_t j = 0; j < allele2.size() - 1; ++j) {
-				cout << m_counts[allele2.at(j)] << ",";
+			tempStr.pop_back();
+			tempStr += "\n";
+			tempStr += m_alleleIDs.at(i);
+			tempStr += "\tV\t";
+			for (size_t j = 0; j < allele2.size(); ++j) {
+				if (m_counts.find(allele2.at(j)) != m_counts.end()) {
+					tempStr += m_counts[allele2.at(j)];
+					tempStr += ",";
+				}
 			}
-			cout << m_counts[allele2.back()] << endl;
+			tempStr.pop_back();
+			tempStr += m_counts[allele2.back()];
+			tempStr += "\n";
+			cout << tempStr;
 		}
 	}
 
@@ -276,10 +290,12 @@ private:
 		kseq_destroy(seq);
 		gzclose(fp2);
 
-		//remove dupes
-		for (tsl::robin_set<uint64_t>::iterator itr = dupes.begin();
-				itr != dupes.end(); ++itr) {
-			m_counts.erase(*itr);
+		if (!opt::dupes) {
+			//remove dupes
+			for (tsl::robin_set<uint64_t>::iterator itr = dupes.begin();
+					itr != dupes.end(); ++itr) {
+				m_counts.erase(*itr);
+			}
 		}
 	}
 };

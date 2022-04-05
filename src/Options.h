@@ -26,10 +26,10 @@ unsigned k = 25;
 string var = "";
 string ref = "";
 
-double scoreThresh= 0.01;
-double covThresh= 0;
-double maxCov= 0;
-
+double scoreThresh = 0.01;
+double covThresh = 0;
+double maxCov = 0;
+bool dupes = false;
 
 }
 #endif
