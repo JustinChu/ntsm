@@ -53,7 +53,7 @@ while ($line) {
 		if ( exists( $chrPosToRSID{$id} ) ) {
 			if ( $chrPosToVar{$id} eq $varBase ) {
 				print $chrPosToRSID{$id};
-				if ( $refBase eq "A" || $varBase eq "T" ) {
+				if ( $refBase eq "A" || $refBase eq "T" ) {
 					for ( my $i = 9 ; $i < scalar(@tempArr) ; ++$i ) {
 						if ( $tempArr[$i] eq "1|1" ) {
 							print "\t2";
