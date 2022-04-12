@@ -44,23 +44,47 @@ my $count = 0;
 while ($line) {
 	if ($line) {
 		chomp($line);
+
+		#chr1	911428	1:911428:C:T	C	T
 		my @tempArr = split( /\t/, $line );
 		my $id      = $tempArr[0] . "\t" . $tempArr[1];
+		my $refBase = $tempArr[3];
+		my $varBase = $tempArr[4];
 		if ( exists( $chrPosToRSID{$id} ) ) {
-			if ( $chrPosToVar{$id} eq $tempArr[4] ) {
+			if ( $chrPosToVar{$id} eq $varBase ) {
 				print $chrPosToRSID{$id};
-				for ( my $i = 9 ; $i < scalar(@tempArr) ; ++$i ) {
-					if ( $tempArr[$i] eq "1|1" ) {
-						print "\t2";
+				if ( $refBase eq "A" || $varBase eq "T" ) {
+					for ( my $i = 9 ; $i < scalar(@tempArr) ; ++$i ) {
+						if ( $tempArr[$i] eq "1|1" ) {
+							print "\t2";
+						}
+						elsif ( $tempArr[$i] eq "1|0" || $tempArr[$i] eq "0|1" )
+						{
+							print "\t1";
+						}
+						elsif ( $tempArr[$i] eq "0|0" ) {
+							print "\t0";
+						}
+						else {
+							print "\tNA";
+						}
 					}
-					elsif ( $tempArr[$i] eq "1|0" || $tempArr[$i] eq "0|1" ) {
-						print "\t1";
-					}
-					elsif ( $tempArr[$i] eq "0|0" ) {
-						print "\t0";
-					}
-					else {
-						print "\tNA";
+				}
+				else {
+					for ( my $i = 9 ; $i < scalar(@tempArr) ; ++$i ) {
+						if ( $tempArr[$i] eq "0|0" ) {
+							print "\t2";
+						}
+						elsif ( $tempArr[$i] eq "1|0" || $tempArr[$i] eq "0|1" )
+						{
+							print "\t1";
+						}
+						elsif ( $tempArr[$i] eq "1|1" ) {
+							print "\t0";
+						}
+						else {
+							print "\tNA";
+						}
 					}
 				}
 				print "\n";
