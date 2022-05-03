@@ -98,18 +98,25 @@ class ExtractKmers:
             varFH.write(">" + id + "\n")
             refFH.write(">" + id + "\n")            
             if(self._orderVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
-                varFH.write(modStr + "\n")
                 refFH.write(tmpStr + "\n")
+                varFH.write(modStr + "\n")
+                #sub k-mer stuff here
+                if self._subKmer != 0:
+                    for pos in range(0, len(modStr) - self._subKmer + 1):
+                        print(">" + id + "|" + str(pos) + "|AT")
+                        print(tmpStr[pos:pos + self._subKmer])
+                        print(">" + id + "|" + str(pos) + "|CG")
+                        print(modStr[pos:pos + self._subKmer])
             else:
-                varFH.write(tmpStr + "\n")
                 refFH.write(modStr + "\n")
-            #sub k-mer stuff here
-            if self._subKmer != 0:
-                for pos in range(0, len(modStr) - self._subKmer + 1):
-                    print(">" + id + "|" + str(pos) + "|AT")
-                    print(tmpStr[pos:pos + self._subKmer])
-                    print(">" + id + "|" + str(pos) + "|CG")
-                    print(modStr[pos:pos + self._subKmer])
+                varFH.write(tmpStr + "\n")
+                #sub k-mer stuff here
+                if self._subKmer != 0:
+                    for pos in range(0, len(modStr) - self._subKmer + 1):
+                        print(">" + id + "|" + str(pos) + "|AT")
+                        print(modStr[pos:pos + self._subKmer])
+                        print(">" + id + "|" + str(pos) + "|CG")
+                        print(tmpStr[pos:pos + self._subKmer])
                 
             
         refFH.close()
