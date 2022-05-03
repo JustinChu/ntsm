@@ -131,7 +131,6 @@ public:
 				}
 			}
 			tempStr.pop_back();
-			tempStr += m_counts[allele2.back()];
 			tempStr += "\n";
 			cout << tempStr;
 		}
