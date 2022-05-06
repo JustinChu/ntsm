@@ -50,7 +50,6 @@ while ($line) {
 			else{
 				unless($lineArr[3] eq $secondNT){
 					print STDERR "Reference Allele is not in high abundance:" . $line . "\n";
-					exit(1);
 				}
 				$lineArr[4] = $highestNT;
 			}
