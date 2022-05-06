@@ -126,7 +126,7 @@ public:
 			tempStr += "\tV\t";
 			for (size_t j = 0; j < allele2.size(); ++j) {
 				if (m_counts.find(allele2.at(j)) != m_counts.end()) {
-					tempStr += m_counts[allele2.at(j)];
+					tempStr += std::to_string(m_counts[allele2.at(j)]);
 					tempStr += ",";
 				}
 			}
