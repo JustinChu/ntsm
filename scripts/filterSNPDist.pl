@@ -38,8 +38,8 @@ while ($line) {
 			$isGood = 0;
 		}
 	}
-	if($isGood == 1){
-		print $line;
+	if ( $isGood == 1 ) {
+		print $line . "\n";
 	}
 	$line = $fh2->getline();
 }
