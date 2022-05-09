@@ -20,7 +20,7 @@ while ($line) {
 $fh->close();
 
 #main list VCF
-my $fh2 = new IO::File( $ARGV[0], "r" );
+my $fh2 = new IO::File( $ARGV[1], "r" );
 $line = $fh2->getline();
 my $count = 0;
 
