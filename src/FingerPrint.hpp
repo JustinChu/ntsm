@@ -84,7 +84,7 @@ public:
 		}
 	}
 
-	void printCountsOld(){
+	void printCountsMax(){
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
 			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
 			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
@@ -106,7 +106,7 @@ public:
 		}
 	}
 
-	void printCounts(){
+	void printCountsAllCounts(){
 		string tempStr;
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
 			tempStr.clear();
