@@ -49,14 +49,14 @@ while ($line) {
 			}
 			else{
 				unless($lineArr[3] eq $secondNT){
-					print STDERR "Reference Allele is not in high abundance:" . $line . "\n";
+#					print STDERR "Reference Allele is not in high abundance:" . $line . "\n";
 				}
 				$lineArr[4] = $highestNT;
 			}
 
 			if ( $secondHighestAllele > $threshold ) {
 				if($secondHighestAllele > 0.5){
-					print STDERR "Allele Frequency error: " . $line . "\n";
+#					print STDERR "Allele Frequency error: " . $line . "\n";
 				}
 				local $" = "\t";
 				print "@lineArr\n";
@@ -66,7 +66,7 @@ while ($line) {
 			}
 		}
 		else {
-			print STDERR 'Unparsed Line: ' . $line . "\n";
+#			print STDERR 'Unparsed Line: ' . $line . "\n";
 		}
 	}
 	$line = $fh->getline();
