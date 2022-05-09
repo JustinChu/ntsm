@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
 	FingerPrint fp(inputFiles);
 	fp.computeCounts();
-	fp.printCounts();
+	fp.printCountsMax();
 	cerr << "Total Bases Considered: " << fp.getTotalCounts() << endl;
 	cerr << "Total k-mers Recorded: " << fp.getTotalKmerCounts() << endl;
 	cerr << "Distinct k-mers: " << fp.getDistinctKmerCount() << endl;
