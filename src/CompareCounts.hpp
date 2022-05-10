@@ -14,14 +14,15 @@
 #include <memory>
 #include <math.h>
 
-#include "vendor/kfunc.c"
+//#include "vendor/kfunc.c"
 
 using namespace std;
 
 class CompareCounts {
 public:
 	CompareCounts(const vector<string> &filenames) :
-			m_filenames(filenames) {
+			m_filenames(filenames), m_sumlogPSingle(
+					vector<double>(filenames.size())) {
 
 		vector<uint64_t> maxCounts;
 		vector<shared_ptr<vector<pair<unsigned, unsigned>>>> counts;
@@ -93,18 +94,18 @@ public:
 		}
 	}
 
-	void runFET() {
-		//TODO parallelize loop -> may need to manually collapse loop
+	void runLogLikelihood() {
+		initLogPSum();
 		string temp = "";
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
-				double pVal = runCombinedPval(i, j);
+				double logl = computeLogLikelihood(i, j);
 				temp += m_filenames[i];
 				temp += "\t";
 				temp += m_filenames[j];
 				temp += "\t";
-				temp += to_string(pVal);
-				if (pVal < opt::scoreThresh) {
+				temp += to_string(logl);
+				if (logl < opt::scoreThresh) {
 					temp += "\tY\t";
 				} else {
 					temp += "\tN\t";
@@ -120,6 +121,32 @@ public:
 		}
 	}
 
+//	void runFET() {
+//		string temp = "";
+//		for (unsigned i = 0; i < m_counts.size(); ++i) {
+//			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
+//				double pVal = runCombinedPval(i, j);
+//				temp += m_filenames[i];
+//				temp += "\t";
+//				temp += m_filenames[j];
+//				temp += "\t";
+//				temp += to_string(pVal);
+//				if (pVal < opt::scoreThresh) {
+//					temp += "\tY\t";
+//				} else {
+//					temp += "\tN\t";
+//				}
+//				temp += to_string(double(m_totalCounts[i])/double(m_counts[0]->size()));
+//				temp += "\t";
+//				temp += to_string(double(m_totalCounts[j])/double(m_counts[0]->size()));
+//
+//				temp += "\n";
+//				cout << temp;
+//				temp.clear();
+//			}
+//		}
+//	}
+
 	~CompareCounts() {
 		// TODO Auto-generated destructor stub
 	}
@@ -128,27 +155,87 @@ private:
 	const vector<string> &m_filenames;
 	vector<shared_ptr<vector<pair<unsigned, unsigned>>>> m_counts;
 	vector<uint64_t> m_totalCounts;
+	vector<double> m_sumlogPSingle;
 
-	double runCombinedPval(unsigned index1, unsigned index2) {
-		double sumLogPVal = 0.0;
-		unsigned totalCount = 0;
-		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
-			if ((m_counts[index1]->at(i).first + m_counts[index1]->at(i).second
-					>= opt::covThresh)
-					&& (m_counts[index2]->at(i).first
-							+ m_counts[index2]->at(i).second >= opt::covThresh)) {
-				double fisher_left_p, fisher_right_p, fisher_twosided_p;
-				kt_fisher_exact(m_counts[index1]->at(i).first,
-						m_counts[index2]->at(i).first,
-						m_counts[index1]->at(i).second,
-						m_counts[index2]->at(i).second, &fisher_left_p,
-						&fisher_right_p, &fisher_twosided_p);
-				sumLogPVal += log(fisher_twosided_p);
-				totalCount++;
+	//new method for calculating similarity using log likelihood
+	double computeSumLogPSingle(unsigned index) {
+		double sumLogP = 0;
+		for (unsigned i = 0; i < m_counts[index]->size(); ++i) {
+			double freqAT = 0;
+			double freqCG = 0;
+			if(m_counts[index]->at(i).first > opt::covThresh)
+			{
+				freqAT = double(m_counts[index]->at(i).first)
+						/ double(
+								m_counts[index]->at(i).first
+										+ m_counts[index]->at(i).second);
 			}
+			if(m_counts[index]->at(i).second > opt::covThresh)
+			{
+				freqCG = double(m_counts[index]->at(i).second)
+						/ double(
+								m_counts[index]->at(i).first
+										+ m_counts[index]->at(i).second);
+			}
+			sumLogP += m_counts[index]->at(i).first * freqAT
+					+ m_counts[index]->at(i).second * freqCG;
 		}
-		return(exp(sumLogPVal/totalCount));
+		return(sumLogP);
 	}
+
+	double computeSumLogPJoint(unsigned index1, unsigned index2) {
+		double sumLogP = 0;
+		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
+			double freqAT = 0;
+			double freqCG = 0;
+			unsigned countAT = m_counts[index1]->at(i).first
+					+ m_counts[index2]->at(i).first;
+			unsigned countCG = m_counts[index1]->at(i).second
+					+ m_counts[index2]->at(i).second;
+			if (countAT > opt::covThresh) {
+				freqAT = double(countAT) / double(countAT + countCG);
+			}
+			if (countCG > opt::covThresh) {
+				freqCG = double(countCG) / double(countAT + countCG);
+			}
+			sumLogP += countAT * freqAT + countCG * freqCG;
+		}
+		return(sumLogP);
+	}
+
+	double computeLogLikelihood(unsigned index1, unsigned index2) {
+	  return -2*(computeSumLogPJoint(index1, index2) - (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
+	}
+
+	void initLogPSum(){
+		for (unsigned i = 0; i < m_counts.size(); ++i) {
+			m_sumlogPSingle[i] = computeSumLogPSingle(i);
+		}
+	}
+
+
+//	//old method for calculating similarity using FET
+//	double runCombinedPval(unsigned index1, unsigned index2) {
+//		double sumLogPVal = 0.0;
+//		unsigned totalCount = 0;
+//		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
+//			if ((m_counts[index1]->at(i).first + m_counts[index1]->at(i).second
+//					>= opt::covThresh)
+//					&& (m_counts[index2]->at(i).first
+//							+ m_counts[index2]->at(i).second >= opt::covThresh)) {
+//				double fisher_left_p, fisher_right_p, fisher_twosided_p;
+//				kt_fisher_exact(m_counts[index1]->at(i).first,
+//						m_counts[index2]->at(i).first,
+//						m_counts[index1]->at(i).second,
+//						m_counts[index2]->at(i).second, &fisher_left_p,
+//						&fisher_right_p, &fisher_twosided_p);
+//				sumLogPVal += log(fisher_twosided_p);
+//				totalCount++;
+//			}
+//		}
+//		return(exp(sumLogPVal/totalCount));
+//	}
+
 
 };
 
