@@ -9,8 +9,8 @@ my @dataStr;
 my @countA;
 my @countB;
 
-while (<>) {
-	my $fh    = new IO::File( $_, "r" );
+foreach my $file (@ARGV) {
+	my $fh    = new IO::File( $file, "r" );
 	my $line  = $fh->getline();
 	my $index = 0;
 	while ($line) {
