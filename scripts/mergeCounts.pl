@@ -25,7 +25,6 @@ foreach my $file (@ARGV) {
 				push( @countB,  $tmpArr[2] );
 			}
 			else {
-				$dataStr[$index] += $tmpArr[0];
 				$countA[$index]  += $tmpArr[1];
 				$countB[$index]  += $tmpArr[2];
 			}
