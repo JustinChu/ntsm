@@ -39,5 +39,5 @@ foreach my $file (@ARGV) {
 for ( my $i = 0 ; $i < scalar(@dataStr) ; ++$i ) {
 	print $dataStr[$i] . "\t"
 	  . $countA[$i] . "\t"
-	  . $countB[$i] + "\n";
+	  . $countB[$i] . "\n";
 }
