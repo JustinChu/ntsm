@@ -33,10 +33,9 @@ void printVersion()
 }
 
 void printHelpDialog(){
-	const char dialog[] =
+	const string dialog =
 	"Usage: " PROGRAM " [FILES...]\n"
-	"  -s, --score_thresh     Threshold to consider different given geometric\n"
-	"                         mean of Fisher's exact tests on each locus [0.01]\n"
+	"  -s, --score_thresh     Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
 //	"  -t, --threads          Number of threads to run.[1]\n"
 	"  -h, --help             Display this dialog.\n"
 	"  -v, --verbose          Display verbose output.\n"
@@ -150,9 +149,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	double time = omp_get_wtime();
 	CompareCounts comp(inputFiles);
+	double time = omp_get_wtime();
 	comp.runLogLikelihood();
+	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
+	time = omp_get_wtime();
+	comp.runFET();
+	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
+//	comp.runLogLikelihoodRemove();
 
 	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
 	return 0;
