@@ -26,10 +26,11 @@ unsigned k = 25;
 string var = "";
 string ref = "";
 
-double scoreThresh = 0.01;
+double scoreThresh = 2;
 double covThresh = 0;
 double maxCov = 0;
 bool dupes = false;
+//uint64_t minSites = 10000;
 
 }
 #endif

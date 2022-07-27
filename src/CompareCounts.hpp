@@ -121,32 +121,66 @@ public:
 	}
 
 	void runLogLikelihoodRemove() {
-			vector<unsigned> validIndexes = gatherValidEntries();
-			cerr << "Retained " << validIndexes.size() << " SNP sites for evaluation" << endl;
-			initLogPSum(validIndexes);
-			string temp = "";
-			for (unsigned i = 0; i < m_counts.size(); ++i) {
-				for (unsigned j = i + 1; j < m_counts.size(); ++j) {
-					double score = computeLogLikelihood(i, j, validIndexes)/validIndexes.size();
-					temp += m_filenames[i];
-					temp += "\t";
-					temp += m_filenames[j];
-					temp += "\t";
-					temp += to_string(score);
-					if (score < opt::scoreThresh) {
-						temp += "\tY\t";
-					} else {
-						temp += "\tN\t";
-					}
-					temp += to_string(double(m_totalCounts[i])/double(m_counts[0]->size()));
-					temp += "\t";
-					temp += to_string(double(m_totalCounts[j])/double(m_counts[0]->size()));
-					temp += "\n";
-					cout << temp;
-					temp.clear();
+		vector<unsigned> validIndexes = gatherValidEntries();
+		cerr << "Retained " << validIndexes.size()
+				<< " SNP sites for evaluation" << endl;
+		initLogPSum(validIndexes);
+		string temp = "";
+		for (unsigned i = 0; i < m_counts.size(); ++i) {
+			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
+				double score = computeLogLikelihood(i, j, validIndexes)
+						/ validIndexes.size();
+				temp += m_filenames[i];
+				temp += "\t";
+				temp += m_filenames[j];
+				temp += "\t";
+				temp += to_string(score);
+				if (score < opt::scoreThresh) {
+					temp += "\tY\t";
+				} else {
+					temp += "\tN\t";
 				}
+				temp += to_string(
+						double(m_totalCounts[i]) / double(m_counts[0]->size()));
+				temp += "\t";
+				temp += to_string(
+						double(m_totalCounts[j]) / double(m_counts[0]->size()));
+				temp += "\n";
+				cout << temp;
+				temp.clear();
 			}
 		}
+		}
+
+	void runLogLikelihoodRemovePairwise() {
+		string temp = "";
+		for (unsigned i = 0; i < m_counts.size(); ++i) {
+			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
+				unsigned indexesUsed = 0;
+				double score = computeLogLikelihood(i, j, indexesUsed);
+				temp += m_filenames[i];
+				temp += "\t";
+				temp += m_filenames[j];
+				temp += "\t";
+				temp += to_string(score);
+				if (score < opt::scoreThresh) {
+					temp += "\tY\t";
+				} else {
+					temp += "\tN\t";
+				}
+				temp += to_string(
+						double(m_totalCounts[i]) / double(m_counts[0]->size()));
+				temp += "\t";
+				temp += to_string(
+						double(m_totalCounts[j]) / double(m_counts[0]->size()));
+				temp += "\t";
+				temp += to_string(indexesUsed);
+				temp += "\n";
+				cout << temp;
+				temp.clear();
+			}
+		}
+	}
 
 	void runFET() {
 		string temp = "";
@@ -244,12 +278,12 @@ private:
 					+ m_counts[index2]->at(i).first;
 			unsigned countCG = m_counts[index1]->at(i).second
 					+ m_counts[index2]->at(i).second;
-//			if (countAT > opt::covThresh) {
+			if (countAT > opt::covThresh) {
 				freqAT = double(countAT) / double(countAT + countCG);
-//			}
-//			if (countCG > opt::covThresh) {
+			}
+			if (countCG > opt::covThresh) {
 				freqCG = double(countCG) / double(countAT + countCG);
-//			}
+			}
 			sumLogP += countAT * freqAT + countCG * freqCG;
 		}
 		return(sumLogP);
@@ -264,12 +298,12 @@ private:
 					+ m_counts[index2]->at(*i).first;
 			unsigned countCG = m_counts[index1]->at(*i).second
 					+ m_counts[index2]->at(*i).second;
-//			if (countAT > opt::covThresh) {
+			if (countAT > opt::covThresh) {
 				freqAT = double(countAT) / double(countAT + countCG);
-//			}
-//			if (countCG > opt::covThresh) {
+			}
+			if (countCG > opt::covThresh) {
 				freqCG = double(countCG) / double(countAT + countCG);
-//			}
+			}
 			sumLogP += countAT * freqAT + countCG * freqCG;
 		}
 		return(sumLogP);
@@ -296,12 +330,55 @@ private:
 		return(valid);
 	}
 
-	double computeLogLikelihood(unsigned index1, unsigned index2) const{
-	  return -2*(computeSumLogPJoint(index1, index2) - (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
+	//TODO: Easily paralizable
+	vector<unsigned> gatherValidEntries(unsigned index1, unsigned index2) {
+		vector<unsigned> valid;
+		vector<bool> binValid(m_counts[0]->size(), true);
+		unsigned count = 0;
+		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
+			if(m_counts[index1]->at(j).first <= opt::covThresh && m_counts[index1]->at(j).second <= opt::covThresh){
+				count++;
+				binValid[j] = false;
+			}
+		}
+		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
+			if(m_counts[index2]->at(j).first <= opt::covThresh && m_counts[index2]->at(j).second <= opt::covThresh){
+				count++;
+				binValid[j] = false;
+			}
+		}
+		for(unsigned i = 0; i < binValid.size(); ++i){
+			if(binValid[i]){
+				valid.push_back(i);
+			}
+		}
+		return(valid);
 	}
 
-	double computeLogLikelihood(unsigned index1, unsigned index2, const vector<unsigned> &pos) const{
-	  return -2*(computeSumLogPJoint(index1, index2, pos) - (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
+	//standard computation of Likelihood
+	double computeLogLikelihood(unsigned index1, unsigned index2) const {
+		return -2
+				* (computeSumLogPJoint(index1, index2)
+						- (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
+	}
+
+	//compute only sites that aren't missing
+	double computeLogLikelihood(unsigned index1, unsigned index2,
+			unsigned &numRetained) {
+		vector<unsigned> validIndexes = gatherValidEntries(index1, index2);
+		numRetained = validIndexes.size();
+		return -2
+				* (computeSumLogPJoint(index1, index2, validIndexes)
+						- (computeSumLogPSingle(index1, validIndexes)
+								+ computeSumLogPSingle(index2, validIndexes)));
+	}
+
+	//computes sites that aren't missing across all datasets
+	double computeLogLikelihood(unsigned index1, unsigned index2,
+			const vector<unsigned> &pos) const {
+		return -2
+				* (computeSumLogPJoint(index1, index2, pos)
+						- (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
 	}
 
 	void initLogPSum(){

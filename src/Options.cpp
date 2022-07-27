@@ -21,6 +21,7 @@ extern double scoreThresh;
 extern double covThresh;
 extern double maxCov;
 extern bool dupes;
+//extern uint64_t minSites;
 }
 
 

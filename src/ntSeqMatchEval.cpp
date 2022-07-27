@@ -151,12 +151,13 @@ int main(int argc, char *argv[])
 
 	CompareCounts comp(inputFiles);
 	double time = omp_get_wtime();
-	comp.runLogLikelihood();
-	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
-	time = omp_get_wtime();
-	comp.runFET();
-	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
-//	comp.runLogLikelihoodRemove();
+//	comp.runLogLikelihood();
+//	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
+//	time = omp_get_wtime();
+//	comp.runFET();
+//	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
+//  comp.runLogLikelihoodRemove();
+	comp.runLogLikelihoodRemovePairwise();
 
 	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
 	return 0;
