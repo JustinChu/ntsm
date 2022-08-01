@@ -106,6 +106,7 @@ public:
 		}
 	}
 	string printInfoSummary(){
+		unsigned siteCoverage = getSitesCoveredInSample();
 		string outStr = "";
 		outStr += "Total Bases Considered: "
 		outStr += std::to_string(getTotalCounts());
@@ -120,7 +121,7 @@ public:
 		outStr += std::to_string(m_alleleIDToKmerRef.size());
 		outStr += "\n";
 		outStr += "Sites Covered by 1 k-mer ";
-		outStr += std::to_string(getSitesCoveredInSample());
+		outStr += std::to_string(siteCoverage);
 		outStr += "\n";
 //		outStr += "Estimated Error Rate: ";
 //		outStr += std::to_string(getEstimatedErrorRate());
@@ -130,6 +131,9 @@ public:
 			fh.open(opt::summary);
 			fh << outStr;
 			fh.close();
+		}
+		if( double(siteCoverage) / double(m_alleleIDToKmerRef.size()) < opt::siteCovThreshold){
+			cerr << "Warning: site coverage <75%. Data may be sorted or far too sparse along the genome. PCA projection will be inaccurate." << endl;
 		}
 		return(outStr);
 	}

@@ -26,6 +26,7 @@ unsigned k = 25;
 string var = "";
 string ref = "";
 string summary = "";
+float siteCovThreshold = 0.75;
 
 double scoreThresh = 2;
 double covThresh = 0;

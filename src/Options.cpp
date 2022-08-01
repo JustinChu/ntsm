@@ -17,6 +17,7 @@ extern unsigned k;
 extern string ref;
 extern string var;
 extern string summary;
+extern float siteCovThreshold;
 
 extern double scoreThresh;
 extern double covThresh;
