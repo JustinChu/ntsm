@@ -105,6 +105,34 @@ public:
 			cout << m_alleleIDs.at(i) << "\t" << maxCountREF << "\t" << maxCountVAR << endl;
 		}
 	}
+	string printInfoSummary(){
+		string outStr = "";
+		outStr += "Total Bases Considered: "
+		outStr += std::to_string(getTotalCounts());
+		outStr += "\n";
+		outStr += "Total k-mers Recorded: ";
+		outStr += std::to_string(getTotalKmerCounts());
+		outStr += "\n";
+		outStr += "Distinct k-mers in initial set: ";
+		outStr += std::to_string(m_counts.size());
+		outStr += "\n";
+		outStr += "Total Sites";
+		outStr += std::to_string(m_alleleIDToKmerRef.size());
+		outStr += "\n";
+		outStr += "Sites Covered by 1 k-mer ";
+		outStr += std::to_string(getSitesCoveredInSample());
+		outStr += "\n";
+//		outStr += "Estimated Error Rate: ";
+//		outStr += std::to_string(getEstimatedErrorRate());
+//		outStr += "\n";
+		if(opt::summary){
+			ofstream fh;
+			fh.open(opt::summary);
+			fh << outStr;
+			fh.close();
+		}
+		return(outStr);
+	}
 
 	void printCountsAllCounts(){
 		string tempStr;
@@ -144,8 +172,30 @@ public:
 		return m_totalBases;
 	}
 
-	unsigned getDistinctKmerCount(){
-		return m_counts.size();
+	unsigned getSitesCoveredInSample(){
+		unsigned count = 0;
+		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
+			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
+			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
+			size_t maxCountREF = 0;
+			size_t maxCountVAR = 0;
+			for(size_t j = 0; j < allele1.size() ; ++j) {
+				double freqAlle = m_counts[allele1.at(j)];
+				if(maxCountREF < freqAlle){
+					maxCountREF = freqAlle;
+				}
+			}
+			for(size_t j = 0; j < allele2.size() ; ++j) {
+				double freqAlle = m_counts[allele2.at(j)];
+				if(maxCountVAR < freqAlle){
+					maxCountVAR = freqAlle;
+				}
+			}
+			if(maxCountREF != 0 || maxCountVAR != 0){
+				++count;
+			}
+		}
+		return count;
 	}
 
 //	/*

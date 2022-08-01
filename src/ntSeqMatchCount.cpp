@@ -33,18 +33,19 @@ void printVersion() {
 void printHelpDialog() {
 	const char dialog[] =
 			"Usage: " PROGRAM " -r [FASTA] -a [FASTA] [OPTION]... [FILES...]\n"
-			"  -t, --threads          Number of threads to run per file.[1]\n"
-			"  -m, --maxCov           k-mer coverage threshold for early\n"
+			"  -t, --threads = INT    Number of threads to run per file.[1]\n"
+			"  -m, --maxCov = INT     k-mer coverage threshold for early\n"
 			"                         termination [inf].\n"
 //			"  -c, --con_thread       Number of threads in consumer threading.\n"
 //			"                         In this mode the number of threads used\n"
 //			"                         will be equal to the number of files\n"
 //			"                         plus the number of producer threads.[0]\n"
+			"  -s, --summary = STR    Output filename for summary file.\n"
 			"  -d, --dupes            Allow shared k-mers between sites to be\n"
 			"                         counted.\n"
-			"  -r, --ref              Wildtype reference fasta. [required]\n"
-			"  -a, --var              Variant reference fasta. [required]\n"
-			"  -k, --kmer             Kmer size use. [25]\n"
+			"  -r, --ref = STR        Wildtype reference fasta. [required]\n"
+			"  -a, --var = STR        Variant reference fasta. [required]\n"
+			"  -k, --kmer = INT       Kmer size use. [25]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
 			"      --version          Print version information.\n";
@@ -174,9 +175,7 @@ int main(int argc, char *argv[]) {
 	FingerPrint fp(inputFiles);
 	fp.computeCounts();
 	fp.printCountsMax();
-	cerr << "Total Bases Considered: " << fp.getTotalCounts() << endl;
-	cerr << "Total k-mers Recorded: " << fp.getTotalKmerCounts() << endl;
-	cerr << "Distinct k-mers: " << fp.getDistinctKmerCount() << endl;
+	cerr << fp.printInfoSummary() << endl;
 	cerr << "Time: " << omp_get_wtime() - time << "s Memory:" << Util::getRSS()
 			<< "kbytes" << endl;
 	return 0;

@@ -16,6 +16,7 @@ extern unsigned threads;
 extern unsigned k;
 extern string ref;
 extern string var;
+extern string summary;
 
 extern double scoreThresh;
 extern double covThresh;
