@@ -33,14 +33,14 @@ void printVersion() {
 void printHelpDialog() {
 	const char dialog[] =
 			"Usage: " PROGRAM " -r [FASTA] -a [FASTA] [OPTION]... [FILES...]\n"
-			"  -t, --threads = INT    Number of threads to run per file.[1]\n"
+			"  -t, --threads = INT    Number of threads to run.[1]\n"
 			"  -m, --maxCov = INT     k-mer coverage threshold for early\n"
 			"                         termination [inf].\n"
 //			"  -c, --con_thread       Number of threads in consumer threading.\n"
 //			"                         In this mode the number of threads used\n"
 //			"                         will be equal to the number of files\n"
 //			"                         plus the number of producer threads.[0]\n"
-			"  -s, --summary = STR    Output filename for summary file.\n"
+			"  -o, --output = STR     Output for summary file.\n"
 			"  -d, --dupes            Allow shared k-mers between sites to be\n"
 			"                         counted.\n"
 			"  -r, --ref = STR        Wildtype reference fasta. [required]\n"
@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
 	//long form arguments
 	static struct option long_options[] = { { "threads", required_argument, NULL, 't' },
 			{ "maxCov", required_argument, NULL, 'm' },
+			{ "output", required_argument, NULL, 'o' },
 			{ "dupes", required_argument, NULL, 'd' },
 			{ "ref", required_argument, NULL, 'r' },
 			{ "var",required_argument, NULL, 'a' },
@@ -75,12 +76,20 @@ int main(int argc, char *argv[]) {
 			{NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "r:a:t:vhk:m:d", long_options,
+	while ((c = getopt_long(argc, argv, "r:a:t:vhk:m:do:", long_options,
 			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 		case 'h': {
 			printHelpDialog();
+			break;
+		}
+		case 'o': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::summary)) {
+				cerr << "Error - Invalid parameter o: " << optarg << endl;
+				return 0;
+			}
 			break;
 		}
 		case 'd': {

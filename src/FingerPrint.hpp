@@ -135,6 +135,7 @@ public:
 		if( double(siteCoverage) / double(m_alleleIDToKmerRef.size()) < opt::siteCovThreshold){
 			cerr << "Warning: site coverage <75%. Data may be sorted or far too sparse along the genome. PCA projection will be inaccurate." << endl;
 		}
+
 		return(outStr);
 	}
 
