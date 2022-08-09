@@ -108,7 +108,7 @@ public:
 	string printInfoSummary(){
 		unsigned siteCoverage = getSitesCoveredInSample();
 		string outStr = "";
-		outStr += "Total Bases Considered: "
+		outStr += "Total Bases Considered: ";
 		outStr += std::to_string(getTotalCounts());
 		outStr += "\n";
 		outStr += "Total k-mers Recorded: ";
@@ -126,7 +126,7 @@ public:
 //		outStr += "Estimated Error Rate: ";
 //		outStr += std::to_string(getEstimatedErrorRate());
 //		outStr += "\n";
-		if(opt::summary){
+		if(!opt::summary.empty()){
 			ofstream fh;
 			fh.open(opt::summary);
 			fh << outStr;
