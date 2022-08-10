@@ -117,10 +117,10 @@ public:
 		outStr += "Distinct k-mers in initial set: ";
 		outStr += std::to_string(m_counts.size());
 		outStr += "\n";
-		outStr += "Total Sites";
+		outStr += "Total Sites : ";
 		outStr += std::to_string(m_alleleIDToKmerRef.size());
 		outStr += "\n";
-		outStr += "Sites Covered by 1 k-mer ";
+		outStr += "Sites Covered by 1 k-mer : ";
 		outStr += std::to_string(siteCoverage);
 		outStr += "\n";
 //		outStr += "Estimated Error Rate: ";
@@ -132,8 +132,12 @@ public:
 			fh << outStr;
 			fh.close();
 		}
-		if( double(siteCoverage) / double(m_alleleIDToKmerRef.size()) < opt::siteCovThreshold){
-			cerr << "Warning: site coverage <75%. Data may be sorted or far too sparse along the genome. PCA projection will be inaccurate." << endl;
+		double covPer = double(siteCoverage)
+				/ double(m_alleleIDToKmerRef.size());
+		if (covPer < opt::siteCovThreshold) {
+			cerr << "Warning: site coverage is : " << covPer
+					<< "(<75%). Data may be sorted or sparse along the genome. Any PCA projection may be inaccurate."
+					<< endl;
 		}
 
 		return(outStr);
@@ -196,7 +200,7 @@ public:
 					maxCountVAR = freqAlle;
 				}
 			}
-			if(maxCountREF != 0 || maxCountVAR != 0){
+			if(maxCountREF > 0 || maxCountVAR > 0){
 				++count;
 			}
 		}
@@ -245,8 +249,8 @@ public:
 
 private:
 	const vector<string> &m_filenames;
-	size_t m_totalCounts;
-	size_t m_maxCounts;
+	uint64_t m_totalCounts;
+	uint64_t m_maxCounts;
 	tsl::robin_map<uint64_t, size_t> m_counts; //k-mer to count
 	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef;
 	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar;
