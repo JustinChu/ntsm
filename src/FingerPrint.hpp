@@ -117,10 +117,10 @@ public:
 		outStr += "Distinct k-mers in initial set: ";
 		outStr += std::to_string(m_counts.size());
 		outStr += "\n";
-		outStr += "Total Sites : ";
+		outStr += "Total Sites: ";
 		outStr += std::to_string(m_alleleIDToKmerRef.size());
 		outStr += "\n";
-		outStr += "Sites Covered by 1 k-mer : ";
+		outStr += "Sites Covered by at least one k-mer: ";
 		outStr += std::to_string(siteCoverage);
 		outStr += "\n";
 //		outStr += "Estimated Error Rate: ";
