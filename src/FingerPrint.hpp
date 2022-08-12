@@ -69,6 +69,8 @@ public:
 #pragma omp atomic update
 						++m_totalCounts;
 					}
+#pragma omp atomic update
+					++m_totalKmers;
 				}
 #pragma omp atomic update
 				m_totalBases += seq->seq.l;
@@ -110,6 +112,9 @@ public:
 		string outStr = "";
 		outStr += "Total Bases Considered: ";
 		outStr += std::to_string(getTotalCounts());
+		outStr += "\n";
+		outStr += "Total k-mer Considered: ";
+		outStr += std::to_string(m_totalKmers);
 		outStr += "\n";
 		outStr += "Total k-mers Recorded: ";
 		outStr += std::to_string(getTotalKmerCounts());
@@ -250,6 +255,7 @@ public:
 private:
 	const vector<string> &m_filenames;
 	uint64_t m_totalCounts;
+	uint64_t m_totalKmers;
 	uint64_t m_maxCounts;
 	tsl::robin_map<uint64_t, size_t> m_counts; //k-mer to count
 	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef;
