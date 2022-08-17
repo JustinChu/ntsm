@@ -28,7 +28,8 @@ string ref = "";
 string summary = "";
 float siteCovThreshold = 0.75;
 
-double scoreThresh = 2;
+double scoreThresh = 0.5;
+double covSkew = 0.2;
 bool all = false;
 double covThresh = 0;
 double maxCov = 0;

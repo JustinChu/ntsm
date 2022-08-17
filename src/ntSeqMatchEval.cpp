@@ -35,13 +35,15 @@ void printVersion()
 void printHelpDialog(){
 	const string dialog =
 	"Usage: " PROGRAM " [FILES...]\n"
-	"  -s, --score_thresh     Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
-	"  -a, --all              Output results of all tests, not just those that\n"
-	"                         pass the threshold."
-//	"  -t, --threads          Number of threads to run.[1]\n"
-	"  -h, --help             Display this dialog.\n"
-	"  -v, --verbose          Display verbose output.\n"
-	"      --version          Print version information.\n";
+	"  -s, --score_thresh = FLOAT Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
+	"  -a, --all                  Output results of all tests, not just those that pass\n"
+	"                             the threshold.\n"
+	"  -w, --skew = FLOAT         Divides the score by coverage. Formula: (cov1*cov2)^skew\n"
+	"                             Set to zero for no skew. ["+ to_string(opt::covSkew)+"]\n"
+//	"  -t, --threads              Number of threads to run.[1]\n"
+	"  -h, --help                 Display this dialog.\n"
+	"  -v, --verbose              Display verbose output.\n"
+	"      --version              Print version information.\n";
 
 	cerr << dialog << endl;
 	exit(EXIT_SUCCESS);
@@ -69,7 +71,7 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:a", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -86,6 +88,15 @@ int main(int argc, char *argv[])
 			stringstream convert(optarg);
 			if (!(convert >> opt::scoreThresh)) {
 				cerr << "Error - Invalid parameter s: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'w': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::covSkew)) {
+				cerr << "Error - Invalid parameter w: "
 						<< optarg << endl;
 				return 0;
 			}
