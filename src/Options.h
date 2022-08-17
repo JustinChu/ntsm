@@ -29,6 +29,7 @@ string summary = "";
 float siteCovThreshold = 0.75;
 
 double scoreThresh = 2;
+bool all = false;
 double covThresh = 0;
 double maxCov = 0;
 bool dupes = false;

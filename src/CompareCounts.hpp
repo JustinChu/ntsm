@@ -150,34 +150,44 @@ public:
 				temp.clear();
 			}
 		}
-		}
+	}
 
 	void runLogLikelihoodRemovePairwise() {
 		string temp = "";
+#pragma omp parallel for
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
 				unsigned indexesUsed = 0;
 				double score = computeLogLikelihood(i, j, indexesUsed);
-				temp += m_filenames[i];
-				temp += "\t";
-				temp += m_filenames[j];
-				temp += "\t";
-				temp += to_string(score);
-				if (score < opt::scoreThresh) {
-					temp += "\tY\t";
-				} else {
-					temp += "\tN\t";
+				if (opt::all || score < opt::scoreThresh) {
+					temp += m_filenames[i];
+					temp += "\t";
+					temp += m_filenames[j];
+					temp += "\t";
+					temp += to_string(score);
+					if (opt::all) {
+						if (score < opt::scoreThresh) {
+							temp += "\tY\t";
+						} else {
+							temp += "\tN\t";
+						}
+					}
+					temp += to_string(
+							double(m_totalCounts[i])
+									/ double(m_counts[0]->size()));
+					temp += "\t";
+					temp += to_string(
+							double(m_totalCounts[j])
+									/ double(m_counts[0]->size()));
+					temp += "\t";
+					temp += to_string(indexesUsed);
+					temp += "\n";
+#pragma omp critical(cout)
+					{
+						cout << temp;
+					}
+					temp.clear();
 				}
-				temp += to_string(
-						double(m_totalCounts[i]) / double(m_counts[0]->size()));
-				temp += "\t";
-				temp += to_string(
-						double(m_totalCounts[j]) / double(m_counts[0]->size()));
-				temp += "\t";
-				temp += to_string(indexesUsed);
-				temp += "\n";
-				cout << temp;
-				temp.clear();
 			}
 		}
 	}

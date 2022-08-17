@@ -20,6 +20,7 @@ extern string summary;
 extern float siteCovThreshold;
 
 extern double scoreThresh;
+extern bool all;
 extern double covThresh;
 extern double maxCov;
 extern bool dupes;
