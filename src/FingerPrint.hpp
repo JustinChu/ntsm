@@ -113,7 +113,7 @@ public:
 		outStr += "Total Bases Considered: ";
 		outStr += std::to_string(getTotalCounts());
 		outStr += "\n";
-		outStr += "Total k-mer Considered: ";
+		outStr += "Total k-mers Considered: ";
 		outStr += std::to_string(m_totalKmers);
 		outStr += "\n";
 		outStr += "Total k-mers Recorded: ";
