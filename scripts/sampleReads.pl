@@ -8,7 +8,7 @@ use diagnostics;
 use IO::File;
 
 my $fh         = new IO::File( $ARGV[0], "r" );
-my $maxCount   = 3 * 10 ^ 9 * 2;
+my $maxCount   = 6000000000;
 my $curHeader  = $fh->getline();
 my $curSeq     = $fh->getline();
 my $spacer     = $fh->getline();
