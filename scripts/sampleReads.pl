@@ -14,7 +14,7 @@ my $curSeq     = $fh->getline();
 my $spacer     = $fh->getline();
 my $curQual    = $fh->getline();
 my $totalBases = 0;
-while ( $maxCount < $totalBases ) {
+while ( $maxCount > $totalBases ) {
 	print $curHeader . $curSeq . $spacer . $curQual;
 	$totalBases += length($curSeq)-1;
 	$curHeader = $fh->getline();
