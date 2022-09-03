@@ -162,7 +162,8 @@ public:
 						/ double(m_counts[0]->size());
 				double cov2 = double(m_totalCounts[j])
 						/ double(m_counts[0]->size());
-				double score = skew(computeLogLikelihood(i, j, indexesUsed), cov1, cov2);
+				vector<unsigned> validIndexes = gatherValidEntries(i, j);
+				double score = skew(computeLogLikelihood(i, j, indexesUsed, validIndexes), cov1, cov2);
 				if (opt::all || score < opt::scoreThresh) {
 					temp += m_filenames[i];
 					temp += "\t";
@@ -181,6 +182,8 @@ public:
 					temp += to_string(cov2);
 					temp += "\t";
 					temp += to_string(indexesUsed);
+					temp += "\t";
+					temp += to_string(calcRelatedness(i, j, validIndexes));
 					temp += "\n";
 #pragma omp critical(cout)
 					{
@@ -299,9 +302,11 @@ private:
 		return(sumLogP);
 	}
 
-	double computeSumLogPJoint(unsigned index1, unsigned index2, const vector<unsigned> &pos) const{
+	double computeSumLogPJoint(unsigned index1, unsigned index2,
+			const vector<unsigned> &pos) const {
 		double sumLogP = 0;
-		for (vector<unsigned>::const_iterator i = pos.begin(); i != pos.end(); ++i) {
+		for (vector<unsigned>::const_iterator i = pos.begin(); i != pos.end();
+				++i) {
 			double freqAT = 0;
 			double freqCG = 0;
 			unsigned countAT = m_counts[index1]->at(*i).first
@@ -316,7 +321,7 @@ private:
 			}
 			sumLogP += countAT * freqAT + countCG * freqCG;
 		}
-		return(sumLogP);
+		return (sumLogP);
 	}
 
 	//TODO: Easily paralizable
@@ -365,9 +370,9 @@ private:
 		return(valid);
 	}
 
-	//
+	//skews the score by coverage
 	double skew(double score, double cov1, double cov2) const{
-		return (score/(cov1*cov2)^opt::covSkew);
+		return (score/pow((cov1*cov2), opt::covSkew));
 	}
 
 	//standard computation of Likelihood
@@ -379,8 +384,7 @@ private:
 
 	//compute only sites that aren't missing
 	double computeLogLikelihood(unsigned index1, unsigned index2,
-			unsigned &numRetained) {
-		vector<unsigned> validIndexes = gatherValidEntries(index1, index2);
+			unsigned &numRetained, const vector<unsigned> &validIndexes ) {
 		numRetained = validIndexes.size();
 		return -2
 				* (computeSumLogPJoint(index1, index2, validIndexes)
@@ -431,7 +435,47 @@ private:
 		return(exp(sumLogPVal/totalCount));
 	}
 
+	double calcRelatedness(unsigned index1, unsigned index2,
+			const vector<unsigned> &validIndexes ) {
+		unsigned sharedHets = 0, hets1 = 0, hets2 = 0, ibs0 = 0;
+		enum AlleleType {HET, HOM_AT, HOM_CG, UNKNOWN};
 
+		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
+				++i) {
+			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
+			if (m_counts[index1]->at(*i).first > opt::covThresh) {
+				if(m_counts[index1]->at(*i).second > opt::covThresh){
+					type1 = HET;
+					hets1 = HOM_AT;
+				}
+				else{
+					type1 = HOM_AT;
+				}
+			}
+			else if(m_counts[index1]->at(*i).second > opt::covThresh){
+				type1 = HOM_CG;
+			}
+			if (m_counts[index2]->at(*i).first > opt::covThresh) {
+				if(m_counts[index2]->at(*i).second > opt::covThresh){
+					type2 = HET;
+					hets2 = HOM_AT;
+				}
+				else{
+					type2 = HOM_AT;
+				}
+			}
+			else if(m_counts[index2]->at(*i).second > opt::covThresh){
+				type2 = HOM_CG;
+			}
+			if(type1 == HET && type2 == HET){
+				++sharedHets;
+			}
+			else if ((type1 == HOM_AT && type2 == HOM_CG) || (type1 == HOM_CG && type2 == HOM_AT)){
+				++ibs0;
+			}
+		}
+		return double(sharedHets)-2.0*double(ibs0)/double(hets1 < hets2 ? hets1 : hets2);
+	}
 };
 
 #endif /* SRC_COMPARECOUNTS_HPP_ */
