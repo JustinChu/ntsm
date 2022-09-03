@@ -164,6 +164,7 @@ public:
 						/ double(m_counts[0]->size());
 				vector<unsigned> validIndexes = gatherValidEntries(i, j);
 				double score = skew(computeLogLikelihood(i, j, indexesUsed, validIndexes), cov1, cov2);
+				score /= double(indexesUsed);
 				if (opt::all || score < opt::scoreThresh) {
 					temp += m_filenames[i];
 					temp += "\t";
@@ -349,16 +350,13 @@ private:
 	vector<unsigned> gatherValidEntries(unsigned index1, unsigned index2) {
 		vector<unsigned> valid;
 		vector<bool> binValid(m_counts[0]->size(), true);
-		unsigned count = 0;
 		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
 			if(m_counts[index1]->at(j).first <= opt::covThresh && m_counts[index1]->at(j).second <= opt::covThresh){
-				count++;
 				binValid[j] = false;
 			}
 		}
 		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
 			if(m_counts[index2]->at(j).first <= opt::covThresh && m_counts[index2]->at(j).second <= opt::covThresh){
-				count++;
 				binValid[j] = false;
 			}
 		}
@@ -372,7 +370,7 @@ private:
 
 	//skews the score by coverage
 	double skew(double score, double cov1, double cov2) const{
-		return (score/pow((cov1*cov2), opt::covSkew));
+		return (score/pow(cov1*cov2, opt::covSkew));
 	}
 
 	//standard computation of Likelihood
@@ -446,7 +444,7 @@ private:
 			if (m_counts[index1]->at(*i).first > opt::covThresh) {
 				if(m_counts[index1]->at(*i).second > opt::covThresh){
 					type1 = HET;
-					hets1 = HOM_AT;
+					++hets1;
 				}
 				else{
 					type1 = HOM_AT;
@@ -458,7 +456,7 @@ private:
 			if (m_counts[index2]->at(*i).first > opt::covThresh) {
 				if(m_counts[index2]->at(*i).second > opt::covThresh){
 					type2 = HET;
-					hets2 = HOM_AT;
+					++hets2;
 				}
 				else{
 					type2 = HOM_AT;
@@ -474,7 +472,8 @@ private:
 				++ibs0;
 			}
 		}
-		return double(sharedHets)-2.0*double(ibs0)/double(hets1 < hets2 ? hets1 : hets2);
+//		cerr << sharedHets << " " << ibs0 << " "  << (hets1 < hets2 ? hets1 : hets2) << endl;
+		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 < hets2 ? hets1 : hets2);
 	}
 };
 
