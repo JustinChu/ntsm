@@ -154,7 +154,7 @@ public:
 
 	void runLogLikelihoodRemovePairwise() {
 		string temp = "";
-#pragma omp parallel for
+#pragma omp parallel for private(temp)
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
 				unsigned indexesUsed = 0;
@@ -472,9 +472,105 @@ private:
 				++ibs0;
 			}
 		}
-//		cerr << sharedHets << " " << ibs0 << " "  << (hets1 < hets2 ? hets1 : hets2) << endl;
+//		cout << sharedHets << " " << ibs0 << " "  << (hets1 < hets2 ? hets1 : hets2) << endl;
 		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 < hets2 ? hets1 : hets2);
 	}
+
+//	double calcRelatedness(unsigned index1, unsigned index2,
+//			const vector<unsigned> &validIndexes ) {
+//		unsigned sharedHets = 0, hets1 = 0, hets2 = 0, ibs0 = 0, sharedHom = 0, homs1 = 0, homs2 = 0;
+//		enum AlleleType {HET, HOM_AT, HOM_CG, UNKNOWN};
+//
+//		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
+//				++i) {
+//			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
+//			if (m_counts[index1]->at(*i).first > opt::covThresh) {
+//				if(m_counts[index1]->at(*i).second > opt::covThresh){
+//					type1 = HET;
+//					++hets1;
+//				}
+//				else{
+//					type1 = HOM_AT;
+//
+//				}
+//			}
+//			else if(m_counts[index1]->at(*i).second > opt::covThresh){
+//				type1 = HOM_CG;
+//			}
+//			if (m_counts[index2]->at(*i).first > opt::covThresh) {
+//				if(m_counts[index2]->at(*i).second > opt::covThresh){
+//					type2 = HET;
+//					++hets2;
+//				}
+//				else{
+//					type2 = HOM_AT;
+//				}
+//			}
+//			else if(m_counts[index2]->at(*i).second > opt::covThresh){
+//				type2 = HOM_CG;
+//			}
+//			if(type1 == HET && type2 == HET){
+//				++sharedHets;
+//			}
+//			else if ((type1 == HOM_AT && type2 == HOM_CG) || (type1 == HOM_CG && type2 == HOM_AT)){
+//				++ibs0;
+//			}
+//		}
+////		cout << sharedHets << " " << ibs0 << " "  << (hets1 < hets2 ? hets1 : hets2) << endl;
+//		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 < hets2 ? hets1 : hets2);
+//	}
+
+
+//	double calcRelatedness(unsigned index1, unsigned index2,
+//			const vector<unsigned> &validIndexes ) {
+//		uint64_t sharedHets = 0, hets1 = 0, hets2 = 0, ibs0 = 0;
+//		enum AlleleType {HET, HOM_AT, HOM_CG, UNKNOWN};
+//
+//		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
+//				++i) {
+//			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
+//			if (m_counts[index1]->at(*i).first > opt::covThresh) {
+//				if(m_counts[index1]->at(*i).second > opt::covThresh){
+//					type1 = HET;
+//					hets1 += m_counts[index1]->at(*i).first + m_counts[index1]->at(*i).second;
+//				}
+//				else{
+//					type1 = HOM_AT;
+//				}
+//			}
+//			else if(m_counts[index1]->at(*i).second > opt::covThresh){
+//				type1 = HOM_CG;
+//			}
+//			if (m_counts[index2]->at(*i).first > opt::covThresh) {
+//				if(m_counts[index2]->at(*i).second > opt::covThresh){
+//					type2 = HET;
+//					hets2 += m_counts[index2]->at(*i).first + m_counts[index2]->at(*i).second;
+//				}
+//				else{
+//					type2 = HOM_AT;
+//				}
+//			}
+//			else if(m_counts[index2]->at(*i).second > opt::covThresh){
+//				type2 = HOM_CG;
+//			}
+//			if (type1 == HET && type2 == HET) {
+//				sharedHets += m_counts[index1]->at(*i).first
+//						+ m_counts[index1]->at(*i).second
+//						+ m_counts[index2]->at(*i).first
+//						+ m_counts[index2]->at(*i).second;
+//			} else if ((type1 == HOM_AT && type2 == HOM_CG)
+//					|| (type1 == HOM_CG && type2 == HOM_AT)) {
+//				if(m_counts[index1]->at(*i).first > m_counts[index1]->at(*i).second){
+//					ibs0 += m_counts[index1]->at(*i).first + m_counts[index2]->at(*i).second;
+//				}
+//				else{
+//					ibs0 += m_counts[index1]->at(*i).second + m_counts[index2]->at(*i).first;
+//				}
+//			}
+//		}
+//		cout << sharedHets << " " << ibs0 << " "  << (hets1 + hets2) << endl;
+//		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 + hets2);
+//	}
 };
 
 #endif /* SRC_COMPARECOUNTS_HPP_ */
