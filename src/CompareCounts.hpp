@@ -440,41 +440,36 @@ private:
 		unsigned sharedHets = 0, hets1 = 0, hets2 = 0, ibs0 = 0;
 		enum AlleleType {HET, HOM_AT, HOM_CG, UNKNOWN};
 
-		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
-				++i) {
+		for (vector<unsigned>::const_iterator i = validIndexes.begin();
+				i != validIndexes.end(); ++i) {
 			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
 			if (m_counts[index1]->at(*i).first > opt::covThresh) {
-				if(m_counts[index1]->at(*i).second > opt::covThresh){
+				if (m_counts[index1]->at(*i).second > opt::covThresh) {
 					type1 = HET;
 					++hets1;
-				}
-				else{
+				} else {
 					type1 = HOM_AT;
 				}
-			}
-			else if(m_counts[index1]->at(*i).second > opt::covThresh){
+			} else if (m_counts[index1]->at(*i).second > opt::covThresh) {
 				type1 = HOM_CG;
 			}
 			if (m_counts[index2]->at(*i).first > opt::covThresh) {
-				if(m_counts[index2]->at(*i).second > opt::covThresh){
+				if (m_counts[index2]->at(*i).second > opt::covThresh) {
 					type2 = HET;
 					++hets2;
-				}
-				else{
+				} else {
 					type2 = HOM_AT;
 				}
-			}
-			else if(m_counts[index2]->at(*i).second > opt::covThresh){
+			} else if (m_counts[index2]->at(*i).second > opt::covThresh) {
 				type2 = HOM_CG;
 			}
-			if(type1 == HET && type2 == HET){
+			if (type1 == HET && type2 == HET) {
 				++sharedHets;
-			}
-			else if ((type1 == HOM_AT && type2 == HOM_CG) || (type1 == HOM_CG && type2 == HOM_AT)){
+			} else if ((type1 == HOM_AT && type2 == HOM_CG)
+					|| (type1 == HOM_CG && type2 == HOM_AT)) {
 				++ibs0;
 			}
 		}
-//		cout << sharedHets << " " << ibs0 << " "  << (hets1 < hets2 ? hets1 : hets2) << endl;
 		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 < hets2 ? hets1 : hets2);
 	}
 
