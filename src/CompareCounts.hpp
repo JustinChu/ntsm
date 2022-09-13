@@ -177,6 +177,8 @@ public:
 						} else {
 							temp += "\tN\t";
 						}
+					} else {
+						temp += "\tY\t";
 					}
 					temp += to_string(cov1);
 					temp += "\t";
@@ -304,7 +306,7 @@ private:
 	}
 
 	double computeSumLogPJoint(unsigned index1, unsigned index2,
-			const vector<unsigned> &pos) const {
+			const vector<unsigned> &pos, unsigned covThresh = opt::covThresh) const {
 		double sumLogP = 0;
 		for (vector<unsigned>::const_iterator i = pos.begin(); i != pos.end();
 				++i) {
@@ -314,10 +316,10 @@ private:
 					+ m_counts[index2]->at(*i).first;
 			unsigned countCG = m_counts[index1]->at(*i).second
 					+ m_counts[index2]->at(*i).second;
-			if (countAT > opt::covThresh) {
+			if (countAT > covThresh) {
 				freqAT = double(countAT) / double(countAT + countCG);
 			}
-			if (countCG > opt::covThresh) {
+			if (countCG > covThresh) {
 				freqCG = double(countCG) / double(countAT + countCG);
 			}
 			sumLogP += countAT * freqAT + countCG * freqCG;
