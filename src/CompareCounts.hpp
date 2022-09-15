@@ -24,8 +24,8 @@ public:
 			m_filenames(filenames), m_sumlogPSingle(
 					vector<double>(filenames.size())) {
 
-		vector<uint64_t> maxCounts;
-		vector<shared_ptr<vector<pair<unsigned, unsigned>>>> counts;
+//		vector<uint64_t> maxCounts;
+		PairedCount counts;
 
 		//load in counts
 		//open file
@@ -38,57 +38,35 @@ public:
 			ifstream fh(itr->c_str());
 			string line;
 			if (fh.is_open()) {
+				m_totalCounts.push_back(0);
 				while (getline(fh, line)) {
 					if (line.length() > 0) {
-						std::string delimiter = "\t";
-						size_t pos = line.find(delimiter);
-
-						string locusID = line.substr(0, pos);
-						line.erase(0, pos + delimiter.length());
-						pos = line.find(delimiter);
-						unsigned count1 = std::stoi(
-								line.substr(0, pos).c_str());
-						line.erase(0, pos + delimiter.length());
-						pos = line.find(delimiter);
-						unsigned count2 = std::stoi(
-								line.substr(0, pos).c_str());
-						counts.back()->push_back(
-								std::make_pair(count1, count2));
-						if(maxCounts.size() >= counts.back()->size()){
-							if(maxCounts[counts.back()->size() - 1] < count1){
-								maxCounts[counts.back()->size() - 1] = count1;
+						size_t pos = line.find("\t");
+						if(line.at(0) != '#'){
+							string type = line.substr(0, pos);
+							if (type == "@TK") {
+								line.erase(0, pos + 1);
+								pos = line.find("\t");
+								m_kmerSize.push_back(
+										std::stoi(line.substr(0, pos)));
+							} else if (type == "@KS") {
+								line.erase(0, pos + 1);
+								pos = line.find("\t");
+								m_kmerSize.push_back(
+										std::stoi(line.substr(0, pos)));
 							}
-							if(maxCounts[counts.back()->size() - 1] < count2){
-								maxCounts[counts.back()->size() - 1] = count2;
-							}
-						}
-						else{
-							maxCounts.push_back(count1);
-							assert(maxCounts.size() == counts.back()->size());
-							if(maxCounts[counts.back()->size() - 1] < count2){
-								maxCounts[counts.back()->size() - 1] = count2;
-							}
+						} else {
+							//locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n
+							string locusID = line.substr(0, pos);
+							line.erase(0, pos + 1);
+							m_counts.back()->push_back(loadPair(line));
+							m_sum.back()->push_back(loadPair(line));
+							m_distinct.back()->push_back(loadPair(line));
+							m_totalCounts.back() +=
+									m_counts.back()->back().first
+											+ m_counts.back()->back().second;
 						}
 					}
-				}
-			}
-		}
-
-		//remove counts that exceed limits
-		for (vector<shared_ptr<vector<pair<unsigned, unsigned>>>>::iterator i =
-				counts.begin(); i != counts.end(); ++i) {
-			m_totalCounts.push_back(0);
-			m_counts.push_back(
-					shared_ptr<vector<pair<unsigned, unsigned>>>(
-							new vector<pair<unsigned, unsigned>>));
-			for (size_t j = 0; j < maxCounts.size(); ++j) {
-				unsigned count1 = (*i)->at(j).first;
-				unsigned count2 = (*i)->at(j).second;
-
-				if (!opt::maxCov || maxCounts[j] < opt::maxCov) {
-					m_counts.back()->push_back(std::make_pair(count1, count2));
-					m_totalCounts.back() += count1;
-					m_totalCounts.back() += count2;
 				}
 			}
 		}
@@ -153,17 +131,22 @@ public:
 //	}
 
 	void runLogLikelihoodRemovePairwise() {
+		vector<uint64_t> cov(m_totalCounts.size());
+		vector<uint64_t> errorRate(m_totalCounts.size());
+		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
+			cov[i] = double(m_totalCounts[i])
+								/ double(m_counts[0]->size());
+			errorRate[i] = computeErrorRate(i);
+		}
 		string temp = "";
 #pragma omp parallel for private(temp)
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
 				unsigned indexesUsed = 0;
-				double cov1 = double(m_totalCounts[i])
-						/ double(m_counts[0]->size());
-				double cov2 = double(m_totalCounts[j])
-						/ double(m_counts[0]->size());
 				vector<unsigned> validIndexes = gatherValidEntries(i, j);
-				double score = skew(computeLogLikelihood(i, j, indexesUsed, validIndexes), cov1, cov2);
+				double score = skew(
+						computeLogLikelihood(i, j, indexesUsed, validIndexes),
+						cov[i], cov[j]);
 				score /= double(indexesUsed);
 				if (opt::all || score < opt::scoreThresh) {
 					temp += m_filenames[i];
@@ -180,9 +163,13 @@ public:
 					} else {
 						temp += "\tY\t";
 					}
-					temp += to_string(cov1);
+					temp += to_string(cov[i]);
 					temp += "\t";
-					temp += to_string(cov2);
+					temp += to_string(cov[j]);
+					temp += "\t";
+					temp += to_string(errorRate[i]);
+					temp += "\t";
+					temp += to_string(errorRate[j]);
 					temp += "\t";
 					temp += to_string(indexesUsed);
 					temp += "\t";
@@ -230,35 +217,49 @@ public:
 
 private:
 	const vector<string> &m_filenames;
-	vector<shared_ptr<vector<pair<unsigned, unsigned>>>> m_counts;
+	typedef vector<shared_ptr<vector<pair<unsigned, unsigned>>>> PairedCount;
+	PairedCount m_counts;
+	PairedCount m_sum;
+	PairedCount m_distinct;
 	vector<uint64_t> m_totalCounts;
+	vector<uint64_t> m_rawTotalCounts;
+	vector<unsigned> m_kmerSize;
 	vector<double> m_sumlogPSingle;
 
-	//new method for calculating similarity using log likelihood
-	double computeSumLogPSingle(unsigned index) const{
-		double sumLogP = 0;
-		for (unsigned i = 0; i < m_counts[index]->size(); ++i) {
-			double freqAT = 0;
-			double freqCG = 0;
-			if(m_counts[index]->at(i).first > opt::covThresh)
-			{
-				freqAT = double(m_counts[index]->at(i).first)
-						/ double(
-								m_counts[index]->at(i).first
-										+ m_counts[index]->at(i).second);
-			}
-			if(m_counts[index]->at(i).second > opt::covThresh)
-			{
-				freqCG = double(m_counts[index]->at(i).second)
-						/ double(
-								m_counts[index]->at(i).first
-										+ m_counts[index]->at(i).second);
-			}
-			sumLogP += m_counts[index]->at(i).first * freqAT
-					+ m_counts[index]->at(i).second * freqCG;
-		}
-		return(sumLogP);
+	pair<unsigned, unsigned> loadPair(string &line) {
+		unsigned pos = line.find("\t");
+		unsigned count1 = std::stoi(line.substr(0, pos).c_str());
+		line.erase(0, pos + 1);
+		pos = line.find("\t");
+		unsigned count2 = std::stoi(line.substr(0, pos).c_str());
+		return (std::make_pair(count1, count2));
 	}
+
+	//new method for calculating similarity using log likelihood
+//	double computeSumLogPSingle(unsigned index) const{
+//		double sumLogP = 0;
+//		for (unsigned i = 0; i < m_counts[index]->size(); ++i) {
+//			double freqAT = 0;
+//			double freqCG = 0;
+//			if(m_counts[index]->at(i).first > opt::covThresh)
+//			{
+//				freqAT = double(m_counts[index]->at(i).first)
+//						/ double(
+//								m_counts[index]->at(i).first
+//										+ m_counts[index]->at(i).second);
+//			}
+//			if(m_counts[index]->at(i).second > opt::covThresh)
+//			{
+//				freqCG = double(m_counts[index]->at(i).second)
+//						/ double(
+//								m_counts[index]->at(i).first
+//										+ m_counts[index]->at(i).second);
+//			}
+//			sumLogP += m_counts[index]->at(i).first * freqAT
+//					+ m_counts[index]->at(i).second * freqCG;
+//		}
+//		return(sumLogP);
+//	}
 
 	double computeSumLogPSingle(unsigned index, const vector<unsigned> &pos) const{
 		double sumLogP = 0;
@@ -285,25 +286,25 @@ private:
 		return(sumLogP);
 	}
 
-	double computeSumLogPJoint(unsigned index1, unsigned index2) const{
-		double sumLogP = 0;
-		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
-			double freqAT = 0;
-			double freqCG = 0;
-			unsigned countAT = m_counts[index1]->at(i).first
-					+ m_counts[index2]->at(i).first;
-			unsigned countCG = m_counts[index1]->at(i).second
-					+ m_counts[index2]->at(i).second;
-			if (countAT > opt::covThresh) {
-				freqAT = double(countAT) / double(countAT + countCG);
-			}
-			if (countCG > opt::covThresh) {
-				freqCG = double(countCG) / double(countAT + countCG);
-			}
-			sumLogP += countAT * freqAT + countCG * freqCG;
-		}
-		return(sumLogP);
-	}
+//	double computeSumLogPJoint(unsigned index1, unsigned index2) const{
+//		double sumLogP = 0;
+//		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
+//			double freqAT = 0;
+//			double freqCG = 0;
+//			unsigned countAT = m_counts[index1]->at(i).first
+//					+ m_counts[index2]->at(i).first;
+//			unsigned countCG = m_counts[index1]->at(i).second
+//					+ m_counts[index2]->at(i).second;
+//			if (countAT > opt::covThresh) {
+//				freqAT = double(countAT) / double(countAT + countCG);
+//			}
+//			if (countCG > opt::covThresh) {
+//				freqCG = double(countCG) / double(countAT + countCG);
+//			}
+//			sumLogP += countAT * freqAT + countCG * freqCG;
+//		}
+//		return(sumLogP);
+//	}
 
 	double computeSumLogPJoint(unsigned index1, unsigned index2,
 			const vector<unsigned> &pos, unsigned covThresh = opt::covThresh) const {
@@ -327,43 +328,45 @@ private:
 		return (sumLogP);
 	}
 
-	//TODO: Easily paralizable
-	vector<unsigned> gatherValidEntries() {
-		vector<unsigned> valid;
-		vector<bool> binValid(m_counts[0]->size(), true);
-		unsigned count = 0;
-		for (unsigned i = 0; i != m_counts.size(); ++i) {
-			for (unsigned j = 0; j < m_counts[i]->size(); ++j) {
-				if(m_counts[i]->at(j).first <= opt::covThresh && m_counts[i]->at(j).second <= opt::covThresh){
-					count++;
-					binValid[j] = false;
-				}
-			}
-		}
-		for(unsigned i = 0; i < binValid.size(); ++i){
-			if(binValid[i]){
-				valid.push_back(i);
-			}
-		}
-		return(valid);
-	}
+//	vector<unsigned> gatherValidEntries() {
+//		vector<unsigned> valid;
+//		vector<bool> binValid(m_counts[0]->size(), true);
+//		unsigned count = 0;
+//		for (unsigned i = 0; i != m_counts.size(); ++i) {
+//			for (unsigned j = 0; j < m_counts[i]->size(); ++j) {
+//				if (m_counts[i]->at(j).first <= opt::covThresh
+//						&& m_counts[i]->at(j).second <= opt::covThresh) {
+//					count++;
+//					binValid[j] = false;
+//				}
+//			}
+//		}
+//		for (unsigned i = 0; i < binValid.size(); ++i) {
+//			if (binValid[i]) {
+//				valid.push_back(i);
+//			}
+//		}
+//		return (valid);
+//	}
 
-	//TODO: Easily paralizable
+	//TODO: Easily parelizable
 	vector<unsigned> gatherValidEntries(unsigned index1, unsigned index2) {
 		vector<unsigned> valid;
 		vector<bool> binValid(m_counts[0]->size(), true);
 		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
-			if(m_counts[index1]->at(j).first <= opt::covThresh && m_counts[index1]->at(j).second <= opt::covThresh){
+			if (m_counts[index1]->at(j).first <= opt::covThresh
+					&& m_counts[index1]->at(j).second <= opt::covThresh) {
 				binValid[j] = false;
 			}
 		}
 		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
-			if(m_counts[index2]->at(j).first <= opt::covThresh && m_counts[index2]->at(j).second <= opt::covThresh){
+			if (m_counts[index2]->at(j).first <= opt::covThresh
+					&& m_counts[index2]->at(j).second <= opt::covThresh) {
 				binValid[j] = false;
 			}
 		}
-		for(unsigned i = 0; i < binValid.size(); ++i){
-			if(binValid[i]){
+		for (unsigned i = 0; i < binValid.size(); ++i) {
+			if (binValid[i]) {
 				valid.push_back(i);
 			}
 		}
@@ -376,11 +379,11 @@ private:
 	}
 
 	//standard computation of Likelihood
-	double computeLogLikelihood(unsigned index1, unsigned index2) const {
-		return -2
-				* (computeSumLogPJoint(index1, index2)
-						- (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
-	}
+//	double computeLogLikelihood(unsigned index1, unsigned index2) const {
+//		return -2
+//				* (computeSumLogPJoint(index1, index2)
+//						- (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
+//	}
 
 	//compute only sites that aren't missing
 	double computeLogLikelihood(unsigned index1, unsigned index2,
@@ -392,19 +395,19 @@ private:
 								+ computeSumLogPSingle(index2, validIndexes)));
 	}
 
-	//computes sites that aren't missing across all datasets
-	double computeLogLikelihood(unsigned index1, unsigned index2,
-			const vector<unsigned> &pos) const {
-		return -2
-				* (computeSumLogPJoint(index1, index2, pos)
-						- (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
-	}
-
-	void initLogPSum(){
-		for (unsigned i = 0; i < m_counts.size(); ++i) {
-			m_sumlogPSingle[i] = computeSumLogPSingle(i);
-		}
-	}
+//	//computes sites that aren't missing across all datasets
+//	double computeLogLikelihood(unsigned index1, unsigned index2,
+//			const vector<unsigned> &pos) const {
+//		return -2
+//				* (computeSumLogPJoint(index1, index2, pos)
+//						- (m_sumlogPSingle[index1] + m_sumlogPSingle[index2]));
+//	}
+//
+//	void initLogPSum(){
+//		for (unsigned i = 0; i < m_counts.size(); ++i) {
+//			m_sumlogPSingle[i] = computeSumLogPSingle(i);
+//		}
+//	}
 
 	void initLogPSum(const vector<unsigned> &pos){
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
@@ -414,26 +417,26 @@ private:
 
 
 	//old method for calculating similarity using FET
-	double runCombinedPval(unsigned index1, unsigned index2) {
-		double sumLogPVal = 0.0;
-		unsigned totalCount = 0;
-		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
-			if ((m_counts[index1]->at(i).first + m_counts[index1]->at(i).second
-					>= opt::covThresh)
-					&& (m_counts[index2]->at(i).first
-							+ m_counts[index2]->at(i).second >= opt::covThresh)) {
-				double fisher_left_p, fisher_right_p, fisher_twosided_p;
-				kt_fisher_exact(m_counts[index1]->at(i).first,
-						m_counts[index2]->at(i).first,
-						m_counts[index1]->at(i).second,
-						m_counts[index2]->at(i).second, &fisher_left_p,
-						&fisher_right_p, &fisher_twosided_p);
-				sumLogPVal += log(fisher_twosided_p);
-				totalCount++;
-			}
-		}
-		return(exp(sumLogPVal/totalCount));
-	}
+//	double runCombinedPval(unsigned index1, unsigned index2) {
+//		double sumLogPVal = 0.0;
+//		unsigned totalCount = 0;
+//		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
+//			if ((m_counts[index1]->at(i).first + m_counts[index1]->at(i).second
+//					>= opt::covThresh)
+//					&& (m_counts[index2]->at(i).first
+//							+ m_counts[index2]->at(i).second >= opt::covThresh)) {
+//				double fisher_left_p, fisher_right_p, fisher_twosided_p;
+//				kt_fisher_exact(m_counts[index1]->at(i).first,
+//						m_counts[index2]->at(i).first,
+//						m_counts[index1]->at(i).second,
+//						m_counts[index2]->at(i).second, &fisher_left_p,
+//						&fisher_right_p, &fisher_twosided_p);
+//				sumLogPVal += log(fisher_twosided_p);
+//				totalCount++;
+//			}
+//		}
+//		return(exp(sumLogPVal/totalCount));
+//	}
 
 	double calcRelatedness(unsigned index1, unsigned index2,
 			const vector<unsigned> &validIndexes ) {
@@ -471,6 +474,21 @@ private:
 			}
 		}
 		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 < hets2 ? hets1 : hets2);
+	}
+
+	double computeErrorRate(unsigned index){
+		//1-(dat$recordedKmers*2/(dat$totalKmers*(dat$distinctKmers/genomeSize)))^(1/kmerSize)
+		uint64_t sum = 0;
+		for (unsigned i = 0; i < m_sum[index]->size(); ++i) {
+			sum += m_sum[index]->at(i).first + m_sum[index]->at(i).second;
+		}
+		return (1.0
+				- pow(
+						(double(sum) * 2.0)
+								/ (double(m_totalCounts.at(index))
+										* double(m_sum[index]->size())
+										/ double(opt::genomeSize)),
+						1.0 / double(m_kmerSize[index])));
 	}
 
 //	double calcRelatedness(unsigned index1, unsigned index2,

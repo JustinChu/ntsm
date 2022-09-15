@@ -35,6 +35,7 @@ unsigned covThresh = 1;
 double maxCov = 0;
 bool dupes = false;
 //uint64_t minSites = 10000;
+uint64_t genomeSize = 3000000000;
 
 }
 #endif

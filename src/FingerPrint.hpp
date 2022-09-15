@@ -86,27 +86,63 @@ public:
 		}
 	}
 
+	/*
+	 * Prints header for summary info
+	 */
+	void printHeader(){
+		string outStr = "";
+		outStr += "#@TK\t";
+		outStr += std::to_string(m_totalKmers);
+		outStr += "\n#@KS\t";
+		outStr += std::to_string(opt::k);
+		outStr += "\n#locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n";
+		cout << outStr;
+	}
+
 	void printCountsMax(){
+		printHeader();
+		string outStr = "";
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
+			outStr.clear();
 			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
 			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
-			size_t maxCountREF = 0;
-			size_t maxCountVAR = 0;
+			unsigned maxCountREF = 0;
+			unsigned maxCountVAR = 0;
+			unsigned countSumAT = 0;
+			unsigned countSumCG = 0;
 			for(size_t j = 0; j < allele1.size() ; ++j) {
 				double freqAlle = m_counts[allele1.at(j)];
 				if(maxCountREF < freqAlle){
 					maxCountREF = freqAlle;
 				}
+				countSumAT += freqAlle;
 			}
 			for(size_t j = 0; j < allele2.size() ; ++j) {
 				double freqAlle = m_counts[allele2.at(j)];
 				if(maxCountVAR < freqAlle){
 					maxCountVAR = freqAlle;
 				}
+				countSumCG += freqAlle;
 			}
-			cout << m_alleleIDs.at(i) << "\t" << maxCountREF << "\t" << maxCountVAR << endl;
+			outStr += m_alleleIDs.at(i);
+			outStr += "\t";
+			outStr += std::to_string(maxCountREF);
+			outStr += "\t";
+			outStr += std::to_string(maxCountVAR);
+			outStr += "\n";
+			outStr += std::to_string(countSumAT);
+			outStr += "\n";
+			outStr += std::to_string(countSumCG);
+			outStr += "\n";
+			outStr += std::to_string(allele1.size());
+			outStr += "\n";
+			outStr += std::to_string(allele2.size());
+			outStr += "\n";
+			cout << outStr;
 		}
+
 	}
+
 	string printInfoSummary(){
 		unsigned siteCoverage = getSitesCoveredInSample();
 		string outStr = "";
@@ -128,9 +164,6 @@ public:
 		outStr += "Sites Covered by at least one k-mer: ";
 		outStr += std::to_string(siteCoverage);
 		outStr += "\n";
-//		outStr += "Estimated Error Rate: ";
-//		outStr += std::to_string(getEstimatedErrorRate());
-//		outStr += "\n";
 		if(!opt::summary.empty()){
 			ofstream fh;
 			fh.open(opt::summary);
@@ -148,35 +181,35 @@ public:
 		return(outStr);
 	}
 
-	void printCountsAllCounts(){
-		string tempStr;
-		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
-			tempStr.clear();
-			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
-			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
-			tempStr += m_alleleIDs.at(i);
-			tempStr += "\tR\t";
-			for (size_t j = 0; j < allele1.size(); ++j) {
-				if(m_counts.find(allele1.at(j)) != m_counts.end()){
-					tempStr += std::to_string(m_counts[allele1.at(j)]);
-					tempStr += ",";
-				}
-			}
-			tempStr.pop_back();
-			tempStr += "\n";
-			tempStr += m_alleleIDs.at(i);
-			tempStr += "\tV\t";
-			for (size_t j = 0; j < allele2.size(); ++j) {
-				if (m_counts.find(allele2.at(j)) != m_counts.end()) {
-					tempStr += std::to_string(m_counts[allele2.at(j)]);
-					tempStr += ",";
-				}
-			}
-			tempStr.pop_back();
-			tempStr += "\n";
-			cout << tempStr;
-		}
-	}
+//	void printCountsAllCounts(){
+//		string tempStr;
+//		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
+//			tempStr.clear();
+//			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
+//			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
+//			tempStr += m_alleleIDs.at(i);
+//			tempStr += "\tR\t";
+//			for (size_t j = 0; j < allele1.size(); ++j) {
+//				if(m_counts.find(allele1.at(j)) != m_counts.end()){
+//					tempStr += std::to_string(m_counts[allele1.at(j)]);
+//					tempStr += ",";
+//				}
+//			}
+//			tempStr.pop_back();
+//			tempStr += "\n";
+//			tempStr += m_alleleIDs.at(i);
+//			tempStr += "\tV\t";
+//			for (size_t j = 0; j < allele2.size(); ++j) {
+//				if (m_counts.find(allele2.at(j)) != m_counts.end()) {
+//					tempStr += std::to_string(m_counts[allele2.at(j)]);
+//					tempStr += ",";
+//				}
+//			}
+//			tempStr.pop_back();
+//			tempStr += "\n";
+//			cout << tempStr;
+//		}
+//	}
 
 	uint64_t getTotalKmerCounts(){
 		return m_totalCounts;
@@ -248,9 +281,6 @@ public:
 //		}
 //		cout << endl;
 //	}
-
-	virtual ~FingerPrint() {
-	}
 
 private:
 	const vector<string> &m_filenames;
