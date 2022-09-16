@@ -95,7 +95,7 @@ public:
 		outStr += std::to_string(m_totalKmers);
 		outStr += "\n#@KS\t";
 		outStr += std::to_string(opt::k);
-		outStr += "\n#locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n";
+		outStr += "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
 		cout << outStr;
 	}
 
@@ -129,13 +129,13 @@ public:
 			outStr += std::to_string(maxCountREF);
 			outStr += "\t";
 			outStr += std::to_string(maxCountVAR);
-			outStr += "\n";
+			outStr += "\t";
 			outStr += std::to_string(countSumAT);
-			outStr += "\n";
+			outStr += "\t";
 			outStr += std::to_string(countSumCG);
-			outStr += "\n";
+			outStr += "\t";
 			outStr += std::to_string(allele1.size());
-			outStr += "\n";
+			outStr += "\t";
 			outStr += std::to_string(allele2.size());
 			outStr += "\n";
 			cout << outStr;
