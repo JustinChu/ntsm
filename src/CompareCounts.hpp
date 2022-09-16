@@ -23,16 +23,15 @@ public:
 	CompareCounts(const vector<string> &filenames) :
 			m_filenames(filenames), m_sumlogPSingle(
 					vector<double>(filenames.size())) {
-
-//		vector<uint64_t> maxCounts;
-		PairedCount counts;
-
 		//load in counts
 		//open file
 		//TODO parallelize loop -> may need to preallocate size of count vector
 		for (vector<string>::const_iterator itr = m_filenames.begin();
 				itr != m_filenames.end(); ++itr) {
-			counts.push_back(
+			m_counts.push_back(
+					shared_ptr<vector<pair<unsigned, unsigned>>>(
+							new vector<pair<unsigned, unsigned>>));
+			m_sum.push_back(
 					shared_ptr<vector<pair<unsigned, unsigned>>>(
 							new vector<pair<unsigned, unsigned>>));
 			ifstream fh(itr->c_str());
@@ -42,18 +41,17 @@ public:
 				while (getline(fh, line)) {
 					if (line.length() > 0) {
 						size_t pos = line.find("\t");
-						if(line.at(0) != '#'){
-							string type = line.substr(0, pos);
-							if (type == "@TK") {
+						if(line.at(0) == '#'){
+							if (line.compare(1, pos - 1, "@TK") == 0) {
+								line.erase(0, pos + 1);
+								pos = line.find("\t");
+								m_rawTotalCounts.push_back(
+										std::stoull(line.substr(0, pos)));
+							} else if (line.compare(1, pos - 1, "@KS") == 0) {
 								line.erase(0, pos + 1);
 								pos = line.find("\t");
 								m_kmerSize.push_back(
-										std::stoi(line.substr(0, pos)));
-							} else if (type == "@KS") {
-								line.erase(0, pos + 1);
-								pos = line.find("\t");
-								m_kmerSize.push_back(
-										std::stoi(line.substr(0, pos)));
+										std::stoull(line.substr(0, pos)));
 							}
 						} else {
 							//locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n
@@ -61,7 +59,9 @@ public:
 							line.erase(0, pos + 1);
 							m_counts.back()->push_back(loadPair(line));
 							m_sum.back()->push_back(loadPair(line));
-							m_distinct.back()->push_back(loadPair(line));
+							if(itr == m_filenames.begin()){
+								m_distinct.push_back(loadPair(line));
+							}
 							m_totalCounts.back() +=
 									m_counts.back()->back().first
 											+ m_counts.back()->back().second;
@@ -130,12 +130,11 @@ public:
 //		}
 //	}
 
-	void runLogLikelihoodRemovePairwise() {
-		vector<uint64_t> cov(m_totalCounts.size());
-		vector<uint64_t> errorRate(m_totalCounts.size());
+	void computeScore() {
+		vector<uint64_t> cov(m_totalCounts.size(),0);
+		vector<double> errorRate(m_totalCounts.size(), 0);
 		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
-			cov[i] = double(m_totalCounts[i])
-								/ double(m_counts[0]->size());
+			cov[i] = double(m_totalCounts[i]) / double(m_distinct.size());
 			errorRate[i] = computeErrorRate(i);
 		}
 		string temp = "";
@@ -220,7 +219,7 @@ private:
 	typedef vector<shared_ptr<vector<pair<unsigned, unsigned>>>> PairedCount;
 	PairedCount m_counts;
 	PairedCount m_sum;
-	PairedCount m_distinct;
+	vector<pair<unsigned, unsigned>> m_distinct;
 	vector<uint64_t> m_totalCounts;
 	vector<uint64_t> m_rawTotalCounts;
 	vector<unsigned> m_kmerSize;
@@ -228,10 +227,10 @@ private:
 
 	pair<unsigned, unsigned> loadPair(string &line) {
 		unsigned pos = line.find("\t");
-		unsigned count1 = std::stoi(line.substr(0, pos).c_str());
+		unsigned count1 = std::stoul(line.substr(0, pos).c_str());
 		line.erase(0, pos + 1);
 		pos = line.find("\t");
-		unsigned count2 = std::stoi(line.substr(0, pos).c_str());
+		unsigned count2 = std::stoul(line.substr(0, pos).c_str());
 		return (std::make_pair(count1, count2));
 	}
 
@@ -387,9 +386,9 @@ private:
 
 	//compute only sites that aren't missing
 	double computeLogLikelihood(unsigned index1, unsigned index2,
-			unsigned &numRetained, const vector<unsigned> &validIndexes ) {
+			unsigned &numRetained, const vector<unsigned> &validIndexes) {
 		numRetained = validIndexes.size();
-		return -2
+		return -2.0
 				* (computeSumLogPJoint(index1, index2, validIndexes)
 						- (computeSumLogPSingle(index1, validIndexes)
 								+ computeSumLogPSingle(index2, validIndexes)));
@@ -476,18 +475,20 @@ private:
 		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 < hets2 ? hets1 : hets2);
 	}
 
-	double computeErrorRate(unsigned index){
+	double computeErrorRate(unsigned index) {
 		//1-(dat$recordedKmers*2/(dat$totalKmers*(dat$distinctKmers/genomeSize)))^(1/kmerSize)
 		uint64_t sum = 0;
+		uint64_t distinctKmers = 0;
 		for (unsigned i = 0; i < m_sum[index]->size(); ++i) {
 			sum += m_sum[index]->at(i).first + m_sum[index]->at(i).second;
+			distinctKmers += m_distinct.at(i).first + m_distinct.at(i).second;
 		}
 		return (1.0
 				- pow(
 						(double(sum) * 2.0)
-								/ (double(m_totalCounts.at(index))
-										* double(m_sum[index]->size())
-										/ double(opt::genomeSize)),
+								/ (double(m_rawTotalCounts.at(index))
+										* (double(distinctKmers)
+												/ double(opt::genomeSize))),
 						1.0 / double(m_kmerSize[index])));
 	}
 
