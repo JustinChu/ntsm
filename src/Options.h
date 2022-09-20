@@ -31,7 +31,7 @@ float siteCovThreshold = 0.75;
 double covThresh = std::numeric_limits<double>::max();
 
 double scoreThresh = 0.5;
-double covSkew = 0.25;
+double covSkew = 0.2;
 bool all = false;
 unsigned maxCov = std::numeric_limits<unsigned>::max();
 unsigned minCov = 1;
