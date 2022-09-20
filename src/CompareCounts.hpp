@@ -533,7 +533,8 @@ private:
 					|| (type1 == HOM_CG && type2 == HOM_CG)) {
 				++info.sharedHoms;
 				++info.ibs2;
-			} else {
+			} else if ((type1 == HOM_CG && type2 == HOM_AT)
+					|| (type1 == HOM_AT && type2 == HOM_CG)){
 				++info.ibs0;
 			}
 		}
