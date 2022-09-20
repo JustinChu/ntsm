@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <limits>
 
 using namespace std;
 
@@ -27,12 +28,13 @@ string var = "";
 string ref = "";
 string summary = "";
 float siteCovThreshold = 0.75;
+double covThresh = std::numeric_limits<double>::max();
 
 double scoreThresh = 0.5;
 double covSkew = 0.25;
 bool all = false;
-unsigned covThresh = 1;
-double maxCov = 0;
+unsigned maxCov = std::numeric_limits<unsigned>::max();
+unsigned minCov = 1;
 bool dupes = false;
 //uint64_t minSites = 10000;
 uint64_t genomeSize = 3000000000;

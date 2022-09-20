@@ -267,13 +267,13 @@ private:
 //			for (vector<pair<unsigned, unsigned>>::const_iterator itr =
 //					m_counts.at(i)->begin(); itr != m_counts.at(i)->end();
 //					++itr) {
-//				if (itr->first > opt::covThresh) {
-//					if (itr->second > opt::covThresh) {
+//				if (itr->first > opt::minCov) {
+//					if (itr->second > opt::minCov) {
 //						++m_calls[i].het;
 //					} else {
 //						++m_calls[i].homAT;
 //					}
-//				} else if (itr->second > opt::covThresh) {
+//				} else if (itr->second > opt::minCov) {
 //					++m_calls[i].homCG;
 //				}
 //			}
@@ -295,14 +295,14 @@ private:
 //		for (unsigned i = 0; i < m_counts[index]->size(); ++i) {
 //			double freqAT = 0;
 //			double freqCG = 0;
-//			if(m_counts[index]->at(i).first > opt::covThresh)
+//			if(m_counts[index]->at(i).first > opt::minCov)
 //			{
 //				freqAT = double(m_counts[index]->at(i).first)
 //						/ double(
 //								m_counts[index]->at(i).first
 //										+ m_counts[index]->at(i).second);
 //			}
-//			if(m_counts[index]->at(i).second > opt::covThresh)
+//			if(m_counts[index]->at(i).second > opt::minCov)
 //			{
 //				freqCG = double(m_counts[index]->at(i).second)
 //						/ double(
@@ -320,14 +320,14 @@ private:
 		for (vector<unsigned>::const_iterator i = pos.begin(); i != pos.end(); ++i) {
 			double freqAT = 0;
 			double freqCG = 0;
-			if(m_counts[index]->at(*i).first > opt::covThresh)
+			if(m_counts[index]->at(*i).first > opt::minCov)
 			{
 				freqAT = double(m_counts[index]->at(*i).first)
 						/ double(
 								m_counts[index]->at(*i).first
 										+ m_counts[index]->at(*i).second);
 			}
-			if(m_counts[index]->at(*i).second > opt::covThresh)
+			if(m_counts[index]->at(*i).second > opt::minCov)
 			{
 				freqCG = double(m_counts[index]->at(*i).second)
 						/ double(
@@ -349,10 +349,10 @@ private:
 //					+ m_counts[index2]->at(i).first;
 //			unsigned countCG = m_counts[index1]->at(i).second
 //					+ m_counts[index2]->at(i).second;
-//			if (countAT > opt::covThresh) {
+//			if (countAT > opt::minCov) {
 //				freqAT = double(countAT) / double(countAT + countCG);
 //			}
-//			if (countCG > opt::covThresh) {
+//			if (countCG > opt::minCov) {
 //				freqCG = double(countCG) / double(countAT + countCG);
 //			}
 //			sumLogP += countAT * freqAT + countCG * freqCG;
@@ -361,7 +361,7 @@ private:
 //	}
 
 	double computeSumLogPJoint(unsigned index1, unsigned index2,
-			const vector<unsigned> &pos, unsigned covThresh = opt::covThresh) const {
+			const vector<unsigned> &pos, unsigned covThresh = opt::minCov) const {
 		double sumLogP = 0;
 		for (vector<unsigned>::const_iterator i = pos.begin(); i != pos.end();
 				++i) {
@@ -388,8 +388,8 @@ private:
 //		unsigned count = 0;
 //		for (unsigned i = 0; i != m_counts.size(); ++i) {
 //			for (unsigned j = 0; j < m_counts[i]->size(); ++j) {
-//				if (m_counts[i]->at(j).first <= opt::covThresh
-//						&& m_counts[i]->at(j).second <= opt::covThresh) {
+//				if (m_counts[i]->at(j).first <= opt::minCov
+//						&& m_counts[i]->at(j).second <= opt::minCov) {
 //					count++;
 //					binValid[j] = false;
 //				}
@@ -408,14 +408,14 @@ private:
 		vector<unsigned> valid;
 		vector<bool> binValid(m_counts[0]->size(), true);
 		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
-			if (m_counts[index1]->at(j).first <= opt::covThresh
-					&& m_counts[index1]->at(j).second <= opt::covThresh) {
+			if (m_counts[index1]->at(j).first <= opt::minCov
+					&& m_counts[index1]->at(j).second <= opt::minCov) {
 				binValid[j] = false;
 			}
 		}
 		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
-			if (m_counts[index2]->at(j).first <= opt::covThresh
-					&& m_counts[index2]->at(j).second <= opt::covThresh) {
+			if (m_counts[index2]->at(j).first <= opt::minCov
+					&& m_counts[index2]->at(j).second <= opt::minCov) {
 				binValid[j] = false;
 			}
 		}
@@ -476,9 +476,9 @@ private:
 //		unsigned totalCount = 0;
 //		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
 //			if ((m_counts[index1]->at(i).first + m_counts[index1]->at(i).second
-//					>= opt::covThresh)
+//					>= opt::minCov)
 //					&& (m_counts[index2]->at(i).first
-//							+ m_counts[index2]->at(i).second >= opt::covThresh)) {
+//							+ m_counts[index2]->at(i).second >= opt::minCov)) {
 //				double fisher_left_p, fisher_right_p, fisher_twosided_p;
 //				kt_fisher_exact(m_counts[index1]->at(i).first,
 //						m_counts[index2]->at(i).first,
@@ -502,27 +502,27 @@ private:
 		for (vector<unsigned>::const_iterator i = validIndexes.begin();
 				i != validIndexes.end(); ++i) {
 			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
-			if (m_counts[index1]->at(*i).first > opt::covThresh) {
-				if (m_counts[index1]->at(*i).second > opt::covThresh) {
+			if (m_counts[index1]->at(*i).first > opt::minCov) {
+				if (m_counts[index1]->at(*i).second > opt::minCov) {
 					type1 = HET;
 					++info.hets1;
 				} else {
 					type1 = HOM_AT;
 					++info.homs1;
 				}
-			} else if (m_counts[index1]->at(*i).second > opt::covThresh) {
+			} else if (m_counts[index1]->at(*i).second > opt::minCov) {
 				type1 = HOM_CG;
 				++info.homs1;
 			}
-			if (m_counts[index2]->at(*i).first > opt::covThresh) {
-				if (m_counts[index2]->at(*i).second > opt::covThresh) {
+			if (m_counts[index2]->at(*i).first > opt::minCov) {
+				if (m_counts[index2]->at(*i).second > opt::minCov) {
 					type2 = HET;
 					++info.hets2;
 				} else {
 					type2 = HOM_AT;
 					++info.homs2;
 				}
-			} else if (m_counts[index2]->at(*i).second > opt::covThresh) {
+			} else if (m_counts[index2]->at(*i).second > opt::minCov) {
 				type2 = HOM_CG;
 				++info.homs2;
 			}
@@ -571,8 +571,8 @@ private:
 //		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
 //				++i) {
 //			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
-//			if (m_counts[index1]->at(*i).first > opt::covThresh) {
-//				if(m_counts[index1]->at(*i).second > opt::covThresh){
+//			if (m_counts[index1]->at(*i).first > opt::minCov) {
+//				if(m_counts[index1]->at(*i).second > opt::minCov){
 //					type1 = HET;
 //					++hets1;
 //				}
@@ -581,11 +581,11 @@ private:
 //
 //				}
 //			}
-//			else if(m_counts[index1]->at(*i).second > opt::covThresh){
+//			else if(m_counts[index1]->at(*i).second > opt::minCov){
 //				type1 = HOM_CG;
 //			}
-//			if (m_counts[index2]->at(*i).first > opt::covThresh) {
-//				if(m_counts[index2]->at(*i).second > opt::covThresh){
+//			if (m_counts[index2]->at(*i).first > opt::minCov) {
+//				if(m_counts[index2]->at(*i).second > opt::minCov){
 //					type2 = HET;
 //					++hets2;
 //				}
@@ -593,7 +593,7 @@ private:
 //					type2 = HOM_AT;
 //				}
 //			}
-//			else if(m_counts[index2]->at(*i).second > opt::covThresh){
+//			else if(m_counts[index2]->at(*i).second > opt::minCov){
 //				type2 = HOM_CG;
 //			}
 //			if(type1 == HET && type2 == HET){
@@ -616,8 +616,8 @@ private:
 //		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
 //				++i) {
 //			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
-//			if (m_counts[index1]->at(*i).first > opt::covThresh) {
-//				if(m_counts[index1]->at(*i).second > opt::covThresh){
+//			if (m_counts[index1]->at(*i).first > opt::minCov) {
+//				if(m_counts[index1]->at(*i).second > opt::minCov){
 //					type1 = HET;
 //					hets1 += m_counts[index1]->at(*i).first + m_counts[index1]->at(*i).second;
 //				}
@@ -625,11 +625,11 @@ private:
 //					type1 = HOM_AT;
 //				}
 //			}
-//			else if(m_counts[index1]->at(*i).second > opt::covThresh){
+//			else if(m_counts[index1]->at(*i).second > opt::minCov){
 //				type1 = HOM_CG;
 //			}
-//			if (m_counts[index2]->at(*i).first > opt::covThresh) {
-//				if(m_counts[index2]->at(*i).second > opt::covThresh){
+//			if (m_counts[index2]->at(*i).first > opt::minCov) {
+//				if(m_counts[index2]->at(*i).second > opt::minCov){
 //					type2 = HET;
 //					hets2 += m_counts[index2]->at(*i).first + m_counts[index2]->at(*i).second;
 //				}
@@ -637,7 +637,7 @@ private:
 //					type2 = HOM_AT;
 //				}
 //			}
-//			else if(m_counts[index2]->at(*i).second > opt::covThresh){
+//			else if(m_counts[index2]->at(*i).second > opt::minCov){
 //				type2 = HOM_CG;
 //			}
 //			if (type1 == HET && type2 == HET) {

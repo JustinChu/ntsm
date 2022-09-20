@@ -38,7 +38,7 @@ void printHelpDialog(){
 	"  -s, --score_thresh = FLOAT Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
 	"  -a, --all                  Output results of all tests, not just those that pass\n"
 	"                             the threshold.\n"
-	"  -c, --min_cov              Keep only sites with this coverage and above. ["+ to_string(opt::covThresh)+"]\n"
+	"  -c, --min_cov              Keep only sites with this coverage and above. ["+ to_string(opt::minCov)+"]\n"
 	"  -w, --skew = FLOAT         Divides the score by coverage. Formula: (cov1*cov2)^skew\n"
 	"                             Set to zero for no skew. ["+ to_string(opt::covSkew)+"]\n"
 //	"  -t, --threads              Number of threads to run.[1]\n"
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 		}
 		case 'c': {
 			stringstream convert(optarg);
-			if (!(convert >> opt::covThresh)) {
+			if (!(convert >> opt::minCov)) {
 				cerr << "Error - Invalid parameter c: "
 						<< optarg << endl;
 				return 0;

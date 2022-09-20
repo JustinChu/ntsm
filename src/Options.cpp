@@ -18,12 +18,13 @@ extern string ref;
 extern string var;
 extern string summary;
 extern float siteCovThreshold;
+extern double covThresh;
 
 extern double scoreThresh;
 extern double covSkew;
 extern bool all;
-extern unsigned covThresh;
-extern double maxCov;
+extern unsigned maxCov;
+extern unsigned minCov;
 extern bool dupes;
 //extern uint64_t minSites;
 }
