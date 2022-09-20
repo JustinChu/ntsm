@@ -238,16 +238,16 @@ public:
 
 private:
 	struct Relate{
-		double relatedness;
-		unsigned ibs0;
-		unsigned ibs2;
-		double homConcord;
-		unsigned sharedHoms;
-		unsigned sharedHets;
-		unsigned hets1;
-		unsigned homs1;
-		unsigned hets2;
-		unsigned homs2;
+		double relatedness = 0;
+		unsigned ibs0 = 0;
+		unsigned ibs2 = 0;
+		double homConcord = 0;
+		unsigned sharedHoms = 0;
+		unsigned sharedHets = 0;
+		unsigned hets1 = 0;
+		unsigned homs1 = 0;
+		unsigned hets2 = 0;
+		unsigned homs2 = 0;
 	};
 
 	const vector<string> &m_filenames;
