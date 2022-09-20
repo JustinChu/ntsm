@@ -137,7 +137,10 @@ public:
 			cov[i] = double(m_totalCounts[i]) / double(m_distinct.size());
 			errorRate[i] = computeErrorRate(i);
 		}
-		string temp = "";
+		string temp = "sample1\tsample2\trelate\tibs0\tibs2\thomConcord\thets1"
+				"\thets2\tsharedHets\thom1\thom2\tsharedHom\tn\tscore\tsame"
+				"\tcov1\tcov2\terror_rate1\terror_rate2\n";
+		cout << temp;
 #pragma omp parallel for private(temp)
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
@@ -148,19 +151,43 @@ public:
 						cov[i], cov[j]);
 				score /= double(indexesUsed);
 				if (opt::all || score < opt::scoreThresh) {
+					temp.clear();
+					Relate info = calcRelatedness(i, j, validIndexes);
 					temp += m_filenames[i];
 					temp += "\t";
 					temp += m_filenames[j];
 					temp += "\t";
+					temp += to_string(info.relatedness);
+					temp += "\t";
+					temp += to_string(info.ibs0);
+					temp += "\t";
+					temp += to_string(info.ibs2);
+					temp += "\t";
+					temp += to_string(info.homConcord);
+					temp += "\t";
+					temp += to_string(info.hets1);
+					temp += "\t";
+					temp += to_string(info.hets2);
+					temp += "\t";
+					temp += to_string(info.sharedHets);
+					temp += "\t";
+					temp += to_string(info.homs1);
+					temp += "\t";
+					temp += to_string(info.homs2);
+					temp += "\t";
+					temp += to_string(info.sharedHoms);
+					temp += "\t";
+					temp += to_string(indexesUsed);
+					temp += "\t";
 					temp += to_string(score);
 					if (opt::all) {
 						if (score < opt::scoreThresh) {
-							temp += "\tY\t";
+							temp += "\t1\t";
 						} else {
-							temp += "\tN\t";
+							temp += "\t0\t";
 						}
 					} else {
-						temp += "\tY\t";
+						temp += "\t1\t";
 					}
 					temp += to_string(cov[i]);
 					temp += "\t";
@@ -169,16 +196,11 @@ public:
 					temp += to_string(errorRate[i]);
 					temp += "\t";
 					temp += to_string(errorRate[j]);
-					temp += "\t";
-					temp += to_string(indexesUsed);
-					temp += "\t";
-					temp += to_string(calcRelatedness(i, j, validIndexes));
 					temp += "\n";
 #pragma omp critical(cout)
 					{
 						cout << temp;
 					}
-					temp.clear();
 				}
 			}
 		}
@@ -215,6 +237,19 @@ public:
 	}
 
 private:
+	struct Relate{
+		double relatedness;
+		unsigned ibs0;
+		unsigned ibs2;
+		double homConcord;
+		unsigned sharedHoms;
+		unsigned sharedHets;
+		unsigned hets1;
+		unsigned homs1;
+		unsigned hets2;
+		unsigned homs2;
+	};
+
 	const vector<string> &m_filenames;
 	typedef vector<shared_ptr<vector<pair<unsigned, unsigned>>>> PairedCount;
 	PairedCount m_counts;
@@ -222,8 +257,28 @@ private:
 	vector<pair<unsigned, unsigned>> m_distinct;
 	vector<uint64_t> m_totalCounts;
 	vector<uint64_t> m_rawTotalCounts;
-	vector<unsigned> m_kmerSize;
+	vector<unsigned> m_kmerSize; //TODO is this needed? Why would you mix k?
 	vector<double> m_sumlogPSingle;
+//	vector<CallSummary> m_calls;
+//	void initCalls(){
+//		m_calls = vector<CallSummary>(m_counts.size());
+//#pragma omp parallel for
+//		for (unsigned i = 0; i < m_counts.size(); ++i) {
+//			for (vector<pair<unsigned, unsigned>>::const_iterator itr =
+//					m_counts.at(i)->begin(); itr != m_counts.at(i)->end();
+//					++itr) {
+//				if (itr->first > opt::covThresh) {
+//					if (itr->second > opt::covThresh) {
+//						++m_calls[i].het;
+//					} else {
+//						++m_calls[i].homAT;
+//					}
+//				} else if (itr->second > opt::covThresh) {
+//					++m_calls[i].homCG;
+//				}
+//			}
+//		}
+//	}
 
 	pair<unsigned, unsigned> loadPair(string &line) {
 		unsigned pos = line.find("\t");
@@ -437,10 +492,12 @@ private:
 //		return(exp(sumLogPVal/totalCount));
 //	}
 
-	double calcRelatedness(unsigned index1, unsigned index2,
-			const vector<unsigned> &validIndexes ) {
-		unsigned sharedHets = 0, hets1 = 0, hets2 = 0, ibs0 = 0;
-		enum AlleleType {HET, HOM_AT, HOM_CG, UNKNOWN};
+	Relate calcRelatedness(unsigned index1, unsigned index2,
+			const vector<unsigned> &validIndexes) {
+		Relate info = {};
+		enum AlleleType {
+			HET, HOM_AT, HOM_CG, UNKNOWN
+		};
 
 		for (vector<unsigned>::const_iterator i = validIndexes.begin();
 				i != validIndexes.end(); ++i) {
@@ -448,31 +505,44 @@ private:
 			if (m_counts[index1]->at(*i).first > opt::covThresh) {
 				if (m_counts[index1]->at(*i).second > opt::covThresh) {
 					type1 = HET;
-					++hets1;
+					++info.hets1;
 				} else {
 					type1 = HOM_AT;
+					++info.homs1;
 				}
 			} else if (m_counts[index1]->at(*i).second > opt::covThresh) {
 				type1 = HOM_CG;
+				++info.homs1;
 			}
 			if (m_counts[index2]->at(*i).first > opt::covThresh) {
 				if (m_counts[index2]->at(*i).second > opt::covThresh) {
 					type2 = HET;
-					++hets2;
+					++info.hets2;
 				} else {
 					type2 = HOM_AT;
+					++info.homs2;
 				}
 			} else if (m_counts[index2]->at(*i).second > opt::covThresh) {
 				type2 = HOM_CG;
+				++info.homs2;
 			}
 			if (type1 == HET && type2 == HET) {
-				++sharedHets;
-			} else if ((type1 == HOM_AT && type2 == HOM_CG)
-					|| (type1 == HOM_CG && type2 == HOM_AT)) {
-				++ibs0;
+				++info.sharedHets;
+				++info.ibs2;
+			} else if ((type1 == HOM_AT && type2 == HOM_AT)
+					|| (type1 == HOM_CG && type2 == HOM_CG)) {
+				++info.sharedHoms;
+				++info.ibs2;
+			} else {
+				++info.ibs0;
 			}
 		}
-		return (double(sharedHets)-2.0*double(ibs0))/double(hets1 < hets2 ? hets1 : hets2);
+//		(shared-homozygous-alts(i,j)-2∗ibs0(i,j))/min (homozygous-alts(i),homozygous-alts(j))
+		info.homConcord = (double(info.sharedHoms) - 2.0 * double(info.ibs0))
+						/ double(info.homs1 < info.homs2 ? info.homs1 : info.homs2);
+		info.relatedness = (double(info.sharedHets) - 2.0 * double(info.ibs0))
+						/ double(info.hets1 < info.hets2 ? info.hets1 : info.hets2);
+		return info;
 	}
 
 	double computeErrorRate(unsigned index) {
@@ -481,6 +551,7 @@ private:
 		uint64_t distinctKmers = 0;
 		for (unsigned i = 0; i < m_sum[index]->size(); ++i) {
 			sum += m_sum[index]->at(i).first + m_sum[index]->at(i).second;
+			//TODO this doesn't need to be recomputed each time
 			distinctKmers += m_distinct.at(i).first + m_distinct.at(i).second;
 		}
 		return (1.0
