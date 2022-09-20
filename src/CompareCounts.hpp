@@ -131,7 +131,7 @@ public:
 //	}
 
 	void computeScore() {
-		vector<uint64_t> cov(m_totalCounts.size(),0);
+		vector<double> cov(m_totalCounts.size(),0);
 		vector<double> errorRate(m_totalCounts.size(), 0);
 		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
 			cov[i] = double(m_totalCounts[i]) / double(m_distinct.size());
