@@ -286,6 +286,7 @@ private:
 		line.erase(0, pos + 1);
 		pos = line.find("\t");
 		unsigned count2 = std::stoul(line.substr(0, pos).c_str());
+		line.erase(0, pos + 1);
 		return (std::make_pair(count1, count2));
 	}
 
@@ -546,12 +547,12 @@ private:
 		return info;
 	}
 
-	double computeErrorRate(unsigned index) {
+	double computeErrorRate(unsigned index) const{
 		//1-(dat$recordedKmers*2/(dat$totalKmers*(dat$distinctKmers/genomeSize)))^(1/kmerSize)
 		uint64_t sum = 0;
 		uint64_t distinctKmers = 0;
-		for (unsigned i = 0; i < m_sum[index]->size(); ++i) {
-			sum += m_sum[index]->at(i).first + m_sum[index]->at(i).second;
+		for (unsigned i = 0; i < m_distinct.size(); ++i) {
+			sum += m_sum.at(index)->at(i).first + m_sum.at(index)->at(i).second;
 			//TODO this doesn't need to be recomputed each time
 			distinctKmers += m_distinct.at(i).first + m_distinct.at(i).second;
 		}
