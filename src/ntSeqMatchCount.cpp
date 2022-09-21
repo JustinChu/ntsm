@@ -185,8 +185,8 @@ int main(int argc, char *argv[]) {
 	fp.computeCounts();
 	fp.printCountsMax();
 	cerr << fp.printInfoSummary() << endl;
-	cerr << "Time: " << omp_get_wtime() - time << "s Memory:" << Util::getRSS()
-			<< "kbytes" << endl;
+	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
+			<< " kbytes" << endl;
 	return 0;
 }
 
