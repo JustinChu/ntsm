@@ -89,7 +89,7 @@ public:
 	/*
 	 * Prints header for summary info
 	 */
-	void printHeader(){
+	void printHeader() const{
 		string outStr = "";
 		outStr += "#@TK\t";
 		outStr += std::to_string(m_totalKmers);
@@ -99,26 +99,26 @@ public:
 		cout << outStr;
 	}
 
-	void printCountsMax(){
+	void printCountsMax() const{
 		printHeader();
 		string outStr = "";
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
 			outStr.clear();
-			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
-			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
+			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef.at(i);
+			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar.at(i);
 			unsigned maxCountREF = 0;
 			unsigned maxCountVAR = 0;
 			unsigned countSumAT = 0;
 			unsigned countSumCG = 0;
 			for(size_t j = 0; j < allele1.size() ; ++j) {
-				unsigned freqAlle = m_counts[allele1.at(j)];
+				unsigned freqAlle = m_counts.at(allele1.at(j));
 				if(maxCountREF < freqAlle){
 					maxCountREF = freqAlle;
 				}
 				countSumAT += freqAlle;
 			}
 			for(size_t j = 0; j < allele2.size() ; ++j) {
-				unsigned freqAlle = m_counts[allele2.at(j)];
+				unsigned freqAlle = m_counts.at(allele2.at(j));
 				if(maxCountVAR < freqAlle){
 					maxCountVAR = freqAlle;
 				}
@@ -140,7 +140,6 @@ public:
 			outStr += "\n";
 			cout << outStr;
 		}
-
 	}
 
 	string printInfoSummary(){
