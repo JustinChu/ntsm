@@ -111,14 +111,14 @@ public:
 			unsigned countSumAT = 0;
 			unsigned countSumCG = 0;
 			for(size_t j = 0; j < allele1.size() ; ++j) {
-				double freqAlle = m_counts[allele1.at(j)];
+				unsigned freqAlle = m_counts[allele1.at(j)];
 				if(maxCountREF < freqAlle){
 					maxCountREF = freqAlle;
 				}
 				countSumAT += freqAlle;
 			}
 			for(size_t j = 0; j < allele2.size() ; ++j) {
-				double freqAlle = m_counts[allele2.at(j)];
+				unsigned freqAlle = m_counts[allele2.at(j)];
 				if(maxCountVAR < freqAlle){
 					maxCountVAR = freqAlle;
 				}
