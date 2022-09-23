@@ -553,16 +553,12 @@ private:
 		uint64_t distinctKmers = 0;
 		for (unsigned i = 0; i < m_distinct.size(); ++i) {
 			sum += m_sum.at(index)->at(i).first + m_sum.at(index)->at(i).second;
-			//TODO this doesn't need to be recomputed each time
 			distinctKmers += m_distinct.at(i).first + m_distinct.at(i).second;
 		}
+		double expected = double(m_rawTotalCounts.at(index))
+				* double(distinctKmers) / double(opt::genomeSize * 2);
 		return (1.0
-				- pow(
-						(double(sum) * 2.0)
-								/ (double(m_rawTotalCounts.at(index))
-										* (double(distinctKmers)
-												/ double(opt::genomeSize))),
-						1.0 / double(m_kmerSize[index])));
+				- pow(double(sum) / expected, 1.0 / double(m_kmerSize[index])));
 	}
 
 //	double calcRelatedness(unsigned index1, unsigned index2,
