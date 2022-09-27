@@ -37,7 +37,7 @@ unsigned maxCov = std::numeric_limits<unsigned>::max();
 unsigned minCov = 1;
 bool dupes = false;
 //uint64_t minSites = 10000;
-uint64_t genomeSize = 3000000000;
+uint64_t genomeSize = 6000000000;
 
 }
 #endif

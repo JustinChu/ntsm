@@ -556,7 +556,7 @@ private:
 			distinctKmers += m_distinct.at(i).first + m_distinct.at(i).second;
 		}
 		double expected = double(m_rawTotalCounts.at(index))
-				* double(distinctKmers) / double(opt::genomeSize * 2);
+				* double(distinctKmers) / double(opt::genomeSize);
 		return (1.0
 				- pow(double(sum) / expected, 1.0 / double(m_kmerSize[index])));
 	}
