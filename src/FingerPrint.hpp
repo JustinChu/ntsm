@@ -58,7 +58,6 @@ public:
 			//read in seq
 			kseq_t *seq = kseq_init(fp);
 			int l = kseq_read(seq);
-			unsigned index = 0;
 			while (l >= 0) {
 				//k-merize and insert
 				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
@@ -75,7 +74,6 @@ public:
 #pragma omp atomic update
 				m_totalBases += seq->seq.l;
 				l = kseq_read(seq);
-				index++;
 				//terminate early
 				if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
 					break;
