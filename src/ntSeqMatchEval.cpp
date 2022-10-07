@@ -33,14 +33,20 @@ void printVersion()
 }
 
 void printHelpDialog(){
-	const char dialog[] =
+	const string dialog =
 	"Usage: " PROGRAM " [FILES...]\n"
-	"  -s, --score_thresh     Threshold to consider different given geometric\n"
-	"                         mean of Fisher's exact tests on each locus [0.01]\n"
-//	"  -t, --threads          Number of threads to run.[1]\n"
-	"  -h, --help             Display this dialog.\n"
-	"  -v, --verbose          Display verbose output.\n"
-	"      --version          Print version information.\n";
+	"  -s, --score_thresh = FLOAT Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
+	"  -a, --all                  Output results of all tests, not just those that pass\n"
+	"                             the threshold.\n"
+	"  -c, --min_cov = INT        Keep only sites with this coverage and above. ["+ to_string(opt::minCov)+"]\n"
+	"  -w, --skew = FLOAT         Divides the score by coverage. Formula: (cov1*cov2)^skew\n"
+	"                             Set to zero for no skew. ["+ to_string(opt::genomeSize)+"]\n"
+	"  -g, --genome_size = INT    Diploid genome size for error rate estimation.\n"
+	"                             ["+ to_string(opt::covSkew)+"]\n"
+//	"  -t, --threads              Number of threads to run.[1]\n"
+	"  -h, --help                 Display this dialog.\n"
+	"  -v, --verbose              Display verbose output.\n"
+	"      --version              Print version information.\n";
 
 	cerr << dialog << endl;
 	exit(EXIT_SUCCESS);
@@ -58,6 +64,11 @@ int main(int argc, char *argv[])
 	//long form arguments
 	static struct option long_options[] = { {
 		"score_thresh", required_argument, NULL, 's' }, {
+		"all", no_argument, NULL, 'a' }, {
+		"min_cov", required_argument, NULL, 'c' }, {
+		"max_cov", required_argument, NULL, 'm' }, {
+		"skew", required_argument, NULL, 'w' }, {
+		"genome_size", required_argument, NULL, 'g' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"help", no_argument, NULL, 'h' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
@@ -65,7 +76,7 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -74,10 +85,50 @@ int main(int argc, char *argv[])
 			printHelpDialog();
 			break;
 		}
+		case 'a': {
+			opt::all = true;
+			break;
+		}
 		case 's': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::scoreThresh)) {
 				cerr << "Error - Invalid parameter s: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'w': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::covSkew)) {
+				cerr << "Error - Invalid parameter w: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'c': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::minCov)) {
+				cerr << "Error - Invalid parameter c: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'm': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::maxCov)) {
+				cerr << "Error - Invalid parameter m: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'g': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::genomeSize)) {
+				cerr << "Error - Invalid parameter g: "
 						<< optarg << endl;
 				return 0;
 			}
@@ -130,11 +181,11 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	double time = omp_get_wtime();
 	CompareCounts comp(inputFiles);
-	comp.runFET();
+	double time = omp_get_wtime();
+	comp.computeScore();
 
-	cerr << "Time: " << omp_get_wtime() - time << "s Memory:"  << Util::getRSS() << "kbytes" << endl;
+	cerr << "Time: " << omp_get_wtime() - time << " s Memory: "  << Util::getRSS() << " kbytes" << endl;
 	return 0;
 }
 

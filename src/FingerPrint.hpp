@@ -17,6 +17,7 @@
 #include "Options.h"
 
 #include "vendor/tsl/robin_map.h"
+#include "vendor/tsl/robin_set.h"
 #include "vendor/KseqHashIterator.hpp"
 #include "vendor/kseq.h"
 #ifndef KSEQ_INIT_NEW
@@ -24,20 +25,22 @@
 KSEQ_INIT(gzFile, gzread)
 #endif /*KSEQ_INIT_NEW*/
 
-//TODO current implementation may be incorrect due to hash collisions
-
 using namespace std;
 
 class FingerPrint {
 public:
 
-	typedef uint16_t alleleID;
+	typedef uint16_t AlleleID;
+	typedef uint64_t HashedKmer;
 
 	FingerPrint(const vector<string> &filenames) :
-			m_filenames(filenames) {
+			m_filenames(filenames), m_totalCounts(0), m_maxCounts(0), m_totalBases(0) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
+		if(opt::covThresh != 0){
+			m_maxCounts = (m_counts.size() * opt::covThresh)/2;
+		}
 	}
 
 	void computeCounts(){
@@ -55,7 +58,6 @@ public:
 			//read in seq
 			kseq_t *seq = kseq_init(fp);
 			int l = kseq_read(seq);
-			unsigned index = 0;
 			while (l >= 0) {
 				//k-merize and insert
 				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
@@ -63,35 +65,181 @@ public:
 					if(m_counts.find(*itr) != m_counts.end()){
 #pragma omp atomic update
 						++m_counts[*itr];
+#pragma omp atomic update
+						++m_totalCounts;
 					}
+#pragma omp atomic update
+					++m_totalKmers;
 				}
+#pragma omp atomic update
+				m_totalBases += seq->seq.l;
 				l = kseq_read(seq);
-				index++;
+				//terminate early
+				if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
+					break;
+				}
 			}
 			kseq_destroy(seq);
 			gzclose(fp);
 		}
 	}
 
-	void printCounts(){
-		string tempStr = "";
+	/*
+	 * Prints header for summary info
+	 */
+	void printHeader() const{
+		string outStr = "";
+		outStr += "#@TK\t";
+		outStr += std::to_string(m_totalKmers);
+		outStr += "\n#@KS\t";
+		outStr += std::to_string(opt::k);
+		outStr += "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
+		cout << outStr;
+	}
+
+	void printCountsMax() const{
+		printHeader();
+		string outStr = "";
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
-			const vector<pair<uint64_t, uint64_t>> &allelePair = *m_alleleIDToKmer[i];
-			size_t maxCountWT = 0;
-			size_t maxCountVAR = 0;
-			for(size_t j = 0; j < allelePair.size() ; ++j) {
-				double freqAlle1 = m_counts[allelePair.at(j).first];
-				double freqAlle2 = m_counts[allelePair.at(j).second];
-				if(maxCountWT < freqAlle1){
-					maxCountWT = freqAlle1;
+			outStr.clear();
+			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef.at(i);
+			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar.at(i);
+			unsigned maxCountREF = 0;
+			unsigned maxCountVAR = 0;
+			unsigned countSumAT = 0;
+			unsigned countSumCG = 0;
+			for(size_t j = 0; j < allele1.size() ; ++j) {
+				unsigned freqAlle = m_counts.at(allele1.at(j));
+				if(maxCountREF < freqAlle){
+					maxCountREF = freqAlle;
 				}
-				if(maxCountVAR < freqAlle2){
-					maxCountVAR = freqAlle2;
+				countSumAT += freqAlle;
+			}
+			for(size_t j = 0; j < allele2.size() ; ++j) {
+				unsigned freqAlle = m_counts.at(allele2.at(j));
+				if(maxCountVAR < freqAlle){
+					maxCountVAR = freqAlle;
+				}
+				countSumCG += freqAlle;
+			}
+			outStr += m_alleleIDs.at(i);
+			outStr += "\t";
+			outStr += std::to_string(maxCountREF);
+			outStr += "\t";
+			outStr += std::to_string(maxCountVAR);
+			outStr += "\t";
+			outStr += std::to_string(countSumAT);
+			outStr += "\t";
+			outStr += std::to_string(countSumCG);
+			outStr += "\t";
+			outStr += std::to_string(allele1.size());
+			outStr += "\t";
+			outStr += std::to_string(allele2.size());
+			outStr += "\n";
+			cout << outStr;
+		}
+	}
+
+	string printInfoSummary(){
+		unsigned siteCoverage = getSitesCoveredInSample();
+		string outStr = "";
+		outStr += "Total Bases Considered: ";
+		outStr += std::to_string(getTotalCounts());
+		outStr += "\n";
+		outStr += "Total k-mers Considered: ";
+		outStr += std::to_string(m_totalKmers);
+		outStr += "\n";
+		outStr += "Total k-mers Recorded: ";
+		outStr += std::to_string(getTotalKmerCounts());
+		outStr += "\n";
+		outStr += "Distinct k-mers in initial set: ";
+		outStr += std::to_string(m_counts.size());
+		outStr += "\n";
+		outStr += "Total Sites: ";
+		outStr += std::to_string(m_alleleIDToKmerRef.size());
+		outStr += "\n";
+		outStr += "Sites Covered by at least one k-mer: ";
+		outStr += std::to_string(siteCoverage);
+		outStr += "\n";
+		if(!opt::summary.empty()){
+			ofstream fh;
+			fh.open(opt::summary);
+			fh << outStr;
+			fh.close();
+		}
+		double covPer = double(siteCoverage)
+				/ double(m_alleleIDToKmerRef.size());
+		if (covPer < opt::siteCovThreshold) {
+			cerr << "Warning: site coverage is : " << covPer
+					<< "(<75%). Data may be sorted or sparse along the genome. Any PCA projection may be inaccurate."
+					<< endl;
+		}
+
+		return(outStr);
+	}
+
+//	void printCountsAllCounts(){
+//		string tempStr;
+//		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
+//			tempStr.clear();
+//			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
+//			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
+//			tempStr += m_alleleIDs.at(i);
+//			tempStr += "\tR\t";
+//			for (size_t j = 0; j < allele1.size(); ++j) {
+//				if(m_counts.find(allele1.at(j)) != m_counts.end()){
+//					tempStr += std::to_string(m_counts[allele1.at(j)]);
+//					tempStr += ",";
+//				}
+//			}
+//			tempStr.pop_back();
+//			tempStr += "\n";
+//			tempStr += m_alleleIDs.at(i);
+//			tempStr += "\tV\t";
+//			for (size_t j = 0; j < allele2.size(); ++j) {
+//				if (m_counts.find(allele2.at(j)) != m_counts.end()) {
+//					tempStr += std::to_string(m_counts[allele2.at(j)]);
+//					tempStr += ",";
+//				}
+//			}
+//			tempStr.pop_back();
+//			tempStr += "\n";
+//			cout << tempStr;
+//		}
+//	}
+
+	uint64_t getTotalKmerCounts(){
+		return m_totalCounts;
+	}
+
+	uint64_t getTotalCounts(){
+		return m_totalBases;
+	}
+
+	unsigned getSitesCoveredInSample(){
+		unsigned count = 0;
+		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
+			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef[i];
+			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar[i];
+			size_t maxCountREF = 0;
+			size_t maxCountVAR = 0;
+			for(size_t j = 0; j < allele1.size() ; ++j) {
+				double freqAlle = m_counts[allele1.at(j)];
+				if(maxCountREF < freqAlle){
+					maxCountREF = freqAlle;
 				}
 			}
-			cout << m_alleleIDs.at(i) << "\t" << maxCountWT << "\t" << maxCountVAR << endl;
+			for(size_t j = 0; j < allele2.size() ; ++j) {
+				double freqAlle = m_counts[allele2.at(j)];
+				if(maxCountVAR < freqAlle){
+					maxCountVAR = freqAlle;
+				}
+			}
+			if(maxCountREF > 0 || maxCountVAR > 0){
+				++count;
+			}
 		}
-		cout << endl;
+		return count;
 	}
 
 //	/*
@@ -131,71 +279,115 @@ public:
 //		cout << endl;
 //	}
 
-	virtual ~FingerPrint() {
-	}
 private:
 	const vector<string> &m_filenames;
-//	size_t m_totalCounts;
-	tsl::robin_map<uint64_t, size_t> m_counts;
-	tsl::robin_map<alleleID, shared_ptr<vector<pair<uint64_t, uint64_t>>>> m_alleleIDToKmer;
-//	vector<pair<uint64_t, uint64_t>> m_allelePairs;
+	uint64_t m_totalCounts;
+	uint64_t m_totalKmers;
+	uint64_t m_maxCounts;
+	tsl::robin_map<uint64_t, size_t> m_counts; //k-mer to count
+	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef;
+	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar;
 	vector<string> m_alleleIDs;
+	uint64_t m_totalBases;
+//	unsigned m_maxSiteSize;
+//	static const unsigned interval = 65536;
 
 	void initCountsHash(){
 		gzFile fp1, fp2;
 		fp1 = gzopen(opt::ref.c_str(), "r");
 		fp2 = gzopen(opt::var.c_str(), "r");
-		validateFile(fp1);
-		validateFile(fp2);
-		kseq_t *seq1 = kseq_init(fp1);
-		kseq_t *seq2 = kseq_init(fp2);
-		int l1 = kseq_read(seq1);
-		int l2 = kseq_read(seq2);
-		unsigned index = 0;
-		while (l1 >= 0 && l2) {
-			KseqHashIterator itr1(seq1->seq.s, seq1->seq.l, opt::k);
-			KseqHashIterator itr2(seq2->seq.s, seq2->seq.l, opt::k);
-			m_alleleIDToKmer[m_alleleIDs.size()] = shared_ptr<
-					vector<pair<uint64_t, uint64_t>>>(
-					new vector<pair<uint64_t, uint64_t>>());
-			m_alleleIDToKmer[m_alleleIDs.size()]->reserve(seq1->seq.l - opt::k + 1);
-
-			//k-merize and insert
-			//TODO Add some more file and sanity checks
-			for (;itr1 != itr1.end() && itr2 != itr2.end(); ++itr1, ++itr2) {
-				uint64_t hv1 = *itr1;
-				uint64_t hv2 = *itr2;
-				//check for duplicates
-				if (m_counts.find(hv1) != m_counts.end()
-						|| m_counts.find(hv2) != m_counts.end()) {
-					cerr << seq1->name.s << " has a k-mer collision" << endl;
-				} else {
-					m_alleleIDToKmer[m_alleleIDs.size()]->emplace_back(
-							make_pair(hv1, hv2));
-					m_counts[hv1] = 0;
-					m_counts[hv2] = 0;
-				}
-			}
-			m_alleleIDs.emplace_back(seq1->name.s);
-			l1 = kseq_read(seq1);
-			l2 = kseq_read(seq2);
-			index++;
-		}
-		kseq_destroy(seq1);
-		kseq_destroy(seq2);
-		gzclose(fp1);
-		gzclose(fp2);
-	}
-
-	void validateFile(gzFile &fp){
-		if (fp == Z_NULL) {
+		tsl::robin_set<uint64_t> dupes;
+		if (fp1 == Z_NULL) {
 			std::cerr << "file " << opt::ref.c_str() << " cannot be opened"
 					<< std::endl;
 			exit(1);
 		} else if (opt::verbose) {
 			std::cerr << "Opening " << opt::ref.c_str() << std::endl;
 		}
-	}
+		if (fp2 == Z_NULL) {
+			std::cerr << "file " << opt::var.c_str() << " cannot be opened"
+					<< std::endl;
+			exit(1);
+		} else if (opt::verbose) {
+			std::cerr << "Opening " << opt::var.c_str() << std::endl;
+		}
+		{
+			kseq_t *seq = kseq_init(fp1);
+			int l = kseq_read(seq);
+			unsigned index = 0;
+			while (l >= 0) {
+				assert(index == m_alleleIDToKmerRef.size());
+				m_alleleIDToKmerRef.emplace_back(
+						shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+//				unsigned count = 0;
+				//k-merize and
+				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+						itr != itr.end(); ++itr) {
+					uint64_t hv = *itr;
+//					count++;
+					//check for duplicates
+					if (m_counts.find(hv)!= m_counts.end()) {
+						cerr << "Warning: " << seq->name.s
+								<< " of REF file has a k-mer collision at pos: "
+								<< itr.getPos() << endl;
+						dupes.insert(hv);
+					} else {
+						m_alleleIDToKmerRef[index]->emplace_back(
+								hv);
+						m_counts[hv] = 0;
+					}
+				}
+//				if(m_maxSiteSize < count){
+//					m_maxSiteSize = count;
+//				}
+				m_alleleIDs.emplace_back(seq->name.s);
+				l = kseq_read(seq);
+				index++;
+			}
+			kseq_destroy(seq);
+			gzclose(fp1);
+		}
 
+		kseq_t *seq = kseq_init(fp2);
+		int l = kseq_read(seq);
+		unsigned index = 0;
+		while (l >= 0) {
+			assert(index == m_alleleIDToKmerVar.size());
+			m_alleleIDToKmerVar.emplace_back(
+					shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+			//k-merize and insert
+//			unsigned count = 0;
+			for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+					itr != itr.end(); ++itr) {
+				uint64_t hv = *itr;
+//				count++;
+				//check for duplicates
+				if (m_counts.find(hv) != m_counts.end()) {
+					cerr << "Warning: " << seq->name.s
+							<< " of VAR file has a k-mer collision at pos: "
+							<< itr.getPos() << endl;
+					dupes.insert(hv);
+				} else {
+					m_alleleIDToKmerVar[index]->emplace_back(hv);
+					m_counts[hv] = 0;
+				}
+			}
+//			if(m_maxSiteSize < count){
+//				m_maxSiteSize = count;
+//			}
+			l = kseq_read(seq);
+			index++;
+		}
+		kseq_destroy(seq);
+		gzclose(fp2);
+
+		if (!opt::dupes) {
+			//remove dupes
+			for (tsl::robin_set<uint64_t>::iterator itr = dupes.begin();
+					itr != dupes.end(); ++itr) {
+				m_counts.erase(*itr);
+			}
+		}
+	}
 };
 #endif /* SRC_FINGERPRINT_HPP_ */

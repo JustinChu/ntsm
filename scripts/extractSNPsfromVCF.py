@@ -12,11 +12,13 @@ class VCFEntry:
         self.variant = variant
 
 class ExtractKmers:
-    def __init__(self, vcf, fasta, k, prefix):
+    def __init__(self, vcf, fasta, k, prefix, ignore, subKmer):
         self._vcf = vcf
         self._fasta = fasta
         self._k = k
         self._prefix = prefix
+        self._ignore = ignore
+        self._subKmer = subKmer
         self._vcfEntries = {}
     
     #Returns True if bases are not purine to pyrimidine
@@ -44,12 +46,21 @@ class ExtractKmers:
         #chr1    45508256    rs2275276    A    G    .    .    .  
         lines = vcfFH.readlines()
         # Strips the newline character
+        idCounter = 0
         for line in lines:
             if line[0] != "#":
                 tmpArr = line.rstrip().split("\t")
+                snpID = tmpArr[2]
+                if snpID == '.':
+                    snpID = idCounter
+                    idCounter += 1
+                #throw an error if multiple alleles are listed in alternate
+                if len(tmpArr[4]) > 1:
+                    print("Error: Multiple alternate alleles found in VCF", file=sys.stderr)
+                    exit(1)
                 #store chr, pos, variant
                 info = VCFEntry(tmpArr[0], tmpArr[1], tmpArr[3], tmpArr[4])
-                self._vcfEntries[tmpArr[2]] = info
+                self._vcfEntries[str(snpID)] = info
             
     def extract(self):
         self._parseVCF()
@@ -57,6 +68,8 @@ class ExtractKmers:
         fastaFile = Fasta(self._fasta)
         refFH = open(self._prefix + "_AT.fa", 'w')
         varFH = open(self._prefix + "_CG.fa", 'w')
+        
+        removeCount = 0
         #for each vcf entry extract wildtype and variant into a string
         for id in self._vcfEntries.keys():
             # print string to repective files
@@ -72,23 +85,43 @@ class ExtractKmers:
                 print("var:" + self._vcfEntries[id].variant, file=sys.stderr)
                 print("fasta:" + str(fastaFile[self._vcfEntries[id].chr][offset]), file=sys.stderr)
                 print("kmer:" + tmpStr, file=sys.stderr)
-                # exit(1)
+                removeCount += 1
+                continue
             
             if(self._checkVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
                 print("Warning: " + id +" " +self._vcfEntries[id].variant + " " + self._vcfEntries[id].wt 
-                      + " is not a purine <-> pyrimidine variant. Ignoring.", file=sys.stderr)
-                continue
+                      + " is not a purine <-> pyrimidine variant.", file=sys.stderr)
+                removeCount += 1
+                if(self._ignore):
+                    continue
             modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
             varFH.write(">" + id + "\n")
             refFH.write(">" + id + "\n")            
             if(self._orderVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
-                varFH.write(modStr + "\n")
                 refFH.write(tmpStr + "\n")
+                varFH.write(modStr + "\n")
+                #sub k-mer stuff here
+                if self._subKmer != 0:
+                    for pos in range(0, len(modStr) - self._subKmer + 1):
+                        print(">" + id + "|" + str(pos) + "|AT")
+                        print(tmpStr[pos:pos + self._subKmer])
+                        print(">" + id + "|" + str(pos) + "|CG")
+                        print(modStr[pos:pos + self._subKmer])
             else:
-                varFH.write(tmpStr + "\n")
                 refFH.write(modStr + "\n")
+                varFH.write(tmpStr + "\n")
+                #sub k-mer stuff here
+                if self._subKmer != 0:
+                    for pos in range(0, len(modStr) - self._subKmer + 1):
+                        print(">" + id + "|" + str(pos) + "|AT")
+                        print(modStr[pos:pos + self._subKmer])
+                        print(">" + id + "|" + str(pos) + "|CG")
+                        print(tmpStr[pos:pos + self._subKmer])
+                
+            
         refFH.close()
         varFH.close()
+        print("Removed " + str(removeCount) + " SNPs.", file=sys.stderr)
         
         
 def main():
@@ -97,9 +130,11 @@ def main():
     parser.add_argument("-f", '--fa', type=str, dest='fasta', help='fasta file with fai index')
     parser.add_argument("-k", '--kmer', type=int, dest='kmer', help='kmer size', default=25)
     parser.add_argument("-p", '--prefix', type=str, dest='prefix', help='output prefix', default = "")
+    parser.add_argument("-i", '--ignoreReq', action='store_false', dest='ignore', help='ignore AT to CG conversion requirements', default = True)
+    parser.add_argument("-s", '--subKmer', type=int, dest='subKmer', help='Sub kmer size, only needed kmer overlap integrity purposes', default=0)
 
     args = parser.parse_args()
-    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.prefix)
+    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.prefix, args.ignore, args.subKmer)
     extractor.extract()
     
 
