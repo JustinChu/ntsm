@@ -165,13 +165,13 @@ public:
 											readBuffer.begin()), s_bulkSize);
 							while (dequeueSize == 0) {
 								//try to work
-								if (kseq_read(seq) >= 0) {
-									//------------------------WORK CODE START---------------------------------------
-									processSingleRead(seq);
-									//------------------------WORK CODE END-----------------------------------------
-								} else {
-									goto fileEmpty;
-								}
+//								if (kseq_read(seq) >= 0) {
+//									//------------------------WORK CODE START---------------------------------------
+//									processSingleRead(seq);
+//									//------------------------WORK CODE END-----------------------------------------
+//								} else {
+//									goto fileEmpty;
+//								}
 								dequeueSize = recycleQueue.try_dequeue_bulk(
 										rctok,
 										std::move_iterator<iter_t>(
@@ -181,7 +181,7 @@ public:
 							size = 0;
 						}
 					}
-					fileEmpty:
+//					fileEmpty:
 					//finish off remaining work
 					for (unsigned i = 0; i < size; ++i) {
 						//------------------------WORK CODE START---------------------------------------
