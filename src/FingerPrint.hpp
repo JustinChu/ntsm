@@ -97,7 +97,7 @@ public:
 			//not enough threads to saturate
 			computeCounts();
 		} else {
-			uint64_t numReads, processedCount = 0;
+			uint64_t numReads = 0, processedCount = 0;
 
 			moodycamel::ConcurrentQueue<kseq_t> workQueue(
 					opt::threads * s_bulkSize);
