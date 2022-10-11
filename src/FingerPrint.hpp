@@ -93,7 +93,7 @@ public:
 
 	//use only if threads > number of files
 	void computeCountsProducerConsumer() {
-		if (opt::threads < m_filenames.size()) {
+		if (opt::threads <= m_filenames.size()) {
 			//not enough threads to saturate
 			computeCounts();
 		} else {
