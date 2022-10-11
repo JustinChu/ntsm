@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 	double time = omp_get_wtime();
 
 	FingerPrint fp(inputFiles);
-	fp.computeCounts();
+	fp.computeCountsProducerConsumer();
 	fp.printCountsMax();
 	cerr << fp.printInfoSummary() << endl;
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
