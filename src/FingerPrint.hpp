@@ -143,7 +143,6 @@ public:
 
 					unsigned size = 0;
 					while (kseq_read(seq) >= 0 && !m_earlyTerm) {
-//							readBuffer.push_back(kseq_t());
 						cpy_kseq(&readBuffer[size++], seq);
 						if (dequeueSize == size) {
 							//try to insert, if cannot queue is full
@@ -151,13 +150,13 @@ public:
 									std::move_iterator<iter_t>(
 											readBuffer.begin()), size)) {
 								//try to work
-//								if (kseq_read(seq) >= 0) {
-//									//------------------------WORK CODE START---------------------------------------
-//									processSingleRead(seq);
-//									//------------------------WORK CODE END-----------------------------------------
-//								} else {
-//									goto fileEmpty;
-//								}
+								if (kseq_read(seq) >= 0) {
+									//------------------------WORK CODE START---------------------------------------
+									processSingleRead(seq);
+									//------------------------WORK CODE END-----------------------------------------
+								} else {
+									goto fileEmpty;
+								}
 							}
 							//reset buffer
 							dequeueSize = recycleQueue.try_dequeue_bulk(rctok,
@@ -165,13 +164,13 @@ public:
 											readBuffer.begin()), s_bulkSize);
 							while (dequeueSize == 0) {
 								//try to work
-//								if (kseq_read(seq) >= 0) {
-//									//------------------------WORK CODE START---------------------------------------
-//									processSingleRead(seq);
-//									//------------------------WORK CODE END-----------------------------------------
-//								} else {
-//									goto fileEmpty;
-//								}
+								if (kseq_read(seq) >= 0) {
+									//------------------------WORK CODE START---------------------------------------
+									processSingleRead(seq);
+									//------------------------WORK CODE END-----------------------------------------
+								} else {
+									goto fileEmpty;
+								}
 								dequeueSize = recycleQueue.try_dequeue_bulk(
 										rctok,
 										std::move_iterator<iter_t>(
@@ -181,7 +180,7 @@ public:
 							size = 0;
 						}
 					}
-//					fileEmpty:
+					fileEmpty:
 					//finish off remaining work
 					for (unsigned i = 0; i < size; ++i) {
 						//------------------------WORK CODE START---------------------------------------
@@ -441,7 +440,7 @@ public:
 //	}
 
 private:
-	const static size_t s_bulkSize = 256;
+	const static size_t s_bulkSize = 1024;
 
 	const vector<string> &m_filenames;
 	uint64_t m_totalCounts;
