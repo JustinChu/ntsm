@@ -76,5 +76,4 @@ foreach my $id ( keys(%idToUniqCount) ) {
 		}
 	}
 }
-$AT->close();
-$CG->close();
+$fh->close();
