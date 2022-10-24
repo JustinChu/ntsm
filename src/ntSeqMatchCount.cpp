@@ -36,15 +36,11 @@ void printHelpDialog() {
 			"  -t, --threads = INT    Number of threads to run.[1]\n"
 			"  -m, --maxCov = INT     k-mer coverage threshold for early\n"
 			"                         termination [inf].\n"
-//			"  -c, --con_thread       Number of threads in consumer threading.\n"
-//			"                         In this mode the number of threads used\n"
-//			"                         will be equal to the number of files\n"
-//			"                         plus the number of producer threads.[0]\n"
 			"  -o, --output = STR     Output for summary file.\n"
 			"  -d, --dupes            Allow shared k-mers between sites to be\n"
 			"                         counted.\n"
-			"  -r, --ref = STR        Wildtype reference fasta. [required]\n"
-			"  -a, --var = STR        Variant reference fasta. [required]\n"
+			"  -s, --snp = STR        Interleaved fasta of SNPs sitest\n"
+			"                         k-merize. [required]\n"
 			"  -k, --kmer = INT       Kmer size use. [25]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
@@ -67,8 +63,7 @@ int main(int argc, char *argv[]) {
 			{ "maxCov", required_argument, NULL, 'm' },
 			{ "output", required_argument, NULL, 'o' },
 			{ "dupes", required_argument, NULL, 'd' },
-			{ "ref", required_argument, NULL, 'r' },
-			{ "var",required_argument, NULL, 'a' },
+			{ "snp", required_argument, NULL, 's' },
 			{ "kmer", required_argument, NULL, 'k' },
 			{ "help", no_argument, NULL, 'h' },
 			{ "version", no_argument,&OPT_VERSION, 1 },
@@ -76,7 +71,7 @@ int main(int argc, char *argv[]) {
 			{NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "r:a:t:vhk:m:do:", long_options,
+	while ((c = getopt_long(argc, argv, "s:t:vhk:m:do:", long_options,
 			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
@@ -96,10 +91,10 @@ int main(int argc, char *argv[]) {
 			opt::dupes = true;
 			break;
 		}
-		case 'r': {
+		case 's': {
 			stringstream convert(optarg);
-			if (!(convert >> opt::ref)) {
-				cerr << "Error - Invalid parameter r: " << optarg << endl;
+			if (!(convert >> opt::snp)) {
+				cerr << "Error - Invalid parameter s: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -108,14 +103,6 @@ int main(int argc, char *argv[]) {
 			stringstream convert(optarg);
 			if (!(convert >> opt::covThresh)) {
 				cerr << "Error - Invalid parameter m: " << optarg << endl;
-				return 0;
-			}
-			break;
-		}
-		case 'a': {
-			stringstream convert(optarg);
-			if (!(convert >> opt::var)) {
-				cerr << "Error - Invalid parameter a: " << optarg << endl;
 				return 0;
 			}
 			break;

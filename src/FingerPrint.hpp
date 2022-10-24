@@ -293,94 +293,71 @@ private:
 //	static const unsigned interval = 65536;
 
 	void initCountsHash(){
-		gzFile fp1, fp2;
-		fp1 = gzopen(opt::ref.c_str(), "r");
-		fp2 = gzopen(opt::var.c_str(), "r");
+		gzFile fp = gzopen(opt::snp.c_str(), "r");
 		tsl::robin_set<uint64_t> dupes;
-		if (fp1 == Z_NULL) {
-			std::cerr << "file " << opt::ref.c_str() << " cannot be opened"
+		if (fp == Z_NULL) {
+			std::cerr << "file " << opt::snp.c_str() << " cannot be opened"
 					<< std::endl;
 			exit(1);
 		} else if (opt::verbose) {
-			std::cerr << "Opening " << opt::ref.c_str() << std::endl;
-		}
-		if (fp2 == Z_NULL) {
-			std::cerr << "file " << opt::var.c_str() << " cannot be opened"
-					<< std::endl;
-			exit(1);
-		} else if (opt::verbose) {
-			std::cerr << "Opening " << opt::var.c_str() << std::endl;
+			std::cerr << "Opening " << opt::snp.c_str() << std::endl;
 		}
 		{
-			kseq_t *seq = kseq_init(fp1);
+			kseq_t *seq = kseq_init(fp);
 			int l = kseq_read(seq);
-			unsigned index = 0;
+			unsigned entryNum = 0;
 			while (l >= 0) {
-				assert(index == m_alleleIDToKmerRef.size());
-				m_alleleIDToKmerRef.emplace_back(
-						shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
-//				unsigned count = 0;
-				//k-merize and
-				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
-						itr != itr.end(); ++itr) {
-					uint64_t hv = *itr;
-//					count++;
-					//check for duplicates
-					if (m_counts.find(hv)!= m_counts.end()) {
-						cerr << "Warning: " << seq->name.s
-								<< " of REF file has a k-mer collision at pos: "
-								<< itr.getPos() << endl;
-						dupes.insert(hv);
-					} else {
-						m_alleleIDToKmerRef[index]->emplace_back(
-								hv);
-						m_counts[hv] = 0;
+				if(entryNum % 2 == 0)
+				{
+					unsigned index = entryNum/2;
+					assert(index == m_alleleIDToKmerRef.size());
+					m_alleleIDToKmerRef.emplace_back(
+							shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+					//k-merize and
+					for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+							itr != itr.end(); ++itr) {
+						uint64_t hv = *itr;
+						//check for duplicates
+						if (m_counts.find(hv)!= m_counts.end()) {
+							cerr << "Warning: " << seq->name.s
+									<< " of REF file has a k-mer collision at pos: "
+									<< itr.getPos() << endl;
+							dupes.insert(hv);
+						} else {
+							m_alleleIDToKmerRef[index]->emplace_back(
+									hv);
+							m_counts[hv] = 0;
+						}
+					}
+					m_alleleIDs.emplace_back(seq->name.s);
+				}
+				else{
+					unsigned index = entryNum/2;
+					assert(index == m_alleleIDToKmerVar.size());
+					m_alleleIDToKmerVar.emplace_back(
+							shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+					//k-merize and insert
+					for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+							itr != itr.end(); ++itr) {
+						uint64_t hv = *itr;
+						//check for duplicates
+						if (m_counts.find(hv) != m_counts.end()) {
+							cerr << "Warning: " << seq->name.s
+									<< " of VAR file has a k-mer collision at pos: "
+									<< itr.getPos() << endl;
+							dupes.insert(hv);
+						} else {
+							m_alleleIDToKmerVar[index]->emplace_back(hv);
+							m_counts[hv] = 0;
+						}
 					}
 				}
-//				if(m_maxSiteSize < count){
-//					m_maxSiteSize = count;
-//				}
-				m_alleleIDs.emplace_back(seq->name.s);
 				l = kseq_read(seq);
-				index++;
+				entryNum++;
 			}
 			kseq_destroy(seq);
-			gzclose(fp1);
+			gzclose(fp);
 		}
-
-		kseq_t *seq = kseq_init(fp2);
-		int l = kseq_read(seq);
-		unsigned index = 0;
-		while (l >= 0) {
-			assert(index == m_alleleIDToKmerVar.size());
-			m_alleleIDToKmerVar.emplace_back(
-					shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
-			//k-merize and insert
-//			unsigned count = 0;
-			for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
-					itr != itr.end(); ++itr) {
-				uint64_t hv = *itr;
-//				count++;
-				//check for duplicates
-				if (m_counts.find(hv) != m_counts.end()) {
-					cerr << "Warning: " << seq->name.s
-							<< " of VAR file has a k-mer collision at pos: "
-							<< itr.getPos() << endl;
-					dupes.insert(hv);
-				} else {
-					m_alleleIDToKmerVar[index]->emplace_back(hv);
-					m_counts[hv] = 0;
-				}
-			}
-//			if(m_maxSiteSize < count){
-//				m_maxSiteSize = count;
-//			}
-			l = kseq_read(seq);
-			index++;
-		}
-		kseq_destroy(seq);
-		gzclose(fp2);
-
 		if (!opt::dupes) {
 			//remove dupes
 			for (tsl::robin_set<uint64_t>::iterator itr = dupes.begin();
