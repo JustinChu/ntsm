@@ -60,7 +60,7 @@ while ($line) {
 }
 $fh->close();
 
-my $fh = new IO::File( $prefix . $totalK . ".fa", "w" );
+my $fh2 = new IO::File( $prefix . $totalK . ".fa", "w" );
 
 foreach my $id ( keys(%idToUniqCount) ) {
 	if ( $idToUniqCount{$id}{"AT"} <= $totalK &&
@@ -68,12 +68,12 @@ foreach my $id ( keys(%idToUniqCount) ) {
 	{
 		print $id . "\n";
 		if(exists($idToStr{$id}{"AT"}) && exists($idToStr{$id}{"CG"})){
-			$fh->write( ">" . $id . " ref\n" . $idToStr{$id}{"AT"} . "\n" );
-			$fh->write( ">" . $id . " var\n" . $idToStr{$id}{"CG"} . "\n" );	
+			$fh2->write( ">" . $id . " ref\n" . $idToStr{$id}{"AT"} . "\n" );
+			$fh2->write( ">" . $id . " var\n" . $idToStr{$id}{"CG"} . "\n" );	
 		}
 		else{
 			print STDERR $id . "\n";
 		}
 	}
 }
-$fh->close();
+$fh2->close();
