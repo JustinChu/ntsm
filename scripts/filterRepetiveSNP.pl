@@ -68,8 +68,8 @@ foreach my $id ( keys(%idToUniqCount) ) {
 	{
 		print $id . "\n";
 		if(exists($idToStr{$id}{"AT"}) && exists($idToStr{$id}{"CG"})){
-			$fh->write( ">" . $id . "\n" . $idToStr{$id}{"AT"} . "\n" );
-			$fh->write( ">" . $id . "\n" . $idToStr{$id}{"CG"} . "\n" );	
+			$fh->write( ">" . $id . " ref\n" . $idToStr{$id}{"AT"} . "\n" );
+			$fh->write( ">" . $id . " var\n" . $idToStr{$id}{"CG"} . "\n" );	
 		}
 		else{
 			print STDERR $id . "\n";
