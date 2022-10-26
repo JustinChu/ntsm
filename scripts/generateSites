@@ -11,10 +11,10 @@ ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 # params
 #------------------------------------------------------------
 
-w=31 #window size
-k=19 #kmer size
-t=4 #threads
-n=0 #omit sites with at most n missing sub k-mers
+w=31 #window size to consider sequences in this region
+k=19 #kmer size used in window region
+t=4 #threads for any subprocess or tools
+n=0 #number of sub k-mers to allow
 
 #------------------------------------------------------------
 # meta rules
