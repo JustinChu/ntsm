@@ -73,7 +73,7 @@ Using these set of k-mers we can then count all of these k-mers within a fastq f
 Example:
 
 ```bash
-ntsmCount -t 2 -r sites.fa sample_part1.fq sample_part2.fq > counts.txt
+ntsmCount -t 2 -s sites.fa sample_part1.fq sample_part2.fq > counts.txt
 ```
 
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
