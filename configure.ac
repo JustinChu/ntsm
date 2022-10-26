@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(ntsm, 0.0.2, cjustin@ds.dfci.harvard.edu)
+AC_INIT(ntsm, 0.1.0, cjustin@ds.dfci.harvard.edu)
 AM_INIT_AUTOMAKE
 #AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
