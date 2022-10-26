@@ -6,7 +6,6 @@ use IO::File;
 
 my $fh     = new IO::File( $ARGV[0], "r" );
 my $totalK = $ARGV[1];
-my $prefix = $ARGV[2];
 my $line   = $fh->getline();
 
 #id->type(AT,CG)->count
@@ -60,20 +59,16 @@ while ($line) {
 }
 $fh->close();
 
-my $fh2 = new IO::File( $prefix . $totalK . ".fa", "w" );
-
 foreach my $id ( keys(%idToUniqCount) ) {
 	if ( $idToUniqCount{$id}{"AT"} <= $totalK &&
 		 $idToUniqCount{$id}{"CG"} <= $totalK )
 	{
-		print $id . "\n";
 		if(exists($idToStr{$id}{"AT"}) && exists($idToStr{$id}{"CG"})){
-			$fh2->write( ">" . $id . " ref\n" . $idToStr{$id}{"AT"} . "\n" );
-			$fh2->write( ">" . $id . " var\n" . $idToStr{$id}{"CG"} . "\n" );	
+			print ">" . $id . " ref\n" . $idToStr{$id}{"AT"} . "\n";
+			print ">" . $id . " var\n" . $idToStr{$id}{"CG"} . "\n";	
 		}
 		else{
 			print STDERR $id . "\n";
 		}
 	}
 }
-$fh2->close();

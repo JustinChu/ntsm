@@ -66,8 +66,8 @@ class ExtractKmers:
         self._parseVCF()
         #open fasta file
         fastaFile = Fasta(self._fasta)
-        refFH = open(self._prefix + "_AT.fa", 'w')
-        varFH = open(self._prefix + "_CG.fa", 'w')
+        # refFH = open(self._prefix + "_AT.fa", 'w')
+        # varFH = open(self._prefix + "_CG.fa", 'w')
         
         removeCount = 0
         #for each vcf entry extract wildtype and variant into a string
@@ -95,11 +95,11 @@ class ExtractKmers:
                 if(self._ignore):
                     continue
             modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
-            varFH.write(">" + id + "\n")
-            refFH.write(">" + id + "\n")            
+            # varFH.write(">" + id + "\n")
+            # refFH.write(">" + id + "\n")            
             if(self._orderVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
-                refFH.write(tmpStr + "\n")
-                varFH.write(modStr + "\n")
+                # refFH.write(tmpStr + "\n")
+                # varFH.write(modStr + "\n")
                 #sub k-mer stuff here
                 if self._subKmer != 0:
                     for pos in range(0, len(modStr) - self._subKmer + 1):
@@ -108,8 +108,8 @@ class ExtractKmers:
                         print(">" + id + "|" + str(pos) + "|CG")
                         print(modStr[pos:pos + self._subKmer])
             else:
-                refFH.write(modStr + "\n")
-                varFH.write(tmpStr + "\n")
+                # refFH.write(modStr + "\n")
+                # varFH.write(tmpStr + "\n")
                 #sub k-mer stuff here
                 if self._subKmer != 0:
                     for pos in range(0, len(modStr) - self._subKmer + 1):
@@ -117,10 +117,8 @@ class ExtractKmers:
                         print(modStr[pos:pos + self._subKmer])
                         print(">" + id + "|" + str(pos) + "|CG")
                         print(tmpStr[pos:pos + self._subKmer])
-                
-            
-        refFH.close()
-        varFH.close()
+        # refFH.close()
+        # varFH.close()
         print("Removed " + str(removeCount) + " SNPs.", file=sys.stderr)
         
         
