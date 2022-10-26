@@ -14,7 +14,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 w=31 #window size
 k=19 #kmer size
 t=4 #threads
-n=0 #number of sub k-mers to allow
+n=0 #omit sites with at most n missing sub k-mers
 
 #------------------------------------------------------------
 # meta rules
