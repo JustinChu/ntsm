@@ -123,7 +123,7 @@ b	c	-0.017423	14756	106307	0.355821	71860	73269	28260	137812	136403	78047	209672
 Column explainations:
 
 * relate: Relatedness determined via shared heterozygous sites
-* ibs0: Number of sites with alleles shared between two samples
+* ibs0: Number of sites with alleles not shared between two samples
 * ibs2: Number of sites with the same genotype between two samples
 * homConcord: Homozygous concordance determined via shared homozygous sites
 * hetsX: Number of heterzygous sites for sample X
