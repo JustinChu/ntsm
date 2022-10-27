@@ -59,7 +59,7 @@ while ($line) {
 }
 $fh->close();
 
-foreach my $id ( keys(%idToUniqCount) ) {
+foreach my $id ( sort keys(%idToUniqCount) ) {
 	if ( $idToUniqCount{$id}{"AT"} <= $totalK &&
 		 $idToUniqCount{$id}{"CG"} <= $totalK )
 	{
