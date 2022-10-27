@@ -102,7 +102,7 @@ Header lines (`#@`) help in error rate estimation.
 Example:
 
 ```bash
-ntsmEval sample1_counts.txt sample2_counts.txt sample2_counts.txt > summary.tsv
+ntsmEval sampleA_counts.txt sampleB_counts.txt sampleC_counts.txt > summary.tsv
 ```
 
 Output Example:
