@@ -105,8 +105,6 @@ Example:
 ntsmEval sample1_counts.txt sample2_counts.txt sample2_counts.txt > summary.tsv
 ```
 
-A tsv file is produced that contains all combinations of geometric mean of Fisher's exact tests on all loci tested (p-values).
-
 Output Example:
 
 ```
