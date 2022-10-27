@@ -11,9 +11,10 @@ General:
 * Autotools (if directly cloning from repo)
 
 For generating site fasta files given a VCF file
-* Python (Tested on 3.8.5)
+* Python (Tested with 3.8.5)
 * pyfaidx python module
-* Perl (Tested on v5.26.2)
+* Perl (Tested with v5.26.2)
+* bwa (Tested with 0.7.17)
 
 ## Installation
 
