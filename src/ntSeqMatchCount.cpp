@@ -41,7 +41,7 @@ void printHelpDialog() {
 			"                         be counted.\n"
 			"  -s, --snp = STR        Interleaved fasta of SNP sites to\n"
 			"                         k-merize. [required]\n"
-			"  -k, --kmer = INT       Kmer size use. [25]\n"
+			"  -k, --kmer = INT       Kmer size use. [19]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
 			"      --version          Print version information.\n";

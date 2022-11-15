@@ -21,7 +21,7 @@ using namespace std;
 namespace opt {
 int verbose = 0;
 unsigned threads = 1;
-unsigned k = 25;
+unsigned k = 19;
 //double refRatioThrehold = 0.1;
 //double minAlleleCount = 3;
 string snp = "";
