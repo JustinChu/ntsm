@@ -140,12 +140,12 @@ int main(int argc, char *argv[]) {
 #endif
 
 	if (OPT_VERSION) {
-		cerr << "k cannot be greater than 32" << endl;
 		printVersion();
 	}
 
 	if (opt::k > 32) {
 		die = true;
+		cerr << "k cannot be greater than 32" << endl;
 	}
 
 	vector<string> inputFiles;
