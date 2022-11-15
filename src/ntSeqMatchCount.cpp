@@ -32,7 +32,7 @@ void printVersion() {
 
 void printHelpDialog() {
 	const char dialog[] =
-			"Usage: " PROGRAM " -r [FASTA] -a [FASTA] [OPTION]... [FILES...]\n"
+			"Usage: " PROGRAM " -s [FASTA] [OPTION]... [FILES...]\n"
 			"  -t, --threads = INT    Number of threads to run.[1]\n"
 			"  -m, --maxCov = INT     k-mer coverage threshold for early\n"
 			"                         termination. [inf]\n"
