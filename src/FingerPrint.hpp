@@ -19,9 +19,9 @@
 #include "vendor/tsl/robin_map.h"
 #include "vendor/tsl/robin_set.h"
 #include "vendor/KseqHashIterator.hpp"
-#include "vendor/kseq.h"
 #ifndef KSEQ_INIT_NEW
 #define KSEQ_INIT_NEW
+#include "vendor/kseq.h"
 KSEQ_INIT(gzFile, gzread)
 #endif /*KSEQ_INIT_NEW*/
 
@@ -33,8 +33,7 @@ public:
 	typedef uint16_t AlleleID;
 	typedef uint64_t HashedKmer;
 
-	FingerPrint(const vector<string> &filenames) :
-			m_filenames(filenames), m_totalCounts(0), m_maxCounts(0), m_totalBases(0) {
+	FingerPrint() : m_totalCounts(0), m_maxCounts(0), m_totalBases(0) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
@@ -43,17 +42,17 @@ public:
 		}
 	}
 
-	void computeCounts(){
+	void computeCounts(const vector<string> &filenames){
 #pragma omp parallel for
-		for (unsigned i = 0; i < m_filenames.size(); ++i) {
+		for (unsigned i = 0; i < filenames.size(); ++i) {
 			gzFile fp;
-			fp = gzopen(m_filenames[i].c_str(), "r");
+			fp = gzopen(filenames[i].c_str(), "r");
 			if (fp == Z_NULL) {
-				std::cerr << "file " << m_filenames[i] << " cannot be opened"
+				std::cerr << "file " << filenames[i] << " cannot be opened"
 						<< std::endl;
 				exit(1);
 			} else if (opt::verbose) {
-				std::cerr << "Opening " << m_filenames[i] << std::endl;
+				std::cerr << "Opening " << filenames[i] << std::endl;
 			}
 			//read in seq
 			kseq_t *seq = kseq_init(fp);
@@ -280,7 +279,7 @@ public:
 //	}
 
 private:
-	const vector<string> &m_filenames;
+//	const vector<string> &m_filenames;
 	uint64_t m_totalCounts;
 	uint64_t m_totalKmers;
 	uint64_t m_maxCounts;
