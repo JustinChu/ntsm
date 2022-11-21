@@ -68,32 +68,35 @@ public:
 		}
 	}
 
-	void processSingleRead(kseq_t *seq){
-		//k-merize and insert
-		for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
-				itr != itr.end(); ++itr) {
-			if(m_counts.find(*itr) != m_counts.end()){
+	void insertCount(const char *seqs, uint64_t seql, unsigned multiplier = 1) {
+		for (KseqHashIterator itr(seqs, seql, opt::k); itr != itr.end();
+				++itr) {
+			if (m_counts.find(*itr) != m_counts.end()) {
 #pragma omp atomic update
-				++m_counts[*itr];
+				m_counts[*itr] += multiplier;
 #pragma omp atomic update
-				++m_totalCounts;
+				m_totalCounts += multiplier;
 			}
 #pragma omp atomic update
 			++m_totalKmers;
 		}
 #pragma omp atomic update
-		m_totalBases += seq->seq.l;
+		m_totalBases += seql;
+	}
 
+	void processSingleRead(kseq_t *seq){
+		//k-merize and insert
+		insertCount(seq->seq.s, seq->seq.l);
 		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
 			m_earlyTerm = true;
 		}
 	}
 
 	//use only if threads > number of files
-	void computeCountsProducerConsumer() {
-		if (opt::threads <= m_filenames.size()) {
+	void computeCountsProducerConsumer(const vector<string> &filenames) {
+		if (opt::threads <= filenames.size()) {
 			//not enough threads to saturate
-			computeCounts();
+			computeCounts(filenames);
 		} else {
 			uint64_t numReads = 0, processedCount = 0;
 
@@ -117,10 +120,10 @@ public:
 			{
 				std::vector<kseq_t> readBuffer(s_bulkSize);
 				string outBuffer;
-				if (unsigned(omp_get_thread_num()) < m_filenames.size()) {
+				if (unsigned(omp_get_thread_num()) < filenames.size()) {
 					//file reading init
 					gzFile fp;
-					fp = gzopen(m_filenames.at(omp_get_thread_num()).c_str(), "r");
+					fp = gzopen(filenames.at(omp_get_thread_num()).c_str(), "r");
 					kseq_t *seq = kseq_init(fp);
 
 					//per thread token
@@ -439,7 +442,6 @@ public:
 
 private:
 	const static size_t s_bulkSize = 1024;
-	const vector<string> &m_filenames;
 	uint64_t m_totalCounts;
 	uint64_t m_totalKmers;
 	uint64_t m_maxCounts;
