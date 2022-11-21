@@ -41,7 +41,7 @@ void printHelpDialog() {
 			"                         be counted.\n"
 			"  -s, --snp = STR        Interleaved fasta of SNP sites to\n"
 			"                         k-merize. [required]\n"
-			"  -k, --kmer = INT       Kmer size use. [19]\n"
+			"  -k, --kmer = INT       Kmer size used. [19]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
 			"      --version          Print version information.\n";
@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
 
 	double time = omp_get_wtime();
 
-	FingerPrint fp(inputFiles);
-	fp.computeCounts();
+	FingerPrint fp;
+	fp.computeCounts(inputFiles);
 	fp.printCountsMax();
 	cerr << fp.printInfoSummary() << endl;
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()

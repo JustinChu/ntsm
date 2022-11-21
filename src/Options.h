@@ -38,5 +38,7 @@ bool dupes = false;
 //uint64_t minSites = 10000;
 uint64_t genomeSize = 6200000000;
 
+string ref;
+unsigned window = 25;
 }
 #endif

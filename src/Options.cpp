@@ -27,6 +27,10 @@ extern unsigned maxCov;
 extern unsigned minCov;
 extern bool dupes;
 //extern uint64_t minSites;
+
+extern string ref;
+extern unsigned window;
+
 }
 
 
