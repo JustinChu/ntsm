@@ -19,6 +19,8 @@
 #include "vendor/tsl/robin_map.h"
 #include "vendor/tsl/robin_set.h"
 #include "vendor/KseqHashIterator.hpp"
+#include "vendor/concurrentqueue.h"
+#include "vendor/kseq_util.h"
 #ifndef KSEQ_INIT_NEW
 #define KSEQ_INIT_NEW
 #include "vendor/kseq.h"
@@ -57,31 +59,188 @@ public:
 			//read in seq
 			kseq_t *seq = kseq_init(fp);
 			int l = kseq_read(seq);
-			while (l >= 0) {
-				//k-merize and insert
-				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
-						itr != itr.end(); ++itr) {
-					if(m_counts.find(*itr) != m_counts.end()){
-#pragma omp atomic update
-						++m_counts[*itr];
-#pragma omp atomic update
-						++m_totalCounts;
-					}
-#pragma omp atomic update
-					++m_totalKmers;
-				}
-#pragma omp atomic update
-				m_totalBases += seq->seq.l;
+			while (l >= 0 && !m_earlyTerm) {
+				processSingleRead(seq);
 				l = kseq_read(seq);
-				//terminate early
-				if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
-					break;
-				}
 			}
 			kseq_destroy(seq);
 			gzclose(fp);
 		}
 	}
+
+	void processSingleRead(kseq_t *seq){
+		//k-merize and insert
+		for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+				itr != itr.end(); ++itr) {
+			if(m_counts.find(*itr) != m_counts.end()){
+#pragma omp atomic update
+				++m_counts[*itr];
+#pragma omp atomic update
+				++m_totalCounts;
+			}
+#pragma omp atomic update
+			++m_totalKmers;
+		}
+#pragma omp atomic update
+		m_totalBases += seq->seq.l;
+
+		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
+			m_earlyTerm = true;
+		}
+	}
+
+	//use only if threads > number of files
+	void computeCountsProducerConsumer() {
+		if (opt::threads <= m_filenames.size()) {
+			//not enough threads to saturate
+			computeCounts();
+		} else {
+			uint64_t numReads = 0, processedCount = 0;
+
+			moodycamel::ConcurrentQueue<kseq_t> workQueue(
+					opt::threads * s_bulkSize);
+			moodycamel::ConcurrentQueue<kseq_t> recycleQueue(
+					opt::threads * s_bulkSize * 2);
+			bool good = true;
+			typedef std::vector<kseq_t>::iterator iter_t;
+
+			//fill recycleQueue with empty objects
+			{
+				std::vector<kseq_t> buffer(opt::threads * s_bulkSize * 2,
+						kseq_t());
+				recycleQueue.enqueue_bulk(
+						std::move_iterator<iter_t>(buffer.begin()),
+						buffer.size());
+			}
+
+#pragma omp parallel
+			{
+				std::vector<kseq_t> readBuffer(s_bulkSize);
+				string outBuffer;
+				if (unsigned(omp_get_thread_num()) < m_filenames.size()) {
+					//file reading init
+					gzFile fp;
+					fp = gzopen(m_filenames.at(omp_get_thread_num()).c_str(), "r");
+					kseq_t *seq = kseq_init(fp);
+
+					//per thread token
+					moodycamel::ProducerToken ptok(workQueue);
+
+					//tokens for recycle queue
+					moodycamel::ConsumerToken rctok(recycleQueue);
+					moodycamel::ProducerToken rptok(recycleQueue);
+
+					unsigned dequeueSize = recycleQueue.try_dequeue_bulk(rctok,
+							std::move_iterator<iter_t>(readBuffer.begin()),
+							s_bulkSize);
+					while (dequeueSize == 0) {
+						dequeueSize = recycleQueue.try_dequeue_bulk(rctok,
+								std::move_iterator<iter_t>(readBuffer.begin()),
+								s_bulkSize);
+					}
+
+					unsigned size = 0;
+					while (kseq_read(seq) >= 0 && !m_earlyTerm) {
+						cpy_kseq(&readBuffer[size++], seq);
+						if (dequeueSize == size) {
+							//try to insert, if cannot queue is full
+							while (!workQueue.try_enqueue_bulk(ptok,
+									std::move_iterator<iter_t>(
+											readBuffer.begin()), size)) {
+								//try to work
+								if (kseq_read(seq) >= 0) {
+									//------------------------WORK CODE START---------------------------------------
+									processSingleRead(seq);
+									//------------------------WORK CODE END-----------------------------------------
+								} else {
+									goto fileEmpty;
+								}
+							}
+							//reset buffer
+							dequeueSize = recycleQueue.try_dequeue_bulk(rctok,
+									std::move_iterator<iter_t>(
+											readBuffer.begin()), s_bulkSize);
+							while (dequeueSize == 0) {
+								//try to work
+								if (kseq_read(seq) >= 0) {
+									//------------------------WORK CODE START---------------------------------------
+									processSingleRead(seq);
+									//------------------------WORK CODE END-----------------------------------------
+								} else {
+									goto fileEmpty;
+								}
+								dequeueSize = recycleQueue.try_dequeue_bulk(
+										rctok,
+										std::move_iterator<iter_t>(
+												readBuffer.begin()),
+										s_bulkSize);
+							}
+							size = 0;
+						}
+					}
+					fileEmpty:
+					//finish off remaining work
+					for (unsigned i = 0; i < size; ++i) {
+						//------------------------WORK CODE START---------------------------------------
+						processSingleRead(seq);
+						//------------------------WORK CODE END-----------------------------------------
+					}
+					assert(
+							recycleQueue.enqueue_bulk(rptok,
+									std::move_iterator<iter_t>(
+											readBuffer.begin()), size));
+					if (processedCount < numReads) {
+						moodycamel::ConsumerToken ctok(workQueue);
+						//join in if others are still not finished
+						while (processedCount < numReads) {
+							size_t num = workQueue.try_dequeue_bulk(ctok,
+									std::move_iterator<iter_t>(
+											readBuffer.begin()), s_bulkSize);
+							if (num) {
+								for (unsigned i = 0; i < num; ++i) {
+									//------------------------WORK CODE START---------------------------------------
+									processSingleRead(seq);
+									//------------------------WORK CODE END-----------------------------------------
+								}
+								assert(
+										recycleQueue.enqueue_bulk(rptok,
+												std::move_iterator<iter_t>(
+														readBuffer.begin()),
+												num));
+							}
+						}
+					}
+#pragma omp atomic update
+					good &= false;
+					kseq_destroy(seq);
+					gzclose(fp);
+				} else {
+					moodycamel::ConsumerToken ctok(workQueue);
+					moodycamel::ProducerToken rptok(recycleQueue);
+					while (good) {
+						if (workQueue.size_approx() >= s_bulkSize) {
+							size_t num = workQueue.try_dequeue_bulk(ctok,
+									std::move_iterator<iter_t>(
+											readBuffer.begin()), s_bulkSize);
+							if (num) {
+								for (unsigned i = 0; i < num; ++i) {
+									//------------------------WORK CODE START---------------------------------------
+									processSingleRead(&readBuffer[i]);
+									//------------------------WORK CODE END-----------------------------------------
+								}
+								assert(
+										recycleQueue.enqueue_bulk(rptok,
+												std::move_iterator<iter_t>(
+														readBuffer.begin()),
+												num));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 
 	/*
 	 * Prints header for summary info
@@ -279,7 +438,8 @@ public:
 //	}
 
 private:
-//	const vector<string> &m_filenames;
+	const static size_t s_bulkSize = 1024;
+	const vector<string> &m_filenames;
 	uint64_t m_totalCounts;
 	uint64_t m_totalKmers;
 	uint64_t m_maxCounts;
@@ -288,6 +448,7 @@ private:
 	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar;
 	vector<string> m_alleleIDs;
 	uint64_t m_totalBases;
+	bool m_earlyTerm;
 //	unsigned m_maxSiteSize;
 //	static const unsigned interval = 65536;
 
