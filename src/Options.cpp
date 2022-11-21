@@ -30,6 +30,7 @@ extern bool dupes;
 
 extern string ref;
 extern unsigned window;
+extern unsigned multi;
 
 }
 

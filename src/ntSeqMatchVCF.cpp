@@ -9,16 +9,13 @@
 #include "config.h"
 #include "src/Options.h"
 #include "src/Util.h"
+#include <omp.h>
 
-#include "FingerPrint.hpp"
-
-#if _OPENMP
-# include <omp.h>
-#endif
+#include "VCFConvert.hpp"
 
 using namespace std;
 
-#define PROGRAM "ntsmCount"
+#define PROGRAM "ntsmVCF"
 
 void printVersion() {
 	const char VERSION_MESSAGE[] =
@@ -32,16 +29,17 @@ void printVersion() {
 
 void printHelpDialog() {
 	const char dialog[] =
-			"Usage: " PROGRAM " -s [FASTA] [OPTION]... [FILES...]\n"
+			"Usage: " PROGRAM " -s [FASTA] -r [FASTA] [FILE]\n"
+			"Converts a multi vcf file to a set of counts files."
 			"  -t, --threads = INT    Number of threads to run.[1]\n"
-			"  -m, --maxCov = INT     k-mer coverage threshold for early\n"
-			"                         termination. [inf]\n"
-			"  -o, --output = STR     Output for summary file.\n"
 			"  -d, --dupes            Allow shared k-mers between sites to\n"
 			"                         be counted.\n"
 			"  -s, --snp = STR        Interleaved fasta of SNP sites to\n"
 			"                         k-merize. [required]\n"
 			"  -k, --kmer = INT       k-mer size used. [19]\n"
+			"  -m, --multi = INT      Multiply counts by this.[1]"
+			"  -w, --window = INT     Window size used. [25]\n"
+			"  -r, --ref = STR        Reference fasta. [required]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
 			"      --version          Print version information.\n";
@@ -59,19 +57,21 @@ int main(int argc, char *argv[]) {
 	int OPT_VERSION = 0;
 
 	//long form arguments
-	static struct option long_options[] = { { "threads", required_argument, NULL, 't' },
-			{ "maxCov", required_argument, NULL, 'm' },
-			{ "output", required_argument, NULL, 'o' },
+	static struct option long_options[] = {
+			{ "threads", required_argument, NULL, 't' },
 			{ "dupes", required_argument, NULL, 'd' },
 			{ "snp", required_argument, NULL, 's' },
 			{ "kmer", required_argument, NULL, 'k' },
+			{ "multi", required_argument, NULL, 'm' },
+			{ "window", required_argument, NULL, 'w' },
+			{ "ref", required_argument, NULL, 'r' },
 			{ "help", no_argument, NULL, 'h' },
 			{ "version", no_argument,&OPT_VERSION, 1 },
 			{ "verbose", no_argument, NULL, 'v' },
 			{NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "s:t:vhk:m:do:", long_options,
+	while ((c = getopt_long(argc, argv, "s:t:vhk:dr:w:m:", long_options,
 			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
@@ -79,14 +79,7 @@ int main(int argc, char *argv[]) {
 			printHelpDialog();
 			break;
 		}
-		case 'o': {
-			stringstream convert(optarg);
-			if (!(convert >> opt::summary)) {
-				cerr << "Error - Invalid parameter o: " << optarg << endl;
-				return 0;
-			}
-			break;
-		}
+
 		case 'd': {
 			opt::dupes = true;
 			break;
@@ -99,14 +92,6 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		}
-		case 'm': {
-			stringstream convert(optarg);
-			if (!(convert >> opt::covThresh)) {
-				cerr << "Error - Invalid parameter m: " << optarg << endl;
-				return 0;
-			}
-			break;
-		}
 		case 'k': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::k)) {
@@ -115,10 +100,34 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		}
+		case 'w': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::window)) {
+				cerr << "Error - Invalid parameter w: " << optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'm': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::multi)) {
+				cerr << "Error - Invalid parameter m: " << optarg << endl;
+				return 0;
+			}
+			break;
+		}
 		case 't': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::threads)) {
 				cerr << "Error - Invalid parameter t: " << optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'r': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::ref)) {
+				cerr << "Error - Invalid parameter r: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -161,6 +170,11 @@ int main(int argc, char *argv[]) {
 		die = true;
 	}
 
+	if (Util::fexists(opt::ref)){
+		cerr << "Error: Unable to load reference file" << endl;
+		die = true;
+	}
+
 	if (die) {
 		cerr << "Try '--help' for more information.\n";
 		exit(EXIT_FAILURE);
@@ -168,11 +182,6 @@ int main(int argc, char *argv[]) {
 
 	double time = omp_get_wtime();
 
-	FingerPrint fp;
-	fp.computeCounts(inputFiles);
-	fp.printOptionalHeader();
-	fp.printCountsMax();
-	cerr << fp.printInfoSummary() << endl;
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
 	return 0;

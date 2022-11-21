@@ -84,14 +84,6 @@ public:
 		m_totalBases += seql;
 	}
 
-	void processSingleRead(kseq_t *seq){
-		//k-merize and insert
-		insertCount(seq->seq.s, seq->seq.l);
-		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
-			m_earlyTerm = true;
-		}
-	}
-
 	//use only if threads > number of files
 	void computeCountsProducerConsumer(const vector<string> &filenames) {
 		if (opt::threads <= filenames.size()) {
@@ -246,20 +238,19 @@ public:
 
 
 	/*
-	 * Prints header for summary info
+	 * Prints summary info needed for computing error rate
 	 */
-	void printHeader() const{
+	void printOptionalHeader() const{
 		string outStr = "";
 		outStr += "#@TK\t";
 		outStr += std::to_string(m_totalKmers);
 		outStr += "\n#@KS\t";
 		outStr += std::to_string(opt::k);
-		outStr += "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
 		cout << outStr;
 	}
 
-	void printCountsMax() const{
-		printHeader();
+	void printCountsMax(ostream &out = cout) const{
+		out << "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
 		string outStr = "";
 		for (size_t i = 0; i < m_alleleIDs.size() ; ++i) {
 			outStr.clear();
@@ -297,7 +288,7 @@ public:
 			outStr += "\t";
 			outStr += std::to_string(allele2.size());
 			outStr += "\n";
-			cout << outStr;
+			out << outStr;
 		}
 	}
 
@@ -453,6 +444,14 @@ private:
 	bool m_earlyTerm;
 //	unsigned m_maxSiteSize;
 //	static const unsigned interval = 65536;
+
+	void processSingleRead(kseq_t *seq){
+		//k-merize and insert
+		insertCount(seq->seq.s, seq->seq.l);
+		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
+			m_earlyTerm = true;
+		}
+	}
 
 	void initCountsHash(){
 		gzFile fp = gzopen(opt::snp.c_str(), "r");

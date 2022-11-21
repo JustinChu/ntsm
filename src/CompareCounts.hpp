@@ -34,6 +34,8 @@ public:
 			m_sum.push_back(
 					shared_ptr<vector<pair<unsigned, unsigned>>>(
 							new vector<pair<unsigned, unsigned>>));
+			m_rawTotalCounts.push_back(0);
+			m_kmerSize.push_back(0);
 			ifstream fh(itr->c_str());
 			string line;
 			if (fh.is_open()) {
@@ -45,13 +47,11 @@ public:
 							if (line.compare(1, pos - 1, "@TK") == 0) {
 								line.erase(0, pos + 1);
 								pos = line.find("\t");
-								m_rawTotalCounts.push_back(
-										std::stoull(line.substr(0, pos)));
+								m_rawTotalCounts.back() = std::stoull(line.substr(0, pos));
 							} else if (line.compare(1, pos - 1, "@KS") == 0) {
 								line.erase(0, pos + 1);
 								pos = line.find("\t");
-								m_kmerSize.push_back(
-										std::stoull(line.substr(0, pos)));
+								m_kmerSize.back() = std::stoull(line.substr(0, pos));
 							}
 						} else {
 							//locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n
@@ -549,16 +549,23 @@ private:
 
 	double computeErrorRate(unsigned index) const{
 		//1-(dat$recordedKmers*2/(dat$totalKmers*(dat$distinctKmers/genomeSize)))^(1/kmerSize)
-		uint64_t sum = 0;
-		uint64_t distinctKmers = 0;
-		for (unsigned i = 0; i < m_distinct.size(); ++i) {
-			sum += m_sum.at(index)->at(i).first + m_sum.at(index)->at(i).second;
-			distinctKmers += m_distinct.at(i).first + m_distinct.at(i).second;
+		if (m_rawTotalCounts.at(index) > 0 && m_kmerSize.at(index) > 0) {
+			uint64_t sum = 0;
+			uint64_t distinctKmers = 0;
+			for (unsigned i = 0; i < m_distinct.size(); ++i) {
+				sum += m_sum.at(index)->at(i).first
+						+ m_sum.at(index)->at(i).second;
+				distinctKmers += m_distinct.at(i).first
+						+ m_distinct.at(i).second;
+			}
+			double expected = double(m_rawTotalCounts.at(index))
+					* double(distinctKmers) / double(opt::genomeSize);
+			return (1.0
+					- pow(double(sum) / expected,
+							1.0 / double(m_kmerSize.at(index))));
+		} else {
+			return 0.0;
 		}
-		double expected = double(m_rawTotalCounts.at(index))
-				* double(distinctKmers) / double(opt::genomeSize);
-		return (1.0
-				- pow(double(sum) / expected, 1.0 / double(m_kmerSize[index])));
 	}
 
 //	double calcRelatedness(unsigned index1, unsigned index2,

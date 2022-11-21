@@ -1,4 +1,4 @@
-bin_PROGRAMS = ntsmCount ntsmEval
+bin_PROGRAMS = ntsmCount ntsmEval ntsmVCF
 
 ntsmCount_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
@@ -27,6 +27,21 @@ ntsmEval_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-pthread
 
 ntsmEval_SOURCES = ntSeqMatchEval.cpp \
+	CompareCounts.hpp \
+	Options.cpp Options.h \
+	Util.h
+	
+ntsmVCF_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
+
+ntsmVCF_CPPFLAGS = -I$(top_srcdir)/src \
+	-I$(top_srcdir)/vendor \
+	-I$(top_srcdir)
+		
+ntsmVCF_LDFLAGS = $(OPENMP_CXXFLAGS) \
+	-pthread
+
+ntsmVCF_SOURCES = ntSeqMatchVCF.cpp \
+	VCFConvert.hpp \
 	CompareCounts.hpp \
 	Options.cpp Options.h \
 	Util.h
