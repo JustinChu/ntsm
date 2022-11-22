@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 		die = true;
 	}
 
-	if (Util::fexists(opt::ref)){
+	if (!Util::fexists(opt::ref)){
 		cerr << "Error: Unable to load reference file" << endl;
 		die = true;
 	}
