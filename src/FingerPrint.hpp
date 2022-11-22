@@ -468,35 +468,34 @@ private:
 			int l = kseq_read(seq);
 			unsigned entryNum = 0;
 			while (l >= 0) {
-				if(entryNum % 2 == 0)
-				{
-					unsigned index = entryNum/2;
+				if (entryNum % 2 == 0) {
+					unsigned index = entryNum / 2;
 					assert(index == m_alleleIDToKmerRef.size());
 					m_alleleIDToKmerRef.emplace_back(
-							shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+							shared_ptr<vector<uint64_t>>(
+									new vector<uint64_t>()));
 					//k-merize and
 					for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
 							itr != itr.end(); ++itr) {
 						uint64_t hv = *itr;
 						//check for duplicates
-						if (m_counts.find(hv)!= m_counts.end()) {
+						if (m_counts.find(hv) != m_counts.end()) {
 							cerr << "Warning: " << seq->name.s
 									<< " of REF file has a k-mer collision at pos: "
 									<< itr.getPos() << endl;
 							dupes.insert(hv);
 						} else {
-							m_alleleIDToKmerRef[index]->emplace_back(
-									hv);
+							m_alleleIDToKmerRef[index]->emplace_back(hv);
 							m_counts[hv] = 0;
 						}
 					}
 					m_alleleIDs.emplace_back(seq->name.s);
-				}
-				else{
-					unsigned index = entryNum/2;
+				} else {
+					unsigned index = entryNum / 2;
 					assert(index == m_alleleIDToKmerVar.size());
 					m_alleleIDToKmerVar.emplace_back(
-							shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+							shared_ptr<vector<uint64_t>>(
+									new vector<uint64_t>()));
 					//k-merize and insert
 					for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
 							itr != itr.end(); ++itr) {
