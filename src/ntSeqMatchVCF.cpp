@@ -30,7 +30,7 @@ void printVersion() {
 void printHelpDialog() {
 	const char dialog[] =
 			"Usage: " PROGRAM " -s [FASTA] -r [FASTA] [VCF]\n"
-			"Converts a multi vcf file to a set of counts files."
+			"Converts a multi vcf file to a set of counts files.\n"
 			"  -t, --threads = INT    Number of threads to run.[1]\n"
 			"  -d, --dupes            Allow shared k-mers between sites to\n"
 			"                         be counted.\n"
