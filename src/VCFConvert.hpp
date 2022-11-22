@@ -21,13 +21,14 @@
 
 #include "vendor/tsl/robin_map.h"
 #include "vendor/tsl/robin_set.h"
+#include "vendor/kseq.h"
+#include "vendor/kseq_util.h"
 
 #ifndef KSEQ_INIT_NEW
 #define KSEQ_INIT_NEW
-#include "vendor/kseq.h"
-#include "vendor/kseq_util.h"
 KSEQ_INIT(gzFile, gzread)
 #endif /*KSEQ_INIT_NEW*/
+
 using namespace std;
 
 class VCFConvert {

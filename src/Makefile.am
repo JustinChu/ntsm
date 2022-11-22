@@ -40,6 +40,8 @@ ntsmVCF_CPPFLAGS = -I$(top_srcdir)/src \
 ntsmVCF_LDFLAGS = $(OPENMP_CXXFLAGS) \
 	-pthread
 
+ntsmVCF_LDADD = -lz
+
 ntsmVCF_SOURCES = ntSeqMatchVCF.cpp \
 	VCFConvert.hpp \
 	CompareCounts.hpp \

@@ -182,6 +182,10 @@ int main(int argc, char *argv[]) {
 
 	double time = omp_get_wtime();
 
+	VCFConvert convert;
+	assert(inputFiles.size() == 1);
+	convert.count(inputFiles[0]);
+
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
 	return 0;
