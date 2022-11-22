@@ -29,7 +29,7 @@ void printVersion() {
 
 void printHelpDialog() {
 	const char dialog[] =
-			"Usage: " PROGRAM " -s [FASTA] -r [FASTA] [FILE]\n"
+			"Usage: " PROGRAM " -s [FASTA] -r [FASTA] [VCF]\n"
 			"Converts a multi vcf file to a set of counts files."
 			"  -t, --threads = INT    Number of threads to run.[1]\n"
 			"  -d, --dupes            Allow shared k-mers between sites to\n"
@@ -37,7 +37,7 @@ void printHelpDialog() {
 			"  -s, --snp = STR        Interleaved fasta of SNP sites to\n"
 			"                         k-merize. [required]\n"
 			"  -k, --kmer = INT       k-mer size used. [19]\n"
-			"  -m, --multi = INT      Multiply counts by this.[1]"
+			"  -m, --multi = INT      Multiply counts by this.[1]\n"
 			"  -w, --window = INT     Window size used. [25]\n"
 			"  -r, --ref = STR        Reference fasta. [required]\n"
 			"  -h, --help             Display this dialog.\n"
