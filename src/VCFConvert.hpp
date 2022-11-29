@@ -16,8 +16,13 @@
 #include <string>
 #include <zlib.h>
 #include <math.h>
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <iterator>
+#include <sstream>
 
-#include "FingerPrint.hpp"
+#include "MultiCount.hpp"
 
 #include "vendor/tsl/robin_map.h"
 #include "vendor/tsl/robin_set.h"
@@ -40,10 +45,10 @@ public:
 		//read in seq
 		kseq_t *seq = kseq_init(fp);
 		int l = kseq_read(seq);
-		unsigned size = 0;
 		while (l >= 0) {
 			m_chrIDs[seq->name.s] = m_ref.size();
-			cpy_kseq(&m_ref[size++], seq);
+			m_ref.push_back(kseq_t());
+			cpy_kseq(&m_ref.back(), seq);
 			l = kseq_read(seq);
 		}
 		kseq_destroy(seq);
@@ -57,73 +62,72 @@ public:
 		string line;
 		while (getline(fh, line)) {
 			if (line.at(0) == '#') {
-				size_t pos = line.find("\t");
+				std::stringstream ss;
+				ss.str(line);
+				string item;
+				getline(ss, item, '\t');
 				//parse out header and IDs
 				//#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	...
-				if (line.compare(1, pos - 1, "CHROM") == 0) {
+				if (item.compare("#CHROM") == 0) {
 					//skip first 9 entries
-					for (unsigned i = 0; i < 9; ++i) {
-						pos = line.find("\t");
-						line.erase(0, pos + 1);
+					for (unsigned i = 0; i < 8; ++i) {
+						getline(ss, item, '\t');
 					}
-					while (line != "") {
-						pos = line.find("\t");
-						m_sampleIDs.push_back(line.substr(0, pos));
-						line.erase(0, pos + 1);
+					while (getline(ss, item, '\t')) {
+						m_sampleIDs.push_back(item);
 					}
 					break;
 				}
 			}
 		}
-		vector<FingerPrint> counts(m_sampleIDs.size());
+		MultiCount counts(m_sampleIDs.size());
 		//read remainder
 		while (getline(fh, line)) {
-			//chr1	911428	1:911428:C:T	C	T	.	PASS	AC=1655...	GT	0|0 ...
-			size_t pos = line.find("\t");
-			string chr = line.substr(0, pos);
-			line.erase(0, pos + 1);
-			pos = line.find("\t");
-			size_t loc = stoi(line.substr(0, pos));
-			line.erase(0, pos + 1);
-			pos = line.find("\t");
-			//skip
-			line.erase(0, pos + 1);
-			pos = line.find("\t");
-//			string ref = line.substr(0, pos);
-			line.erase(0, pos + 1);
-			pos = line.find("\t");
-			assert(pos == 1);
-			char var = line.substr(0, pos).at(0);
+			std::stringstream ss;
+			ss.str(line);
+			string item;
+			getline(ss, item, '\t');
+			string chr = item;
+			getline(ss, item, '\t');
+			size_t loc = stoi(item);
+			getline(ss, item, '\t'); //skip
+			getline(ss, item, '\t'); //skip
+			getline(ss, item, '\t');
+			if(item.size() != 1){ //if vcf entry isn't a snp
+				continue;
+			}
+			char var = item.at(0);
 
 			//skip 4 columns
-			for (unsigned i = 0; i < 5; ++i) {
-				pos = line.find("\t");
-				line.erase(0, pos + 1);
+			for (unsigned i = 0; i < 4; ++i) {
+				getline(ss, item, '\t');
 			}
+
 			//ref, var
 			pair<string,string> seqs = getSeqFromSite(chr, loc, var);
-			string genotype;
 			unsigned index = 0;
-			while (line != "") {
-				pos = line.find("\t");
-				genotype = line.substr(0, pos);
-				if (genotype == "0|0") {
-					counts[index].insertCount(seqs.first.c_str(), seqs.first.length(), opt::multi * 2);
-				}
-				else if (genotype == "0|1" || genotype ==  "1|0") {
-					counts[index].insertCount(seqs.second.c_str(), seqs.second.length(), opt::multi);
-					counts[index].insertCount(seqs.first.c_str(), seqs.first.length(), opt::multi);
-				}
-				else if (genotype == "1|0") {
-					counts[index].insertCount(seqs.second.c_str(), seqs.second.length(), opt::multi * 2);
+			//first pass find bad k-mers
+			//second pass stream calculation
+			//matrix -> seperate
+			while (getline(ss, item, '\t')) {
+				if (item == "0|0") {
+					counts.insertCount(index, seqs.first.c_str(),
+							seqs.first.length(), opt::multi * 2);
+				} else if (item == "0|1" || item == "1|0") {
+					counts.insertCount(index, seqs.second.c_str(),
+							seqs.second.length(), opt::multi);
+					counts.insertCount(index, seqs.first.c_str(),
+							seqs.first.length(), opt::multi);
+				} else if (item == "1|0") {
+					counts.insertCount(index, seqs.second.c_str(),
+							seqs.second.length(), opt::multi * 2);
 				}
 				index++;
-				line.erase(0, pos + 1);
 			}
 		}
 		for(unsigned i = 0; i < m_sampleIDs.size(); ++i){
 			ofstream out(m_sampleIDs.at(i) + ".counts.txt");
-			counts[i].printCountsMax(out);
+			counts.printCountsMax(i, out);
 			out.close();
 		}
 	}
