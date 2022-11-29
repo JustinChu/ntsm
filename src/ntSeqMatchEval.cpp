@@ -181,8 +181,11 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	CompareCounts comp(inputFiles);
 	double time = omp_get_wtime();
+	CompareCounts comp(inputFiles);
+	if(opt::verbose > 1){
+		cerr << "Finished loading files. Now comparing all samples." << endl;
+	}
 	comp.computeScore();
 
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: "  << Util::getRSS() << " kbytes" << endl;
