@@ -15,6 +15,7 @@
 #include <math.h>
 
 #include "vendor/kfunc.c"
+#include "vendor/tsl/robin_map.h"
 
 using namespace std;
 
@@ -22,49 +23,71 @@ class CompareCounts {
 public:
 	CompareCounts(const vector<string> &filenames) :
 			m_filenames(filenames), m_sumlogPSingle(
-					vector<double>(filenames.size())) {
-		//load in counts
-		//open file
-		//TODO parallelize loop -> may need to preallocate size of count vector
-		for (vector<string>::const_iterator itr = m_filenames.begin();
-				itr != m_filenames.end(); ++itr) {
-			m_counts.push_back(
-					shared_ptr<vector<pair<unsigned, unsigned>>>(
-							new vector<pair<unsigned, unsigned>>));
-			m_sum.push_back(
-					shared_ptr<vector<pair<unsigned, unsigned>>>(
-							new vector<pair<unsigned, unsigned>>));
-			m_rawTotalCounts.push_back(0);
-			m_kmerSize.push_back(0);
-			ifstream fh(itr->c_str());
+					vector<double>(filenames.size())), m_rawTotalCounts(
+					vector<uint64_t>(filenames.size(), 0)), m_kmerSize(
+					vector<unsigned>(filenames.size(), 0)), m_totalCounts(
+					vector<uint64_t>(filenames.size(), 0)) {
+		//read first file twice to init vectors
+		{
+			ifstream fh(m_filenames.at(0));
 			string line;
 			if (fh.is_open()) {
-				m_totalCounts.push_back(0);
+				unsigned count = 0;
 				while (getline(fh, line)) {
 					if (line.length() > 0) {
-						size_t pos = line.find("\t");
+						stringstream ss;
+						ss.str(line);
+						string item;
+						getline(ss, item, '\t');
+						if (line.at(0) != '#') {
+							string locusID = item;
+							sampleIDs[locusID] = count++;
+							getline(ss, item, '\t');
+							getline(ss, item, '\t');
+
+							getline(ss, item, '\t');
+							getline(ss, item, '\t');
+
+							getline(ss, item, '\t');
+							m_distinct.push_back(loadPair(ss, item));
+						}
+					}
+				}
+			}
+		}
+		m_counts = PairedCount(filenames.size(), vector<pair<unsigned, unsigned>>(m_distinct.size()));
+		m_sum = PairedCount(filenames.size(), vector<pair<unsigned, unsigned>>(m_distinct.size()));
+
+#pragma omp parallel for
+		for (unsigned i = 0; i < m_filenames.size(); ++i) {
+			ifstream fh(m_filenames.at(i));
+			string line;
+			if (fh.is_open()) {
+				while (getline(fh, line)) {
+					if (line.length() > 0) {
+						stringstream ss;
+						ss.str(line);
+						string item;
+						getline(ss, item, '\t');
 						if(line.at(0) == '#'){
-							if (line.compare(1, pos - 1, "@TK") == 0) {
-								line.erase(0, pos + 1);
-								pos = line.find("\t");
-								m_rawTotalCounts.back() = std::stoull(line.substr(0, pos));
-							} else if (line.compare(1, pos - 1, "@KS") == 0) {
-								line.erase(0, pos + 1);
-								pos = line.find("\t");
-								m_kmerSize.back() = std::stoull(line.substr(0, pos));
+							if (item == "#@TK") {
+								getline(ss, item, '\t');
+								m_rawTotalCounts[i] = std::stoull(item);
+							} else if (item == "#@KS") {
+								getline(ss, item, '\t');
+								m_kmerSize[i] = std::stoull(item);
 							}
 						} else {
+							string locusID = item;
 							//locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n
-							string locusID = line.substr(0, pos);
-							line.erase(0, pos + 1);
-							m_counts.back()->push_back(loadPair(line));
-							m_sum.back()->push_back(loadPair(line));
-							if(itr == m_filenames.begin()){
-								m_distinct.push_back(loadPair(line));
-							}
-							m_totalCounts.back() +=
-									m_counts.back()->back().first
-											+ m_counts.back()->back().second;
+							getline(ss, item, '\t');
+							m_counts[i][sampleIDs.at(locusID)] = loadPair(ss,
+									item);
+							m_totalCounts[i] += m_counts[i][sampleIDs.at(
+									locusID)].first
+									+ m_counts[i][sampleIDs.at(locusID)].second;
+							m_sum[i][sampleIDs.at(locusID)] = loadPair(ss,
+									item);
 						}
 					}
 				}
@@ -251,67 +274,46 @@ private:
 	};
 
 	const vector<string> &m_filenames;
-	typedef vector<shared_ptr<vector<pair<unsigned, unsigned>>>> PairedCount;
+	typedef vector<vector<pair<unsigned, unsigned>>> PairedCount;
+	vector<double> m_sumlogPSingle;
 	PairedCount m_counts;
 	PairedCount m_sum;
 	vector<pair<unsigned, unsigned>> m_distinct;
-	vector<uint64_t> m_totalCounts;
 	vector<uint64_t> m_rawTotalCounts;
-	vector<unsigned> m_kmerSize; //TODO is this needed? Why would you mix k?
-	vector<double> m_sumlogPSingle;
-//	vector<CallSummary> m_calls;
-//	void initCalls(){
-//		m_calls = vector<CallSummary>(m_counts.size());
-//#pragma omp parallel for
-//		for (unsigned i = 0; i < m_counts.size(); ++i) {
-//			for (vector<pair<unsigned, unsigned>>::const_iterator itr =
-//					m_counts.at(i)->begin(); itr != m_counts.at(i)->end();
-//					++itr) {
-//				if (itr->first > opt::minCov) {
-//					if (itr->second > opt::minCov) {
-//						++m_calls[i].het;
-//					} else {
-//						++m_calls[i].homAT;
-//					}
-//				} else if (itr->second > opt::minCov) {
-//					++m_calls[i].homCG;
-//				}
-//			}
-//		}
-//	}
+	vector<unsigned> m_kmerSize;
+	vector<uint64_t> m_totalCounts;
+	tsl::robin_map<string,unsigned> sampleIDs;
 
-	pair<unsigned, unsigned> loadPair(string &line) {
-		unsigned pos = line.find("\t");
-		unsigned count1 = std::stoul(line.substr(0, pos).c_str());
-		line.erase(0, pos + 1);
-		pos = line.find("\t");
-		unsigned count2 = std::stoul(line.substr(0, pos).c_str());
-		line.erase(0, pos + 1);
+	pair<unsigned, unsigned> loadPair(stringstream &ss, string &item) {
+		unsigned count1 = std::stoul(item);
+		getline(ss, item, '\t');
+		unsigned count2 = std::stoul(item);
+		getline(ss, item, '\t');
 		return (std::make_pair(count1, count2));
 	}
 
 	//new method for calculating similarity using log likelihood
 //	double computeSumLogPSingle(unsigned index) const{
 //		double sumLogP = 0;
-//		for (unsigned i = 0; i < m_counts[index]->size(); ++i) {
+//		for (unsigned i = 0; i < m_counts.at(index).size(); ++i) {
 //			double freqAT = 0;
 //			double freqCG = 0;
-//			if(m_counts[index]->at(i).first > opt::minCov)
+//			if(m_counts.at(index).at(i).first > opt::minCov)
 //			{
-//				freqAT = double(m_counts[index]->at(i).first)
+//				freqAT = double(m_counts.at(index).at(i).first)
 //						/ double(
-//								m_counts[index]->at(i).first
-//										+ m_counts[index]->at(i).second);
+//								m_counts.at(index).at(i).first
+//										+ m_counts.at(index).at(i).second);
 //			}
-//			if(m_counts[index]->at(i).second > opt::minCov)
+//			if(m_counts.at(index).at(i).second > opt::minCov)
 //			{
-//				freqCG = double(m_counts[index]->at(i).second)
+//				freqCG = double(m_counts.at(index).at(i).second)
 //						/ double(
-//								m_counts[index]->at(i).first
-//										+ m_counts[index]->at(i).second);
+//								m_counts.at(index).at(i).first
+//										+ m_counts.at(index).at(i).second);
 //			}
-//			sumLogP += m_counts[index]->at(i).first * freqAT
-//					+ m_counts[index]->at(i).second * freqCG;
+//			sumLogP += m_counts.at(index).at(i).first * freqAT
+//					+ m_counts.at(index).at(i).second * freqCG;
 //		}
 //		return(sumLogP);
 //	}
@@ -321,35 +323,35 @@ private:
 		for (vector<unsigned>::const_iterator i = pos.begin(); i != pos.end(); ++i) {
 			double freqAT = 0;
 			double freqCG = 0;
-			if(m_counts[index]->at(*i).first > opt::minCov)
+			if(m_counts.at(index).at(*i).first > opt::minCov)
 			{
-				freqAT = double(m_counts[index]->at(*i).first)
+				freqAT = double(m_counts.at(index).at(*i).first)
 						/ double(
-								m_counts[index]->at(*i).first
-										+ m_counts[index]->at(*i).second);
+								m_counts.at(index).at(*i).first
+										+ m_counts.at(index).at(*i).second);
 			}
-			if(m_counts[index]->at(*i).second > opt::minCov)
+			if(m_counts.at(index).at(*i).second > opt::minCov)
 			{
-				freqCG = double(m_counts[index]->at(*i).second)
+				freqCG = double(m_counts.at(index).at(*i).second)
 						/ double(
-								m_counts[index]->at(*i).first
-										+ m_counts[index]->at(*i).second);
+								m_counts.at(index).at(*i).first
+										+ m_counts.at(index).at(*i).second);
 			}
-			sumLogP += m_counts[index]->at(*i).first * freqAT
-					+ m_counts[index]->at(*i).second * freqCG;
+			sumLogP += m_counts.at(index).at(*i).first * freqAT
+					+ m_counts.at(index).at(*i).second * freqCG;
 		}
 		return(sumLogP);
 	}
 
 //	double computeSumLogPJoint(unsigned index1, unsigned index2) const{
 //		double sumLogP = 0;
-//		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
+//		for (unsigned i = 0; i < m_counts.at(index1).size(); ++i) {
 //			double freqAT = 0;
 //			double freqCG = 0;
-//			unsigned countAT = m_counts[index1]->at(i).first
-//					+ m_counts[index2]->at(i).first;
-//			unsigned countCG = m_counts[index1]->at(i).second
-//					+ m_counts[index2]->at(i).second;
+//			unsigned countAT = m_counts.at(index1).at(i).first
+//					+ m_counts.at(index2).at(i).first;
+//			unsigned countCG = m_counts.at(index1).at(i).second
+//					+ m_counts.at(index2).at(i).second;
 //			if (countAT > opt::minCov) {
 //				freqAT = double(countAT) / double(countAT + countCG);
 //			}
@@ -368,10 +370,10 @@ private:
 				++i) {
 			double freqAT = 0;
 			double freqCG = 0;
-			unsigned countAT = m_counts[index1]->at(*i).first
-					+ m_counts[index2]->at(*i).first;
-			unsigned countCG = m_counts[index1]->at(*i).second
-					+ m_counts[index2]->at(*i).second;
+			unsigned countAT = m_counts.at(index1).at(*i).first
+					+ m_counts.at(index2).at(*i).first;
+			unsigned countCG = m_counts.at(index1).at(*i).second
+					+ m_counts.at(index2).at(*i).second;
 			if (countAT > covThresh) {
 				freqAT = double(countAT) / double(countAT + countCG);
 			}
@@ -407,16 +409,16 @@ private:
 	//TODO: Easily parelizable
 	vector<unsigned> gatherValidEntries(unsigned index1, unsigned index2) {
 		vector<unsigned> valid;
-		vector<bool> binValid(m_counts[0]->size(), true);
-		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
-			if (m_counts[index1]->at(j).first <= opt::minCov
-					&& m_counts[index1]->at(j).second <= opt::minCov) {
+		vector<bool> binValid(m_distinct.size(), true);
+		for (unsigned j = 0; j < m_distinct.size(); ++j) {
+			if (m_counts.at(index1).at(j).first <= opt::minCov
+					&& m_counts.at(index1).at(j).second <= opt::minCov) {
 				binValid[j] = false;
 			}
 		}
-		for (unsigned j = 0; j < m_counts[0]->size(); ++j) {
-			if (m_counts[index2]->at(j).first <= opt::minCov
-					&& m_counts[index2]->at(j).second <= opt::minCov) {
+		for (unsigned j = 0; j < m_distinct.size(); ++j) {
+			if (m_counts.at(index2).at(j).first <= opt::minCov
+					&& m_counts.at(index2).at(j).second <= opt::minCov) {
 				binValid[j] = false;
 			}
 		}
@@ -475,16 +477,16 @@ private:
 //	double runCombinedPval(unsigned index1, unsigned index2) {
 //		double sumLogPVal = 0.0;
 //		unsigned totalCount = 0;
-//		for (unsigned i = 0; i < m_counts[index1]->size(); ++i) {
-//			if ((m_counts[index1]->at(i).first + m_counts[index1]->at(i).second
+//		for (unsigned i = 0; i < m_counts.at(index1).size(); ++i) {
+//			if ((m_counts.at(index1).at(i).first + m_counts.at(index1).at(i).second
 //					>= opt::minCov)
-//					&& (m_counts[index2]->at(i).first
-//							+ m_counts[index2]->at(i).second >= opt::minCov)) {
+//					&& (m_counts.at(index2).at(i).first
+//							+ m_counts.at(index2).at(i).second >= opt::minCov)) {
 //				double fisher_left_p, fisher_right_p, fisher_twosided_p;
-//				kt_fisher_exact(m_counts[index1]->at(i).first,
-//						m_counts[index2]->at(i).first,
-//						m_counts[index1]->at(i).second,
-//						m_counts[index2]->at(i).second, &fisher_left_p,
+//				kt_fisher_exact(m_counts.at(index1).at(i).first,
+//						m_counts.at(index2).at(i).first,
+//						m_counts.at(index1).at(i).second,
+//						m_counts.at(index2).at(i).second, &fisher_left_p,
 //						&fisher_right_p, &fisher_twosided_p);
 //				sumLogPVal += log(fisher_twosided_p);
 //				totalCount++;
@@ -503,27 +505,27 @@ private:
 		for (vector<unsigned>::const_iterator i = validIndexes.begin();
 				i != validIndexes.end(); ++i) {
 			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
-			if (m_counts[index1]->at(*i).first > opt::minCov) {
-				if (m_counts[index1]->at(*i).second > opt::minCov) {
+			if (m_counts.at(index1).at(*i).first > opt::minCov) {
+				if (m_counts.at(index1).at(*i).second > opt::minCov) {
 					type1 = HET;
 					++info.hets1;
 				} else {
 					type1 = HOM_AT;
 					++info.homs1;
 				}
-			} else if (m_counts[index1]->at(*i).second > opt::minCov) {
+			} else if (m_counts.at(index1).at(*i).second > opt::minCov) {
 				type1 = HOM_CG;
 				++info.homs1;
 			}
-			if (m_counts[index2]->at(*i).first > opt::minCov) {
-				if (m_counts[index2]->at(*i).second > opt::minCov) {
+			if (m_counts.at(index2).at(*i).first > opt::minCov) {
+				if (m_counts.at(index2).at(*i).second > opt::minCov) {
 					type2 = HET;
 					++info.hets2;
 				} else {
 					type2 = HOM_AT;
 					++info.homs2;
 				}
-			} else if (m_counts[index2]->at(*i).second > opt::minCov) {
+			} else if (m_counts.at(index2).at(*i).second > opt::minCov) {
 				type2 = HOM_CG;
 				++info.homs2;
 			}
@@ -553,8 +555,8 @@ private:
 			uint64_t sum = 0;
 			uint64_t distinctKmers = 0;
 			for (unsigned i = 0; i < m_distinct.size(); ++i) {
-				sum += m_sum.at(index)->at(i).first
-						+ m_sum.at(index)->at(i).second;
+				sum += m_sum.at(index).at(i).first
+						+ m_sum.at(index).at(i).second;
 				distinctKmers += m_distinct.at(i).first
 						+ m_distinct.at(i).second;
 			}
@@ -576,8 +578,8 @@ private:
 //		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
 //				++i) {
 //			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
-//			if (m_counts[index1]->at(*i).first > opt::minCov) {
-//				if(m_counts[index1]->at(*i).second > opt::minCov){
+//			if (m_counts.at(index1).at(*i).first > opt::minCov) {
+//				if(m_counts.at(index1).at(*i).second > opt::minCov){
 //					type1 = HET;
 //					++hets1;
 //				}
@@ -586,11 +588,11 @@ private:
 //
 //				}
 //			}
-//			else if(m_counts[index1]->at(*i).second > opt::minCov){
+//			else if(m_counts.at(index1).at(*i).second > opt::minCov){
 //				type1 = HOM_CG;
 //			}
-//			if (m_counts[index2]->at(*i).first > opt::minCov) {
-//				if(m_counts[index2]->at(*i).second > opt::minCov){
+//			if (m_counts.at(index2).at(*i).first > opt::minCov) {
+//				if(m_counts.at(index2).at(*i).second > opt::minCov){
 //					type2 = HET;
 //					++hets2;
 //				}
@@ -598,7 +600,7 @@ private:
 //					type2 = HOM_AT;
 //				}
 //			}
-//			else if(m_counts[index2]->at(*i).second > opt::minCov){
+//			else if(m_counts.at(index2).at(*i).second > opt::minCov){
 //				type2 = HOM_CG;
 //			}
 //			if(type1 == HET && type2 == HET){
@@ -621,42 +623,42 @@ private:
 //		for (vector<unsigned>::const_iterator i = validIndexes.begin(); i != validIndexes.end();
 //				++i) {
 //			AlleleType type1 = UNKNOWN, type2 = UNKNOWN;
-//			if (m_counts[index1]->at(*i).first > opt::minCov) {
-//				if(m_counts[index1]->at(*i).second > opt::minCov){
+//			if (m_counts.at(index1).at(*i).first > opt::minCov) {
+//				if(m_counts.at(index1).at(*i).second > opt::minCov){
 //					type1 = HET;
-//					hets1 += m_counts[index1]->at(*i).first + m_counts[index1]->at(*i).second;
+//					hets1 += m_counts.at(index1).at(*i).first + m_counts.at(index1).at(*i).second;
 //				}
 //				else{
 //					type1 = HOM_AT;
 //				}
 //			}
-//			else if(m_counts[index1]->at(*i).second > opt::minCov){
+//			else if(m_counts.at(index1).at(*i).second > opt::minCov){
 //				type1 = HOM_CG;
 //			}
-//			if (m_counts[index2]->at(*i).first > opt::minCov) {
-//				if(m_counts[index2]->at(*i).second > opt::minCov){
+//			if (m_counts.at(index2).at(*i).first > opt::minCov) {
+//				if(m_counts.at(index2).at(*i).second > opt::minCov){
 //					type2 = HET;
-//					hets2 += m_counts[index2]->at(*i).first + m_counts[index2]->at(*i).second;
+//					hets2 += m_counts.at(index2).at(*i).first + m_counts.at(index2).at(*i).second;
 //				}
 //				else{
 //					type2 = HOM_AT;
 //				}
 //			}
-//			else if(m_counts[index2]->at(*i).second > opt::minCov){
+//			else if(m_counts.at(index2).at(*i).second > opt::minCov){
 //				type2 = HOM_CG;
 //			}
 //			if (type1 == HET && type2 == HET) {
-//				sharedHets += m_counts[index1]->at(*i).first
-//						+ m_counts[index1]->at(*i).second
-//						+ m_counts[index2]->at(*i).first
-//						+ m_counts[index2]->at(*i).second;
+//				sharedHets += m_counts.at(index1).at(*i).first
+//						+ m_counts.at(index1).at(*i).second
+//						+ m_counts.at(index2).at(*i).first
+//						+ m_counts.at(index2).at(*i).second;
 //			} else if ((type1 == HOM_AT && type2 == HOM_CG)
 //					|| (type1 == HOM_CG && type2 == HOM_AT)) {
-//				if(m_counts[index1]->at(*i).first > m_counts[index1]->at(*i).second){
-//					ibs0 += m_counts[index1]->at(*i).first + m_counts[index2]->at(*i).second;
+//				if(m_counts.at(index1).at(*i).first > m_counts.at(index1).at(*i).second){
+//					ibs0 += m_counts.at(index1).at(*i).first + m_counts.at(index2).at(*i).second;
 //				}
 //				else{
-//					ibs0 += m_counts[index1]->at(*i).second + m_counts[index2]->at(*i).first;
+//					ibs0 += m_counts.at(index1).at(*i).second + m_counts.at(index2).at(*i).first;
 //				}
 //			}
 //		}

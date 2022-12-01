@@ -44,6 +44,6 @@ ntsmVCF_LDADD = -lz
 
 ntsmVCF_SOURCES = ntSeqMatchVCF.cpp \
 	VCFConvert.hpp \
-	CompareCounts.hpp \
+	MultiCount.hpp \
 	Options.cpp Options.h \
 	Util.h

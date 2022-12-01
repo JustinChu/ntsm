@@ -21,8 +21,8 @@
 #include "vendor/tsl/robin_map.h"
 #include "vendor/tsl/robin_set.h"
 #include "vendor/KseqHashIterator.hpp"
-#include "vendor/concurrentqueue.h"
 #include "vendor/kseq_util.h"
+
 #ifndef KSEQ_INIT_NEW
 #define KSEQ_INIT_NEW
 #include "vendor/kseq.h"
