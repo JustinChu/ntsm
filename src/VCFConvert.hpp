@@ -125,6 +125,7 @@ public:
 				index++;
 			}
 		}
+#pragma omp parallel for
 		for(unsigned i = 0; i < m_sampleIDs.size(); ++i){
 			ofstream out(m_sampleIDs.at(i) + ".counts.txt");
 			counts.printCountsMax(i, out);
@@ -142,8 +143,8 @@ private:
 
 	pair<string,string> getSeqFromSite(string chr, size_t pos, char var){
 		unsigned chrIndex = m_chrIDs.at(chr);
-		char refStr[opt::window + 1] = {0};
-		char varStr[opt::window + 1] = {0};
+		char refStr[opt::window + 1];
+		char varStr[opt::window + 1];
 		size_t offset = pos - 1;
         size_t pos1 = ceil(offset - opt::window/ 2);
 		strncpy(refStr, &(m_ref.at(chrIndex).seq.s[pos1]), opt::window );
