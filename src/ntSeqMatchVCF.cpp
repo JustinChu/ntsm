@@ -28,7 +28,7 @@ void printVersion() {
 }
 
 void printHelpDialog() {
-	const char dialog[] =
+	const string dialog =
 			"Usage: " PROGRAM " -s [FASTA] -r [FASTA] [VCF]\n"
 			"Converts a multi vcf file to a set of counts files.\n"
 			"  -t, --threads = INT    Number of threads to run.[1]\n"
@@ -38,7 +38,7 @@ void printHelpDialog() {
 			"                         k-merize. [required]\n"
 			"  -k, --kmer = INT       k-mer size used. [19]\n"
 			"  -m, --multi = INT      Multiply counts by this.[1]\n"
-			"  -w, --window = INT     Window size used. " + to_string(opt::window) + "\n"
+			"  -w, --window = INT     Window size used. [" + to_string(opt::window) + "]\n"
 			"  -r, --ref = STR        Reference fasta. [required]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
