@@ -14,7 +14,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 w=31 #window size to consider sequences in this region
 k=19 #kmer size used in window region
 t=4 #threads for any subprocess or tools
-n=0 #number of sub k-mers to allow
+n=0 #number of sub k-mers to allow to be missing
 
 #------------------------------------------------------------
 # meta rules
