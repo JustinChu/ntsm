@@ -38,7 +38,7 @@ void printHelpDialog() {
 			"                         k-merize. [required]\n"
 			"  -k, --kmer = INT       k-mer size used. [19]\n"
 			"  -m, --multi = INT      Multiply counts by this.[1]\n"
-			"  -w, --window = INT     Window size used. [25]\n"
+			"  -w, --window = INT     Window size used. " + to_string(opt::window) + "\n"
 			"  -r, --ref = STR        Reference fasta. [required]\n"
 			"  -h, --help             Display this dialog.\n"
 			"  -v, --verbose          Display verbose output.\n"
