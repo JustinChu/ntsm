@@ -63,7 +63,7 @@ $(name)_snps.vcf: $(vcf)
 %.sai: %_subKmers.fa $(name)_reference.fa %_reference.fa.ann %_reference.fa.amb %_reference.fa.bwt %_reference.fa.pac %_reference.fa.sa
 	bwa aln -t $(t) -n 1 $(name)_reference.fa $< > $@
 
-%.sam: %.sai %_subKmers.fa $(name)_reference.fa
+%.sam: %.sai %_subKmers.fa %_reference.fa
 	bwa samse $(name)_reference.fa $< $(name)_subKmers.fa > $@
 
 #filter repetitive sub k-mers & create concatenated sub k-mer fasta files
