@@ -52,15 +52,15 @@ $(name)_snps.vcf: $(vcf)
 	ln -s $< $@
 
 #index reference file
-%.ann %.amb %.bwt %.pac %.sa : %.fa
-	samtools index $<
+%.fa.ann %.fa.amb %.fa.bwt %.fa.pac %.fa.sa: %.fa
+	bwa index $<
 
 #create snp sub k-mer fasta files
 %_subKmers.fa: %_snps.vcf %_reference.fa
 	python $(ROOT_DIR)/extractSNPsfromVCF.py -v $< -f $*_reference.fa -s $(k) -k $(w) -p test > $@
 
 #check for k-mer uniqueness via alignment
-%.sai: %_subKmers.fa $(name)_reference.fa %_reference.fa.ann %_reference.fa.amb %_reference.fa.bwt %_reference.fa.pac %_reference.fa.sa
+%.sai: %_subKmers.fa %_reference.fa %_reference.fa.ann %_reference.fa.amb %_reference.fa.bwt %_reference.fa.pac %_reference.fa.sa
 	bwa aln -t $(t) -n 1 $(name)_reference.fa $< > $@
 
 %.sam: %.sai %_subKmers.fa %_reference.fa
