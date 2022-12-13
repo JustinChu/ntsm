@@ -97,14 +97,15 @@ public:
 				continue;
 			}
 			char var = item.at(0);
+			pair<string,string> seqs = getSeqFromSite(chr, loc, var);
 
 			//skip 4 columns
 			for (unsigned i = 0; i < 4; ++i) {
 				getline(ss, item, '\t');
 			}
 
-			//ref, var
-			pair<string,string> seqs = getSeqFromSite(chr, loc, var);
+//			cout << seqs.first << endl;
+//			cout << seqs.second << endl;
 			unsigned index = 0;
 			//first pass find bad k-mers
 			//second pass stream calculation
@@ -118,7 +119,7 @@ public:
 							seqs.second.length(), opt::multi);
 					counts.insertCount(index, seqs.first.c_str(),
 							seqs.first.length(), opt::multi);
-				} else if (item == "1|0") {
+				} else if (item == "1|1") {
 					counts.insertCount(index, seqs.second.c_str(),
 							seqs.second.length(), opt::multi * 2);
 				}
