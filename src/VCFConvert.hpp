@@ -104,8 +104,6 @@ public:
 				getline(ss, item, '\t');
 			}
 
-//			cout << seqs.first << endl;
-//			cout << seqs.second << endl;
 			unsigned index = 0;
 			//first pass find bad k-mers
 			//second pass stream calculation
@@ -125,6 +123,7 @@ public:
 				}
 				index++;
 			}
+
 		}
 #pragma omp parallel for
 		for(unsigned i = 0; i < m_sampleIDs.size(); ++i){
@@ -146,11 +145,12 @@ private:
 		unsigned chrIndex = m_chrIDs.at(chr);
 		char refStr[opt::window + 1];
 		char varStr[opt::window + 1];
-		size_t offset = pos - 1;
-        size_t pos1 = ceil(offset - opt::window/ 2);
-		strncpy(refStr, &(m_ref.at(chrIndex).seq.s[pos1]), opt::window );
-		strncpy(varStr, &(m_ref.at(chrIndex).seq.s[pos1]), opt::window );
+        size_t offset = pos - opt::window/2 - 1;
+		strncpy(refStr, &(m_ref.at(chrIndex).seq.s[offset]), opt::window );
+		strncpy(varStr, &(m_ref.at(chrIndex).seq.s[offset]), opt::window );
 		varStr[opt::window/2] = var;
+		varStr[opt::window] = '\0';
+		refStr[opt::window] = '\0';
 		return(std::make_pair(string(refStr), string(varStr)));
 	}
 };
