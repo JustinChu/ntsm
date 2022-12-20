@@ -34,8 +34,9 @@ using namespace std;
 class MultiCount {
 public:
 
-	typedef uint16_t AlleleID;
+	typedef uint16_t SampleID;
 	typedef uint64_t HashedKmer;
+	static const double UNDEF = numeric_limits<double>::max();
 
 //	MultiCount(const vector<string> &sampleIDs) : m_sampleIDs(sampleIDs){
 	MultiCount(size_t size){
@@ -50,6 +51,9 @@ public:
 			if (m_kmerToHash.find(*itr) != m_kmerToHash.end()) {
 #pragma omp atomic update
 				(*m_counts[m_kmerToHash.at(*itr)])[index] += multi;
+				if((*m_counts[m_kmerToHash.at(*itr)])[index] > multi){
+					cerr << "Warning double count detected: " << seqs << endl;
+				}
 			}
 		}
 	}
@@ -97,11 +101,51 @@ public:
 		}
 	}
 
+	/*
+	 * SampleID -> max(allele1)/(max(allele1)+max(allele2))
+	 * If there is no count (undefined), UNDEF is set
+	 */
+	vector<vector<double>> getMatrix() {
+		vector<vector<double>> mat(m_counts.size(),
+				vector<double>(m_alleleIDs.size()));
+
+		for (size_t i = 0; i < m_counts.size(); ++i) {
+			for (size_t j = 0; j < m_alleleIDs.size(); ++j) {
+				const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef.at(j);
+				const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar.at(j);
+				unsigned maxCountREF = 0;
+				unsigned maxCountVAR = 0;
+				for (size_t k = 0; k < allele1.size(); ++k) {
+					unsigned freqAlle = m_counts.at(
+							m_kmerToHash.at(allele1.at(j)))->at(i);
+					if (maxCountREF < freqAlle) {
+						maxCountREF = freqAlle;
+					}
+				}
+				for (size_t k = 0; k < allele2.size(); ++k) {
+					unsigned freqAlle = m_counts.at(
+							m_kmerToHash.at(allele2.at(j)))->at(i);
+					if (maxCountVAR < freqAlle) {
+						maxCountVAR = freqAlle;
+					}
+				}
+				unsigned denom = maxCountREF + maxCountVAR;
+				if (denom == 0) {
+					mat[i][j] = UNDEF;
+				}
+				else{
+					mat[i][j] = double(maxCountREF) / double(denom);
+				}
+			}
+		}
+		return(mat);
+	}
+
 private:
-	tsl::robin_map<HashedKmer, size_t> m_kmerToHash;
-	vector<unique_ptr<vector<uint8_t>>> m_counts; //hashvalue->sample->counts
-	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef;
-	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar;
+	tsl::robin_map<HashedKmer, SampleID> m_kmerToHash; //hashvalue->sample
+	vector<unique_ptr<vector<uint8_t>>> m_counts; //sample->counts
+	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef; //alleleID_ref->hashvalue
+	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar; //alleleID_var->hashvalue
 	vector<string> m_alleleIDs;
 //	const vector<string> &m_sampleIDs;
 
