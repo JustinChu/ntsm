@@ -80,7 +80,7 @@ public:
 				}
 			}
 		}
-		MultiCount counts(m_sampleIDs.size());
+		MultiCount counts(m_sampleIDs);
 		//read remainder
 		while (getline(fh, line)) {
 			std::stringstream ss;
@@ -131,6 +131,9 @@ public:
 			counts.printCountsMax(i, out);
 			out.close();
 		}
+		ofstream out("matrix.tsv");
+		ofstream centerFile("center.txt");
+		counts.printNormMatrix(out, centerFile);
 	}
 
 	~VCFConvert() {

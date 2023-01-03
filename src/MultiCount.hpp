@@ -36,24 +36,29 @@ public:
 
 	typedef uint16_t SampleID;
 	typedef uint64_t HashedKmer;
-	static const double UNDEF = numeric_limits<double>::max();
+	static constexpr double UNDEF = numeric_limits<double>::max();
 
-//	MultiCount(const vector<string> &sampleIDs) : m_sampleIDs(sampleIDs){
-	MultiCount(size_t size){
+	MultiCount(const vector<string> &sampleIDs) :
+			m_sampleIDs(sampleIDs) {
+//	MultiCount(size_t size){
 		//read in fasta files
 		//generate hash table
-		initCountsHash(size);
+		initCountsHash(sampleIDs.size());
 	}
 
 	void insertCount(unsigned index, const char *seqs, uint64_t seql, unsigned multi = 1) {
 		for (KseqHashIterator itr(seqs, seql, opt::k); itr != itr.end();
 				++itr) {
 			if (m_kmerToHash.find(*itr) != m_kmerToHash.end()) {
+//				if ((*m_counts[m_kmerToHash.at(*itr)]).at(index) > 0) {
+//					cerr << "Warning double count detected: " << index << " "
+//							<< to_string(
+//									(*m_counts[m_kmerToHash.at(*itr)]).at(
+//											index)) << " " << itr.getPos()
+//							<< " " << seqs << endl;
+//				}
 #pragma omp atomic update
 				(*m_counts[m_kmerToHash.at(*itr)])[index] += multi;
-				if((*m_counts[m_kmerToHash.at(*itr)])[index] > multi){
-					cerr << "Warning double count detected: " << seqs << endl;
-				}
 			}
 		}
 	}
@@ -102,43 +107,63 @@ public:
 	}
 
 	/*
-	 * SampleID -> max(allele1)/(max(allele1)+max(allele2))
-	 * If there is no count (undefined), UNDEF is set
+	 * Prints centered and normalized matrix intended for PCA analysis
+	 * Converts missing values to average value
+	 * Missing values are not use in calculation
 	 */
-	vector<vector<double>> getMatrix() {
-		vector<vector<double>> mat(m_counts.size(),
-				vector<double>(m_alleleIDs.size()));
+	void printNormMatrix(ostream &out, ostream &centerFile) {
+		out << "alleleID";
+		//print allele ids
+		for (unsigned i = 0; i < m_sampleIDs.size(); ++i) {
+			out << "\t" << m_sampleIDs[i];
+		}
+		out << endl;
 
-		for (size_t i = 0; i < m_counts.size(); ++i) {
-			for (size_t j = 0; j < m_alleleIDs.size(); ++j) {
-				const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef.at(j);
-				const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar.at(j);
+		for (unsigned i = 0; i < m_alleleIDs.size(); ++i) {
+			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef.at(i);
+			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar.at(i);
+			vector<double> values(m_sampleIDs.size());
+			double sum = 0;
+			unsigned size = 0;
+			for (size_t j = 0; j < m_sampleIDs.size(); ++j) {
 				unsigned maxCountREF = 0;
 				unsigned maxCountVAR = 0;
 				for (size_t k = 0; k < allele1.size(); ++k) {
 					unsigned freqAlle = m_counts.at(
-							m_kmerToHash.at(allele1.at(j)))->at(i);
+							m_kmerToHash.at(allele1.at(k)))->at(j);
 					if (maxCountREF < freqAlle) {
 						maxCountREF = freqAlle;
 					}
 				}
 				for (size_t k = 0; k < allele2.size(); ++k) {
 					unsigned freqAlle = m_counts.at(
-							m_kmerToHash.at(allele2.at(j)))->at(i);
+							m_kmerToHash.at(allele2.at(k)))->at(j);
 					if (maxCountVAR < freqAlle) {
 						maxCountVAR = freqAlle;
 					}
 				}
 				unsigned denom = maxCountREF + maxCountVAR;
 				if (denom == 0) {
-					mat[i][j] = UNDEF;
-				}
-				else{
-					mat[i][j] = double(maxCountREF) / double(denom);
+					values[j] = UNDEF;
+				} else {
+					values[j] = double(maxCountREF) / double(denom);
+					++size;
+					sum += values.at(j);
 				}
 			}
+			out << m_alleleIDs.at(i);
+			double center = sum / double(size);
+			for (unsigned j = 0; j < values.size(); ++j) {
+				if (values.at(j) == UNDEF) {
+					out << "\t0";
+				} else {
+					out << "\t" << to_string(values.at(j) - center);
+				}
+			}
+//			centerFile << m_alleleIDs[i];
+			centerFile << center << endl;
+			out << endl;
 		}
-		return(mat);
 	}
 
 private:
@@ -147,7 +172,7 @@ private:
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef; //alleleID_ref->hashvalue
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar; //alleleID_var->hashvalue
 	vector<string> m_alleleIDs;
-//	const vector<string> &m_sampleIDs;
+	const vector<string> &m_sampleIDs;
 
 	void initCountsHash(size_t size){
 		gzFile fp = gzopen(opt::snp.c_str(), "r");
