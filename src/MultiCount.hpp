@@ -34,7 +34,7 @@ using namespace std;
 class MultiCount {
 public:
 
-	typedef uint16_t SampleID;
+	typedef uint32_t CountIndex;
 	typedef uint64_t HashedKmer;
 	static constexpr double UNDEF = numeric_limits<double>::max();
 
@@ -46,19 +46,30 @@ public:
 		initCountsHash(sampleIDs.size());
 	}
 
-	void insertCount(unsigned index, const char *seqs, uint64_t seql, unsigned multi = 1) {
+	void insertCount(unsigned sampleIndex, const char *seqs, uint64_t seql, unsigned multi = 1) {
 		for (KseqHashIterator itr(seqs, seql, opt::k); itr != itr.end();
 				++itr) {
+			//collapse duplicate counts
 			if (m_kmerToHash.find(*itr) != m_kmerToHash.end()) {
-//				if ((*m_counts[m_kmerToHash.at(*itr)]).at(index) > 0) {
-//					cerr << "Warning double count detected: " << index << " "
-//							<< to_string(
-//									(*m_counts[m_kmerToHash.at(*itr)]).at(
-//											index)) << " " << itr.getPos()
-//							<< " " << seqs << endl;
-//				}
+				uint8_t oldValue;
+				do {
+					oldValue = m_counts[m_kmerToHash.at(*itr)]->at(sampleIndex);
+					if (oldValue > 0) {
+						if (oldValue != multi) {
+							cerr
+									<< "Warning: Inconsistent k-mer counts, check for overlapping sites."
+									<< endl;
+						}
+						break;
+					}
+				} while (!__sync_bool_compare_and_swap(
+						&((*m_counts[m_kmerToHash.at(*itr)])[sampleIndex]),
+						oldValue, multi));
+
+				if (m_counts[m_kmerToHash.at(*itr)]->at(sampleIndex) > 0) {
+				}
 #pragma omp atomic update
-				(*m_counts[m_kmerToHash.at(*itr)])[index] += multi;
+				(*m_counts[m_kmerToHash.at(*itr)])[sampleIndex] += multi;
 			}
 		}
 	}
@@ -167,8 +178,8 @@ public:
 	}
 
 private:
-	tsl::robin_map<HashedKmer, SampleID> m_kmerToHash; //hashvalue->sample
-	vector<unique_ptr<vector<uint8_t>>> m_counts; //sample->counts
+	tsl::robin_map<HashedKmer, CountIndex> m_kmerToHash; //kmer->kmerPos
+	vector<unique_ptr<vector<uint8_t>>> m_counts; //kmerPos->counts[sampleIndex]
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef; //alleleID_ref->hashvalue
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar; //alleleID_var->hashvalue
 	vector<string> m_alleleIDs;
@@ -188,7 +199,6 @@ private:
 			kseq_t *seq = kseq_init(fp);
 			int l = kseq_read(seq);
 			unsigned entryNum = 0;
-			unsigned totalCount = 0;
 			while (l >= 0) {
 				if (entryNum % 2 == 0) {
 					unsigned index = entryNum / 2;
@@ -208,11 +218,10 @@ private:
 							dupes.insert(hv);
 						} else {
 							m_alleleIDToKmerRef[index]->emplace_back(hv);
-							m_kmerToHash[hv] = totalCount;
+							m_kmerToHash[hv] = m_counts.size();
 							m_counts.emplace_back(
 									unique_ptr<vector<uint8_t>>(
 											new vector<uint8_t>(size, 0)));
-							totalCount++;
 						}
 					}
 					m_alleleIDs.emplace_back(seq->name.s);
@@ -234,11 +243,10 @@ private:
 							dupes.insert(hv);
 						} else {
 							m_alleleIDToKmerVar[index]->emplace_back(hv);
-							m_kmerToHash[hv] = totalCount;
+							m_kmerToHash[hv] = m_counts.size();
 							m_counts.emplace_back(
 									unique_ptr<vector<uint8_t>>(
 											new vector<uint8_t>(size, 0)));
-							totalCount++;
 						}
 					}
 				}

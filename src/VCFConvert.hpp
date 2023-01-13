@@ -91,6 +91,7 @@ public:
 			getline(ss, item, '\t');
 			size_t loc = stoi(item);
 			getline(ss, item, '\t'); //skip
+			string rsID = item;
 			getline(ss, item, '\t'); //skip
 			getline(ss, item, '\t');
 			if(item.size() != 1){ //if vcf entry isn't a snp
@@ -104,24 +105,24 @@ public:
 				getline(ss, item, '\t');
 			}
 
-			unsigned index = 0;
+			unsigned sampleIndex = 0;
 			//first pass find bad k-mers
 			//second pass stream calculation
 			//matrix -> seperate
 			while (getline(ss, item, '\t')) {
 				if (item == "0|0") {
-					counts.insertCount(index, seqs.first.c_str(),
+					counts.insertCount(sampleIndex, seqs.first.c_str(),
 							seqs.first.length(), opt::multi * 2);
 				} else if (item == "0|1" || item == "1|0") {
-					counts.insertCount(index, seqs.second.c_str(),
+					counts.insertCount(sampleIndex, seqs.second.c_str(),
 							seqs.second.length(), opt::multi);
-					counts.insertCount(index, seqs.first.c_str(),
+					counts.insertCount(sampleIndex, seqs.first.c_str(),
 							seqs.first.length(), opt::multi);
 				} else if (item == "1|1") {
-					counts.insertCount(index, seqs.second.c_str(),
+					counts.insertCount(sampleIndex, seqs.second.c_str(),
 							seqs.second.length(), opt::multi * 2);
 				}
-				index++;
+				sampleIndex++;
 			}
 
 		}
