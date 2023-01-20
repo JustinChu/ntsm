@@ -125,7 +125,7 @@ public:
 	 * Missing values are not use in calculation
 	 * DOES NOT center the values to save space
 	 * Assumes PCA algorithm will center the data
-	 * If needed, center.txt can be used to center data
+	 * If needed, centerFile can be used to center data
 	 */
 	void printNormMatrix(ostream &out, ostream &centerFile) {
 		out << "alleleID";
