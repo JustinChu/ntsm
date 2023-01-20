@@ -15,6 +15,9 @@
 #include <stdio.h>
 #include <zlib.h>
 #include <iostream>
+#include <iomanip>
+#include <limits>
+#include <numbers>
 
 #include "Options.h"
 
@@ -43,7 +46,7 @@ public:
 //	MultiCount(size_t size){
 		//read in fasta files
 		//generate hash table
-		initCountsHash(sampleIDs.size());
+		initCountsHash();
 	}
 
 	void insertCount(unsigned sampleIndex, const char *seqs, uint64_t seql, unsigned multi = 1) {
@@ -53,23 +56,18 @@ public:
 			if (m_kmerToHash.find(*itr) != m_kmerToHash.end()) {
 				uint8_t oldValue;
 				do {
-					oldValue = m_counts[m_kmerToHash.at(*itr)]->at(sampleIndex);
+					oldValue = m_matCounts[m_kmerToHash.size() * sampleIndex
+							+ m_kmerToHash.at(*itr)];
 					if (oldValue > 0) {
 						if (oldValue != multi) {
-							cerr
-									<< "Warning: Inconsistent k-mer counts, check for overlapping sites."
+							cerr << "Warning: Inconsistent k-mer counts, check for overlapping sites. "
 									<< endl;
 						}
 						break;
 					}
 				} while (!__sync_bool_compare_and_swap(
-						&((*m_counts[m_kmerToHash.at(*itr)])[sampleIndex]),
-						oldValue, multi));
-
-				if (m_counts[m_kmerToHash.at(*itr)]->at(sampleIndex) > 0) {
-				}
-#pragma omp atomic update
-				(*m_counts[m_kmerToHash.at(*itr)])[sampleIndex] += multi;
+						&m_matCounts[m_kmerToHash.size() * sampleIndex
+								+ m_kmerToHash.at(*itr)], oldValue, multi));
 			}
 		}
 	}
@@ -85,16 +83,20 @@ public:
 			unsigned maxCountVAR = 0;
 			unsigned countSumAT = 0;
 			unsigned countSumCG = 0;
-			for(size_t j = 0; j < allele1.size() ; ++j) {
-				unsigned freqAlle = m_counts.at(m_kmerToHash.at(allele1.at(j)))->at(index);
-				if(maxCountREF < freqAlle){
+			for (size_t j = 0; j < allele1.size(); ++j) {
+				unsigned freqAlle = m_matCounts.at(
+						m_kmerToHash.size() * index
+								+ m_kmerToHash.at(allele1.at(j)));
+				if (maxCountREF < freqAlle) {
 					maxCountREF = freqAlle;
 				}
 				countSumAT += freqAlle;
 			}
-			for(size_t j = 0; j < allele2.size() ; ++j) {
-				unsigned freqAlle = m_counts.at(m_kmerToHash.at(allele2.at(j)))->at(index);
-				if(maxCountVAR < freqAlle){
+			for (size_t j = 0; j < allele2.size(); ++j) {
+				unsigned freqAlle = m_matCounts.at(
+						m_kmerToHash.size() * index
+								+ m_kmerToHash.at(allele2.at(j)));
+				if (maxCountVAR < freqAlle) {
 					maxCountVAR = freqAlle;
 				}
 				countSumCG += freqAlle;
@@ -118,9 +120,12 @@ public:
 	}
 
 	/*
-	 * Prints centered and normalized matrix intended for PCA analysis
+	 * Prints matrix intended for PCA analysis
 	 * Converts missing values to average value
 	 * Missing values are not use in calculation
+	 * DOES NOT center the values to save space
+	 * Assumes PCA algorithm will center the data
+	 * If needed, center.txt can be used to center data
 	 */
 	void printNormMatrix(ostream &out, ostream &centerFile) {
 		out << "alleleID";
@@ -134,21 +139,21 @@ public:
 			const vector<uint64_t> &allele1 = *m_alleleIDToKmerRef.at(i);
 			const vector<uint64_t> &allele2 = *m_alleleIDToKmerVar.at(i);
 			vector<double> values(m_sampleIDs.size());
-			double sum = 0;
-			unsigned size = 0;
+			double sum = 0.0;
+			uint64_t size = 0;
 			for (size_t j = 0; j < m_sampleIDs.size(); ++j) {
 				unsigned maxCountREF = 0;
 				unsigned maxCountVAR = 0;
 				for (size_t k = 0; k < allele1.size(); ++k) {
-					unsigned freqAlle = m_counts.at(
-							m_kmerToHash.at(allele1.at(k)))->at(j);
+					unsigned freqAlle = m_matCounts.at(m_kmerToHash.size() * j +
+							m_kmerToHash.at(allele1.at(k)));
 					if (maxCountREF < freqAlle) {
 						maxCountREF = freqAlle;
 					}
 				}
 				for (size_t k = 0; k < allele2.size(); ++k) {
-					unsigned freqAlle = m_counts.at(
-							m_kmerToHash.at(allele2.at(k)))->at(j);
+					unsigned freqAlle = m_matCounts.at(m_kmerToHash.size() * j +
+							m_kmerToHash.at(allele2.at(k)));
 					if (maxCountVAR < freqAlle) {
 						maxCountVAR = freqAlle;
 					}
@@ -158,36 +163,39 @@ public:
 					values[j] = UNDEF;
 				} else {
 					values[j] = double(maxCountREF) / double(denom);
-					++size;
 					sum += values.at(j);
 				}
+				++size;
 			}
 			out << m_alleleIDs.at(i);
-			double center = sum / double(size);
+			long double sizeFloat = size;
+			long double center = sum / sizeFloat;
 			for (unsigned j = 0; j < values.size(); ++j) {
 				if (values.at(j) == UNDEF) {
-					out << "\t0";
+					//maximum precision can be set higher (19) at the cost of space
+					out << "\t" << std::setprecision(19) << center;
 				} else {
-					out << "\t" << to_string(values.at(j) - center);
+					out << "\t" << values.at(j);
 				}
 			}
 //			centerFile << m_alleleIDs[i];
-			centerFile << center << endl;
+			centerFile  << std::setprecision(19) << center << endl;
 			out << endl;
 		}
 	}
 
 private:
 	tsl::robin_map<HashedKmer, CountIndex> m_kmerToHash; //kmer->kmerPos
-	vector<unique_ptr<vector<uint8_t>>> m_counts; //kmerPos->counts[sampleIndex]
+	vector<uint8_t> m_matCounts; //kmerPos+index->counts[sampleIndex]
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef; //alleleID_ref->hashvalue
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar; //alleleID_var->hashvalue
 	vector<string> m_alleleIDs;
 	const vector<string> &m_sampleIDs;
 
-	void initCountsHash(size_t size){
+	void initCountsHash(){
 		gzFile fp = gzopen(opt::snp.c_str(), "r");
 		tsl::robin_set<uint64_t> dupes;
+		CountIndex kmerCount = 0;
 		if (fp == Z_NULL) {
 			std::cerr << "file " << opt::snp.c_str() << " cannot be opened"
 					<< std::endl;
@@ -202,7 +210,6 @@ private:
 			while (l >= 0) {
 				if (entryNum % 2 == 0) {
 					unsigned index = entryNum / 2;
-					assert(index == m_alleleIDToKmerRef.size());
 					m_alleleIDToKmerRef.emplace_back(
 							unique_ptr<vector<uint64_t>>(
 									new vector<uint64_t>()));
@@ -218,16 +225,12 @@ private:
 							dupes.insert(hv);
 						} else {
 							m_alleleIDToKmerRef[index]->emplace_back(hv);
-							m_kmerToHash[hv] = m_counts.size();
-							m_counts.emplace_back(
-									unique_ptr<vector<uint8_t>>(
-											new vector<uint8_t>(size, 0)));
+							m_kmerToHash[hv] = kmerCount++;
 						}
 					}
 					m_alleleIDs.emplace_back(seq->name.s);
 				} else {
 					unsigned index = entryNum / 2;
-					assert(index == m_alleleIDToKmerVar.size());
 					m_alleleIDToKmerVar.emplace_back(
 							unique_ptr<vector<uint64_t>>(
 									new vector<uint64_t>()));
@@ -243,10 +246,7 @@ private:
 							dupes.insert(hv);
 						} else {
 							m_alleleIDToKmerVar[index]->emplace_back(hv);
-							m_kmerToHash[hv] = m_counts.size();
-							m_counts.emplace_back(
-									unique_ptr<vector<uint8_t>>(
-											new vector<uint8_t>(size, 0)));
+							m_kmerToHash[hv] = kmerCount++;
 						}
 					}
 				}
@@ -256,6 +256,8 @@ private:
 			kseq_destroy(seq);
 			gzclose(fp);
 		}
+		m_matCounts = vector<uint8_t>(kmerCount*m_sampleIDs.size(), 0);
+
 		//TODO remove total count indexes?
 		if (!opt::dupes) {
 			//remove dupes
