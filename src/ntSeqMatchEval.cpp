@@ -148,15 +148,6 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
-		case 'g': {
-			stringstream convert(optarg);
-			if (!(convert >> opt::genomeSize)) {
-				cerr << "Error - Invalid parameter g: "
-						<< optarg << endl;
-				return 0;
-			}
-			break;
-		}
 		case 'p': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::pca)) {
