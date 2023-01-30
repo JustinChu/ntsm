@@ -29,6 +29,9 @@ string summary = "";
 float siteCovThreshold = 0.75;
 double covThresh = std::numeric_limits<double>::max();
 
+string pca = ""
+string norm = ""
+
 double scoreThresh = 0.5;
 double covSkew = 0.2;
 bool all = false;

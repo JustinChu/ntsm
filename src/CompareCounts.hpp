@@ -13,6 +13,7 @@
 #include <iostream>
 #include <memory>
 #include <math.h>
+#include <numeric>
 
 #include "vendor/kfunc.c"
 #include "vendor/tsl/robin_map.h"
@@ -152,6 +153,82 @@ public:
 //			}
 //		}
 //	}
+
+	void projectPCs() {
+		//load in normalization values
+		vector<long double> normVals;
+		{
+			ifstream fh(opt::norm);
+			string line;
+			if (fh.is_open()) {
+				while (getline(fh, line)) {
+					stringstream ss(line);
+					long double value;
+					ss >> value;
+					normVals.emplace_back(value);
+				}
+			}
+		}
+
+		//load in rotational components
+		//log number of components found
+		unsigned compNum = 0;
+		ifstream fh(opt::pca);
+		string line;
+		if (fh.is_open()) {
+			//skip first line
+			getline(fh, line);
+			stringstream ss(line);
+			string val;
+			//skip first line
+			ss >> val;
+			ss >> val;
+			//count number of components
+			while(val){
+				ss >> val;
+				++compNum;
+			}
+		}
+		vector<vector<long double>> rotVals(compNum, vector<long double>(normVals.size(),0));
+		{
+			ifstream fh(opt::pca);
+			string line;
+			if (fh.is_open()) {
+				//skip first line
+				getline(fh, line);
+				unsigned index = 0;
+				while (getline(fh, line)) {
+					stringstream ss(line);
+					//skip rsid
+					string rsID;
+					ss >> rsID;
+					for (unsigned i = 0; 0 < compNum; ++i) {
+						ss >> rotVals[i][index];
+					}
+					++index;
+				}
+			}
+		}
+		//for each sample
+		for (unsigned i = 0; i < m_counts.size(); ++i) {
+			vector<double> pcs(compNum,0);
+			//normalize
+			vector<double> normVals(m_counts.at(i).size(), 0.0);
+			for (unsigned j = 0; j < normVals.size(); ++j) {
+				const pair<unsigned, unsigned> &tempCounts = m_counts.at(i).at(
+						j);
+				normVals[j] = (double(tempCounts.first)
+						/ double(tempCounts.first + tempCounts.second))
+						- normVals[j];
+			}
+			//compute dot product for each PC
+			for (unsigned j = 0; 0 < compNum; ++j) {
+				pcs[j] = inner_product(normVals.begin(), normVals.end(), rotVals.at(j).begin(), 0);
+			}
+			//load into datastructure
+
+		}
+	}
 
 	void computeScore() {
 		vector<double> cov(m_totalCounts.size(),0);

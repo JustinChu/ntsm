@@ -20,6 +20,9 @@ extern string summary;
 extern float siteCovThreshold;
 extern double covThresh;
 
+extern string norm;
+extern string pca;
+
 extern double scoreThresh;
 extern double covSkew;
 extern bool all;

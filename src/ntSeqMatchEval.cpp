@@ -38,6 +38,9 @@ void printHelpDialog(){
 	"  -s, --score_thresh = FLOAT Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
 	"  -a, --all                  Output results of all tests, not just those that pass\n"
 	"                             the threshold.\n"
+	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
+	"                             set of rotational values from a PCA.\n"
+	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
 	"  -c, --min_cov = INT        Keep only sites with this coverage and above. ["+ to_string(opt::minCov)+"]\n"
 	"  -w, --skew = FLOAT         Divides the score by coverage. Formula: (cov1*cov2)^skew\n"
 	"                             Set to zero for no skew. ["+ to_string(opt::genomeSize)+"]\n"
@@ -71,12 +74,14 @@ int main(int argc, char *argv[])
 		"genome_size", required_argument, NULL, 'g' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"help", no_argument, NULL, 'h' }, {
+	    "pca", required_argument, NULL, 'p' }, {
+		"norm", required_argument, NULL, 'n' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
 		"verbose", no_argument, NULL, 'v' }, {
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -143,8 +148,31 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
-		case 'v': {
-			opt::verbose++;
+		case 'g': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::genomeSize)) {
+				cerr << "Error - Invalid parameter g: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'p': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::pca)) {
+				cerr << "Error - Invalid parameter p: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'n': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::norm)) {
+				cerr << "Error - Invalid parameter n: "
+						<< optarg << endl;
+				return 0;
+			}
 			break;
 		}
 		case '?': {
