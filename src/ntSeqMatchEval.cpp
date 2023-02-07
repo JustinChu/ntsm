@@ -41,6 +41,7 @@ void printHelpDialog(){
 	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
 	"                             set of rotational values from a PCA.\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
+	"                             [required]\n"
 	"  -c, --min_cov = INT        Keep only sites with this coverage and above. ["+ to_string(opt::minCov)+"]\n"
 	"  -w, --skew = FLOAT         Divides the score by coverage. Formula: (cov1*cov2)^skew\n"
 	"                             Set to zero for no skew. ["+ to_string(opt::genomeSize)+"]\n"
@@ -166,6 +167,10 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
+		case 'v': {
+			opt::verbose++;
+			break;
+		}
 		case '?': {
 			die = true;
 			break;
@@ -192,6 +197,16 @@ int main(int argc, char *argv[])
 	//Check needed options
 	if (inputFiles.size() == 0) {
 		cerr << "Error: Need Input File" << endl;
+		die = true;
+	}
+
+	if (!Util::fexists(opt::norm)) {
+		cerr << "Error: Need normalization file" << endl;
+		die = true;
+	}
+
+	if (!Util::fexists(opt::pca)) {
+		cerr << "Error: Need rotational PCA file" << endl;
 		die = true;
 	}
 

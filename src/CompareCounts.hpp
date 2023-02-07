@@ -17,6 +17,8 @@
 
 #include "vendor/kfunc.c"
 #include "vendor/tsl/robin_map.h"
+#include "vendor/nanoflann.hpp"
+#include "KDTreeUtil.h"
 
 using namespace std;
 
@@ -28,6 +30,9 @@ public:
 					vector<uint64_t>(filenames.size(), 0)), m_kmerSize(
 					vector<unsigned>(filenames.size(), 0)), m_totalCounts(
 					vector<uint64_t>(filenames.size(), 0)) {
+		if(opt::verbose > 0){
+			cerr << "Reading count files" << endl;
+		}
 		//read first file twice to init vectors
 		{
 			ifstream fh(m_filenames.at(0));
@@ -42,7 +47,7 @@ public:
 						getline(ss, item, '\t');
 						if (line.at(0) != '#') {
 							string locusID = item;
-							sampleIDs[locusID] = count++;
+							m_sampleIDs[locusID] = count++;
 							getline(ss, item, '\t');
 							getline(ss, item, '\t');
 
@@ -61,6 +66,10 @@ public:
 
 #pragma omp parallel for
 		for (unsigned i = 0; i < m_filenames.size(); ++i) {
+			if(opt::verbose > 1){
+#pragma omp critical
+				cerr << "Reading: "<< m_filenames.at(i) << endl;
+			}
 			ifstream fh(m_filenames.at(i));
 			string line;
 			if (fh.is_open()) {
@@ -82,18 +91,20 @@ public:
 							string locusID = item;
 							//locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n
 							getline(ss, item, '\t');
-							m_counts[i][sampleIDs.at(locusID)] = loadPair(ss,
+							m_counts[i][m_sampleIDs.at(locusID)] = loadPair(ss,
 									item);
-							m_totalCounts[i] += m_counts[i][sampleIDs.at(
+							m_totalCounts[i] += m_counts[i][m_sampleIDs.at(
 									locusID)].first
-									+ m_counts[i][sampleIDs.at(locusID)].second;
-							m_sum[i][sampleIDs.at(locusID)] = loadPair(ss,
+									+ m_counts[i][m_sampleIDs.at(locusID)].second;
+							m_sum[i][m_sampleIDs.at(locusID)] = loadPair(ss,
 									item);
 						}
 					}
 				}
 			}
 		}
+		//populate kdtree
+		projectPCs();
 	}
 
 //	void runLogLikelihood() {
@@ -154,83 +165,13 @@ public:
 //		}
 //	}
 
-	void projectPCs() {
-		//load in normalization values
-		vector<long double> normVals;
-		{
-			ifstream fh(opt::norm);
-			string line;
-			if (fh.is_open()) {
-				while (getline(fh, line)) {
-					stringstream ss(line);
-					long double value;
-					ss >> value;
-					normVals.emplace_back(value);
-				}
-			}
-		}
-
-		//load in rotational components
-		//log number of components found
-		unsigned compNum = 0;
-		ifstream fh(opt::pca);
-		string line;
-		if (fh.is_open()) {
-			//skip first line
-			getline(fh, line);
-			stringstream ss(line);
-			string val;
-			//skip first line
-			ss >> val;
-			ss >> val;
-			//count number of components
-			while(val){
-				ss >> val;
-				++compNum;
-			}
-		}
-		vector<vector<long double>> rotVals(compNum, vector<long double>(normVals.size(),0));
-		{
-			ifstream fh(opt::pca);
-			string line;
-			if (fh.is_open()) {
-				//skip first line
-				getline(fh, line);
-				unsigned index = 0;
-				while (getline(fh, line)) {
-					stringstream ss(line);
-					//skip rsid
-					string rsID;
-					ss >> rsID;
-					for (unsigned i = 0; 0 < compNum; ++i) {
-						ss >> rotVals[i][index];
-					}
-					++index;
-				}
-			}
-		}
-		//for each sample
-		for (unsigned i = 0; i < m_counts.size(); ++i) {
-			vector<double> pcs(compNum,0);
-			//normalize
-			vector<double> normVals(m_counts.at(i).size(), 0.0);
-			for (unsigned j = 0; j < normVals.size(); ++j) {
-				const pair<unsigned, unsigned> &tempCounts = m_counts.at(i).at(
-						j);
-				normVals[j] = (double(tempCounts.first)
-						/ double(tempCounts.first + tempCounts.second))
-						- normVals[j];
-			}
-			//compute dot product for each PC
-			for (unsigned j = 0; 0 < compNum; ++j) {
-				pcs[j] = inner_product(normVals.begin(), normVals.end(), rotVals.at(j).begin(), 0);
-			}
-			//load into datastructure
-
-		}
-	}
-
 	void computeScore() {
+
+		const int dim = 10;
+		//build tree
+		//max leaf size can be changed (10-50 seems to be fast for queries)
+		kd_tree_t kdTree(dim, m_cloud, { 10 });
+
 		vector<double> cov(m_totalCounts.size(),0);
 		vector<double> errorRate(m_totalCounts.size(), 0);
 		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
@@ -241,96 +182,80 @@ public:
 				"\thets2\tsharedHets\thom1\thom2\tsharedHom\tn\tscore\tsame"
 				"\tcov1\tcov2\terror_rate1\terror_rate2\n";
 		cout << temp;
-#pragma omp parallel for private(temp)
+//#pragma omp parallel for private(temp)
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
-			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
-				unsigned indexesUsed = 0;
-				vector<unsigned> validIndexes = gatherValidEntries(i, j);
-				double score = skew(
-						computeLogLikelihood(i, j, indexesUsed, validIndexes),
-						cov[i], cov[j]);
-				score /= double(indexesUsed);
-				if (opt::all || score < opt::scoreThresh) {
-					temp.clear();
-					Relate info = calcRelatedness(i, j, validIndexes);
-					temp += m_filenames[i];
-					temp += "\t";
-					temp += m_filenames[j];
-					temp += "\t";
-					temp += to_string(info.relatedness);
-					temp += "\t";
-					temp += to_string(info.ibs0);
-					temp += "\t";
-					temp += to_string(info.ibs2);
-					temp += "\t";
-					temp += to_string(info.homConcord);
-					temp += "\t";
-					temp += to_string(info.hets1);
-					temp += "\t";
-					temp += to_string(info.hets2);
-					temp += "\t";
-					temp += to_string(info.sharedHets);
-					temp += "\t";
-					temp += to_string(info.homs1);
-					temp += "\t";
-					temp += to_string(info.homs2);
-					temp += "\t";
-					temp += to_string(info.sharedHoms);
-					temp += "\t";
-					temp += to_string(indexesUsed);
-					temp += "\t";
-					temp += to_string(score);
-					if (opt::all) {
-						if (score < opt::scoreThresh) {
-							temp += "\t1\t";
+			std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
+			size_t nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0], opt::pcSearchRadius, ret_matches);
+			if (nMatches > 1) {
+				if (opt::verbose > 2) {
+					cout << nMatches << endl;
+				}
+				for (size_t j = 0; j < nMatches; j++) {
+					unsigned indexesUsed = 0;
+					vector<unsigned> validIndexes = gatherValidEntries(i,
+							ret_matches[j].first);
+					double score = skew(
+							computeLogLikelihood(i, ret_matches[j].first,
+									indexesUsed, validIndexes), cov[i],
+							cov[ret_matches[j].first]);
+					score /= double(indexesUsed);
+					if (opt::all || score < opt::scoreThresh) {
+						temp.clear();
+						Relate info = calcRelatedness(i, ret_matches[j].first,
+								validIndexes);
+						temp += m_filenames[i];
+						temp += "\t";
+						temp += m_filenames[ret_matches[j].first];
+						temp += "\t";
+						temp += to_string(info.relatedness);
+						temp += "\t";
+						temp += to_string(info.ibs0);
+						temp += "\t";
+						temp += to_string(info.ibs2);
+						temp += "\t";
+						temp += to_string(info.homConcord);
+						temp += "\t";
+						temp += to_string(info.hets1);
+						temp += "\t";
+						temp += to_string(info.hets2);
+						temp += "\t";
+						temp += to_string(info.sharedHets);
+						temp += "\t";
+						temp += to_string(info.homs1);
+						temp += "\t";
+						temp += to_string(info.homs2);
+						temp += "\t";
+						temp += to_string(info.sharedHoms);
+						temp += "\t";
+						temp += to_string(indexesUsed);
+						temp += "\t";
+						temp += to_string(score);
+						if (opt::all) {
+							if (score < opt::scoreThresh) {
+								temp += "\t1\t";
+							} else {
+								temp += "\t0\t";
+							}
 						} else {
-							temp += "\t0\t";
+							temp += "\t1\t";
 						}
-					} else {
-						temp += "\t1\t";
-					}
-					temp += to_string(cov[i]);
-					temp += "\t";
-					temp += to_string(cov[j]);
-					temp += "\t";
-					temp += to_string(errorRate[i]);
-					temp += "\t";
-					temp += to_string(errorRate[j]);
-					temp += "\n";
+						temp += to_string(cov[i]);
+						temp += "\t";
+						temp += to_string(cov[ret_matches[j].first]);
+						temp += "\t";
+						temp += to_string(errorRate[i]);
+						temp += "\t";
+						temp += to_string(errorRate[ret_matches[j].first]);
+						temp += "\n";
 #pragma omp critical(cout)
-					{
-						cout << temp;
+						{
+							cout << temp;
+						}
 					}
 				}
 			}
 		}
 	}
-
-//	void runFET() {
-//		string temp = "";
-//		for (unsigned i = 0; i < m_counts.size(); ++i) {
-//			for (unsigned j = i + 1; j < m_counts.size(); ++j) {
-//				double pVal = runCombinedPval(i, j);
-//				temp += m_filenames[i];
-//				temp += "\t";
-//				temp += m_filenames[j];
-//				temp += "\t";
-//				temp += to_string(pVal);
-//				if (pVal < opt::scoreThresh) {
-//					temp += "\tY\t";
-//				} else {
-//					temp += "\tN\t";
-//				}
-//				temp += to_string(double(m_totalCounts[i])/double(m_counts[0]->size()));
-//				temp += "\t";
-//				temp += to_string(double(m_totalCounts[j])/double(m_counts[0]->size()));
-//
-//				temp += "\n";
-//				cout << temp;
-//				temp.clear();
-//			}
-//		}
-//	}
 
 	~CompareCounts() {
 		// TODO Auto-generated destructor stub
@@ -352,6 +277,9 @@ private:
 
 	const vector<string> &m_filenames;
 	typedef vector<vector<pair<unsigned, unsigned>>> PairedCount;
+	typedef std::vector<std::vector<double>> vector_of_vectors_t;
+    typedef KDTreeVectorOfVectorsAdaptor<vector_of_vectors_t, double> kd_tree_t;
+
 	vector<double> m_sumlogPSingle;
 	PairedCount m_counts;
 	PairedCount m_sum;
@@ -359,7 +287,82 @@ private:
 	vector<uint64_t> m_rawTotalCounts;
 	vector<unsigned> m_kmerSize;
 	vector<uint64_t> m_totalCounts;
-	tsl::robin_map<string,unsigned> sampleIDs;
+	tsl::robin_map<string,unsigned> m_sampleIDs;
+	vector_of_vectors_t m_cloud;
+
+	void projectPCs() {
+		if(opt::verbose > 0){
+			cerr << "Projecting samples onto PCA" << endl;
+		}
+
+		//load in normalization values
+		vector<long double> normVals;
+		{
+			ifstream fh(opt::norm);
+			string line;
+			if (fh.is_open()) {
+				while (getline(fh, line)) {
+					stringstream ss(line);
+					long double value;
+					ss >> value;
+					normVals.emplace_back(value);
+				}
+			}
+		}
+
+		//load in rotational components
+		//log number of components found
+		unsigned compNum = 0;
+		ifstream fh(opt::pca);
+		string line;
+		{
+			getline(fh, line);
+			stringstream ss(line);
+			string val;
+			//skip first line
+			ss >> val;
+			//count number of components
+			while (ss >> val) {
+				++compNum;
+			}
+		}
+		if(opt::verbose > 0){
+			cerr << "Detected " << compNum << " components for " << normVals.size() << " sites" << endl;
+		}
+				vector<vector<long double>> rotVals(compNum,
+				vector<long double>(normVals.size(), 0));
+		unsigned index = 0;
+				while (getline(fh, line)) {
+			stringstream ss(line);
+			//skip rsid
+			string rsID;
+			ss >> rsID;
+			for (unsigned i = 0; i < compNum; ++i) {
+				ss >> rotVals[i][index];
+			}
+			++index;
+		}
+
+		//for each sample
+		for (unsigned i = 0; i < m_counts.size(); ++i) {
+			vector<double> pcs(compNum,0);
+			//normalize
+			vector<double> normVals(m_counts.at(i).size(), 0.0);
+			for (unsigned j = 0; j < normVals.size(); ++j) {
+				const pair<unsigned, unsigned> &tempCounts = m_counts.at(i).at(
+						j);
+				normVals[j] = (double(tempCounts.first)
+						/ double(tempCounts.first + tempCounts.second))
+						- normVals[j];
+			}
+			//compute dot product for each PC
+			for (unsigned j = 0; j < compNum; ++j) {
+				pcs[j] = inner_product(normVals.begin(), normVals.end(), rotVals.at(j).begin(), 0);
+			}
+			//load into pointcloud
+			m_cloud.emplace_back(std::move(pcs));
+		}
+	}
 
 	pair<unsigned, unsigned> loadPair(stringstream &ss, string &item) {
 		unsigned count1 = std::stoul(item);
