@@ -22,6 +22,7 @@ extern double covThresh;
 
 extern string norm;
 extern string pca;
+extern unsigned dim;
 
 extern double scoreThresh;
 extern double covSkew;

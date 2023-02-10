@@ -63,6 +63,7 @@ public:
 		}
 		m_counts = PairedCount(filenames.size(), vector<pair<unsigned, unsigned>>(m_distinct.size()));
 		m_sum = PairedCount(filenames.size(), vector<pair<unsigned, unsigned>>(m_distinct.size()));
+		m_cloud = vector<vector<double>>(filenames.size(), vector<double>(opt::dim));
 
 #pragma omp parallel for
 		for (unsigned i = 0; i < m_filenames.size(); ++i) {
@@ -103,7 +104,6 @@ public:
 				}
 			}
 		}
-		//populate kdtree
 		projectPCs();
 	}
 
@@ -166,12 +166,9 @@ public:
 //	}
 
 	void computeScore() {
-
-		const int dim = 10;
 		//build tree
 		//max leaf size can be changed (10-50 seems to be fast for queries)
-		kd_tree_t kdTree(dim, m_cloud, { 10 });
-
+		kd_tree_t kdTree(opt::dim, m_cloud, { 10 });
 		vector<double> cov(m_totalCounts.size(),0);
 		vector<double> errorRate(m_totalCounts.size(), 0);
 		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
@@ -185,72 +182,74 @@ public:
 //#pragma omp parallel for private(temp)
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
-			size_t nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0], opt::pcSearchRadius, ret_matches);
-			if (nMatches > 1) {
-				if (opt::verbose > 2) {
-					cout << nMatches << endl;
+			size_t nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
+					opt::pcSearchRadius, ret_matches);
+			if (opt::verbose > 1 && nMatches > 1) {
+				cout << nMatches << endl;
+			}
+			for (size_t j = 0; j < nMatches; j++) {
+				if (i == ret_matches[j].first) {
+					continue;
 				}
-				for (size_t j = 0; j < nMatches; j++) {
-					unsigned indexesUsed = 0;
-					vector<unsigned> validIndexes = gatherValidEntries(i,
-							ret_matches[j].first);
-					double score = skew(
-							computeLogLikelihood(i, ret_matches[j].first,
-									indexesUsed, validIndexes), cov[i],
-							cov[ret_matches[j].first]);
-					score /= double(indexesUsed);
-					if (opt::all || score < opt::scoreThresh) {
-						temp.clear();
-						Relate info = calcRelatedness(i, ret_matches[j].first,
-								validIndexes);
-						temp += m_filenames[i];
-						temp += "\t";
-						temp += m_filenames[ret_matches[j].first];
-						temp += "\t";
-						temp += to_string(info.relatedness);
-						temp += "\t";
-						temp += to_string(info.ibs0);
-						temp += "\t";
-						temp += to_string(info.ibs2);
-						temp += "\t";
-						temp += to_string(info.homConcord);
-						temp += "\t";
-						temp += to_string(info.hets1);
-						temp += "\t";
-						temp += to_string(info.hets2);
-						temp += "\t";
-						temp += to_string(info.sharedHets);
-						temp += "\t";
-						temp += to_string(info.homs1);
-						temp += "\t";
-						temp += to_string(info.homs2);
-						temp += "\t";
-						temp += to_string(info.sharedHoms);
-						temp += "\t";
-						temp += to_string(indexesUsed);
-						temp += "\t";
-						temp += to_string(score);
-						if (opt::all) {
-							if (score < opt::scoreThresh) {
-								temp += "\t1\t";
-							} else {
-								temp += "\t0\t";
-							}
-						} else {
+				unsigned indexesUsed = 0;
+				vector<unsigned> validIndexes = gatherValidEntries(i,
+						ret_matches[j].first);
+				double score = skew(
+						computeLogLikelihood(i, ret_matches[j].first,
+								indexesUsed, validIndexes), cov[i],
+						cov[ret_matches[j].first]);
+				score /= double(indexesUsed);
+				if (opt::all || score < opt::scoreThresh) {
+					temp.clear();
+					Relate info = calcRelatedness(i, ret_matches[j].first,
+							validIndexes);
+					temp += m_filenames[i];
+					temp += "\t";
+					temp += m_filenames[ret_matches[j].first];
+					temp += "\t";
+					temp += to_string(info.relatedness);
+					temp += "\t";
+					temp += to_string(info.ibs0);
+					temp += "\t";
+					temp += to_string(info.ibs2);
+					temp += "\t";
+					temp += to_string(info.homConcord);
+					temp += "\t";
+					temp += to_string(info.hets1);
+					temp += "\t";
+					temp += to_string(info.hets2);
+					temp += "\t";
+					temp += to_string(info.sharedHets);
+					temp += "\t";
+					temp += to_string(info.homs1);
+					temp += "\t";
+					temp += to_string(info.homs2);
+					temp += "\t";
+					temp += to_string(info.sharedHoms);
+					temp += "\t";
+					temp += to_string(indexesUsed);
+					temp += "\t";
+					temp += to_string(score);
+					if (opt::all) {
+						if (score < opt::scoreThresh) {
 							temp += "\t1\t";
+						} else {
+							temp += "\t0\t";
 						}
-						temp += to_string(cov[i]);
-						temp += "\t";
-						temp += to_string(cov[ret_matches[j].first]);
-						temp += "\t";
-						temp += to_string(errorRate[i]);
-						temp += "\t";
-						temp += to_string(errorRate[ret_matches[j].first]);
-						temp += "\n";
+					} else {
+						temp += "\t1\t";
+					}
+					temp += to_string(cov[i]);
+					temp += "\t";
+					temp += to_string(cov[ret_matches[j].first]);
+					temp += "\t";
+					temp += to_string(errorRate[i]);
+					temp += "\t";
+					temp += to_string(errorRate[ret_matches[j].first]);
+					temp += "\n";
 #pragma omp critical(cout)
-						{
-							cout << temp;
-						}
+					{
+						cout << temp;
 					}
 				}
 			}
@@ -315,11 +314,11 @@ private:
 		unsigned compNum = 0;
 		ifstream fh(opt::pca);
 		string line;
+		getline(fh, line);
 		{
-			getline(fh, line);
 			stringstream ss(line);
 			string val;
-			//skip first line
+			//skip first entry
 			ss >> val;
 			//count number of components
 			while (ss >> val) {
@@ -329,10 +328,12 @@ private:
 		if(opt::verbose > 0){
 			cerr << "Detected " << compNum << " components for " << normVals.size() << " sites" << endl;
 		}
-				vector<vector<long double>> rotVals(compNum,
-				vector<long double>(normVals.size(), 0));
+		assert(opt::dim <= compNum);
+
+		vector<vector<long double>> rotVals(compNum,
+				vector<long double>(normVals.size(), 0.0));
 		unsigned index = 0;
-				while (getline(fh, line)) {
+		while (getline(fh, line)) {
 			stringstream ss(line);
 			//skip rsid
 			string rsID;
@@ -342,25 +343,29 @@ private:
 			}
 			++index;
 		}
-
+		assert(index == normVals.size());
 		//for each sample
+#pragma omp parallel for
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
-			vector<double> pcs(compNum,0);
 			//normalize
-			vector<double> normVals(m_counts.at(i).size(), 0.0);
-			for (unsigned j = 0; j < normVals.size(); ++j) {
+			vector<double> vals(m_counts.at(i).size(), 0.0);
+			for (unsigned j = 0; j < vals.size(); ++j) {
 				const pair<unsigned, unsigned> &tempCounts = m_counts.at(i).at(
 						j);
-				normVals[j] = (double(tempCounts.first)
-						/ double(tempCounts.first + tempCounts.second))
-						- normVals[j];
+				unsigned denom = tempCounts.first + tempCounts.second;
+				//if value is missing set to zero (so it gets centered correctly)
+				if(denom == 0){
+					vals[j] = 0.0;
+				}
+				else {
+					vals[j] = (double(tempCounts.first) / double(denom))
+							- normVals[j];
+				}
 			}
 			//compute dot product for each PC
-			for (unsigned j = 0; j < compNum; ++j) {
-				pcs[j] = inner_product(normVals.begin(), normVals.end(), rotVals.at(j).begin(), 0);
+			for (unsigned j = 0; j < opt::dim; ++j) {
+				m_cloud[i][j] = inner_product(vals.begin(), vals.end(), rotVals.at(j).begin(), 0.0);
 			}
-			//load into pointcloud
-			m_cloud.emplace_back(std::move(pcs));
 		}
 	}
 

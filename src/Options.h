@@ -31,6 +31,7 @@ double covThresh = std::numeric_limits<double>::max();
 
 string pca = "";
 string norm = "";
+unsigned dim = 3;
 
 double scoreThresh = 0.5;
 double covSkew = 0.2;
@@ -41,7 +42,7 @@ bool dupes = false;
 //uint64_t minSites = 10000;
 uint64_t genomeSize = 6200000000;
 
-double pcSearchRadius = 0.0001;
+double pcSearchRadius = 0.01;
 
 string ref;
 unsigned window = 31;
