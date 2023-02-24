@@ -10,6 +10,8 @@ use IO::File;
 my $fh        = new IO::File( $ARGV[0], "r" );
 my $line      = $fh->getline();
 my $threshold = 0.05;
+my $mafSum = 0;
+my $mafCount = 0;
 
 my $count = 0;
 
@@ -55,9 +57,11 @@ while ($line) {
 			}
 
 			if ( $secondHighestAllele > $threshold ) {
-				if($secondHighestAllele > 0.5){
+#				if($secondHighestAllele > 0.5){
 #					print STDERR "Allele Frequency error: " . $line . "\n";
-				}
+#				}
+				++$mafCount;
+				$mafSum += $secondHighestAllele;
 				local $" = "\t";
 				print "@lineArr\n";
 			}
@@ -73,3 +77,4 @@ while ($line) {
 }
 $fh->close();
 print STDERR 'Total Removed: ' . $count . "\n";
+print STDERR 'Avg MAF: ' . ($mafSum/$mafCount) . "\n";
