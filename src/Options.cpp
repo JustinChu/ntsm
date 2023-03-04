@@ -36,6 +36,8 @@ extern string ref;
 extern unsigned window;
 extern unsigned multi;
 
+extern string debug;
+
 }
 
 

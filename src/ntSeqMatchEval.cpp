@@ -42,9 +42,10 @@ void printHelpDialog(){
 	"                             set of rotational values from a PCA.[required]\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation.\n"
 	"                             [required]\n"
-	"  -c, --min_cov = INT        Keep only sites with this coverage and above. ["+ to_string(opt::minCov)+"]\n"
+	"  -r, --radius = FLOAT       Search radius for initial PCA based search step.[" + to_string(opt::pcSearchRadius) + "]\n"
+	"  -c, --min_cov = INT        Keep only sites with this coverage and above.[" + to_string(opt::minCov) + "]\n"
 	"  -w, --skew = FLOAT         Divides the score by coverage. Formula: (cov1*cov2)^skew\n"
-	"                             Set to zero for no skew. ["+ to_string(opt::covSkew)+"]\n"
+	"                             Set to zero for no skew.[" + to_string(opt::covSkew) + "]\n"
 	"  -g, --genome_size = INT    Diploid genome size for error rate estimation.\n"
 	"                             ["+ to_string(opt::genomeSize)+"]\n"
 //	"  -t, --threads              Number of threads to run.[1]\n"
@@ -77,12 +78,14 @@ int main(int argc, char *argv[])
 		"help", no_argument, NULL, 'h' }, {
 	    "pca", required_argument, NULL, 'p' }, {
 		"norm", required_argument, NULL, 'n' }, {
+		"radius", required_argument, NULL, 'r' }, {
+		"debug", required_argument, NULL, 'd' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
 		"verbose", no_argument, NULL, 'v' }, {
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -162,6 +165,24 @@ int main(int argc, char *argv[])
 			stringstream convert(optarg);
 			if (!(convert >> opt::norm)) {
 				cerr << "Error - Invalid parameter n: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'r': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::pcSearchRadius)) {
+				cerr << "Error - Invalid parameter r: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'd': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::debug)) {
+				cerr << "Error - Invalid parameter d: "
 						<< optarg << endl;
 				return 0;
 			}

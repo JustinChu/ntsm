@@ -14,9 +14,11 @@
 #include <memory>
 #include <math.h>
 #include <numeric>
+#include <algorithm>
 
 #include "vendor/kfunc.c"
 #include "vendor/tsl/robin_map.h"
+#include "vendor/tsl/robin_set.h"
 #include "vendor/nanoflann.hpp"
 #include "KDTreeUtil.h"
 
@@ -68,10 +70,14 @@ public:
 #pragma omp parallel for
 		for (unsigned i = 0; i < m_filenames.size(); ++i) {
 			if(opt::verbose > 1){
-#pragma omp critical
+#pragma omp critical(cerr)
 				cerr << "Reading: "<< m_filenames.at(i) << endl;
 			}
 			ifstream fh(m_filenames.at(i));
+#pragma omp critical(m_filenameToID)
+			{
+				m_filenameToID[m_filenames.at(i)] = i;
+			}
 			string line;
 			if (fh.is_open()) {
 				while (getline(fh, line)) {
@@ -166,91 +172,153 @@ public:
 //	}
 
 	void computeScore() {
+		const string header =
+				"sample1\tsample2\tscore\tsame\tdist\trelate\tibs0\tibs2\thomConcord"
+						"\thet1\thet2\tsharedHet\thom1\thom2\tsharedHom\tn"
+						"\tcov1\tcov2\terrorRate1\terrorRate2\tmiss1\tmiss2"
+						"\tallHom1\tallHom2\tallHet1\tallHet2"
+						"\tmedianGC1\tmedianGC2\tmad50GC1\tmad50GC2"
+						"\tmeanGC1\tmeanGC2\tvar50GC1\tvar50GC2";
+		cout << header;
 		//build tree
 		//max leaf size can be changed (10-50 seems to be fast for queries)
 		kd_tree_t kdTree(opt::dim, m_cloud, { 10 });
-		vector<double> cov(m_totalCounts.size(),0);
-		vector<double> errorRate(m_totalCounts.size(), 0);
+		vector<GenotypeSummary> genotype(m_totalCounts.size());
 		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
-			cov[i] = double(m_totalCounts[i]) / double(m_distinct.size());
-			errorRate[i] = computeErrorRate(i);
+			genotype[i] = calcHomHetMiss(m_counts.at(i));
+			genotype[i].errorRate = computeErrorRate(i);
+			genotype[i].cov = double(m_totalCounts[i]) / double(m_distinct.size());
+			genotype[i].expandSearch = genotype[i].errorRate
+					> opt::pcErrorThresh
+					|| (double(genotype.at(i).miss) / double(m_counts.size()))
+							> opt::pcMissThresh;
 		}
-		string temp = "sample1\tsample2\trelate\tibs0\tibs2\thomConcord\thets1"
-				"\thets2\tsharedHets\thom1\thom2\tsharedHom\tn\tscore\tsame"
-				"\tcov1\tcov2\terror_rate1\terror_rate2\n";
-		cout << temp;
-//#pragma omp parallel for private(temp)
-		for (unsigned i = 0; i < m_counts.size(); ++i) {
-			std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
-			size_t nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
-					opt::pcSearchRadius, ret_matches);
-			if (opt::verbose > 1 && nMatches > 1) {
-				cout << nMatches << endl;
-			}
-			for (size_t j = 0; j < nMatches; j++) {
-				if (i == ret_matches[j].first) {
-					continue;
+		if (opt::debug.empty()) {
+			string temp = "\n";
+			cout << temp;
+#pragma omp parallel for
+			for (unsigned i = 0; i < m_counts.size(); ++i) {
+				std::vector<nanoflann::ResultItem<long unsigned, double>> ret_matches;
+				size_t nMatches = 0;
+				if (genotype.at(i).expandSearch) {
+					nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
+							opt::pcLargeRadius, ret_matches);
+				} else {
+					nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
+							opt::pcSearchRadius, ret_matches);
 				}
-				unsigned indexesUsed = 0;
-				vector<unsigned> validIndexes = gatherValidEntries(i,
-						ret_matches[j].first);
-				double score = skew(
-						computeLogLikelihood(i, ret_matches[j].first,
-								indexesUsed, validIndexes), cov[i],
-						cov[ret_matches[j].first]);
-				score /= double(indexesUsed);
-				if (opt::all || score < opt::scoreThresh) {
-					temp.clear();
-					Relate info = calcRelatedness(i, ret_matches[j].first,
-							validIndexes);
-					temp += m_filenames[i];
-					temp += "\t";
-					temp += m_filenames[ret_matches[j].first];
-					temp += "\t";
-					temp += to_string(info.relatedness);
-					temp += "\t";
-					temp += to_string(info.ibs0);
-					temp += "\t";
-					temp += to_string(info.ibs2);
-					temp += "\t";
-					temp += to_string(info.homConcord);
-					temp += "\t";
-					temp += to_string(info.hets1);
-					temp += "\t";
-					temp += to_string(info.hets2);
-					temp += "\t";
-					temp += to_string(info.sharedHets);
-					temp += "\t";
-					temp += to_string(info.homs1);
-					temp += "\t";
-					temp += to_string(info.homs2);
-					temp += "\t";
-					temp += to_string(info.sharedHoms);
-					temp += "\t";
-					temp += to_string(indexesUsed);
-					temp += "\t";
-					temp += to_string(score);
-					if (opt::all) {
-						if (score < opt::scoreThresh) {
-							temp += "\t1\t";
-						} else {
-							temp += "\t0\t";
+				for (size_t j = 0; j < nMatches; j++) {
+					unsigned k = ret_matches[j].first;
+					if (genotype.at(i).expandSearch
+							== genotype.at(k).expandSearch) {
+						if (k <= i) {
+							continue;
 						}
-					} else {
-						temp += "\t1\t";
+					} else if (genotype.at(k).expandSearch) {
+						continue;
 					}
-					temp += to_string(cov[i]);
-					temp += "\t";
-					temp += to_string(cov[ret_matches[j].first]);
-					temp += "\t";
-					temp += to_string(errorRate[i]);
-					temp += "\t";
-					temp += to_string(errorRate[ret_matches[j].first]);
-					temp += "\n";
+					unsigned indexesUsed = 0;
+					vector<unsigned> validIndexes = gatherValidEntries(i,
+							k);
+					double score = skew(
+							computeLogLikelihood(i, k,
+									indexesUsed, validIndexes), genotype[i].cov,
+							genotype[k].cov);
+					score /= double(indexesUsed);
+					if (opt::all || score < opt::scoreThresh) {
+						Relate info = calcRelatedness(i, k,
+								validIndexes);
+						resultsStr(temp, genotype, info,
+								indexesUsed, score, i, k);
+						temp += "\n";
 #pragma omp critical(cout)
-					{
-						cout << temp;
+						{
+							cout << temp;
+						}
 					}
+				}
+			}
+		} else {
+			string temp = "\tpairs\n";
+			cout << temp;
+			tsl::robin_set<uint64_t> truePairs;
+			//load in debug file
+			ifstream fh(opt::debug);
+			string line;
+			if (fh.is_open()) {
+				while (getline(fh, line)) {
+					stringstream ss(line);
+					string fileID;
+					vector<string> values;
+					while(ss >> fileID){
+						values.emplace_back(fileID);
+					}
+					for (unsigned i = 0; i < values.size(); ++i) {
+						for (unsigned j = i + 1; j < values.size(); ++j) {
+							if(!m_filenameToID.contains(values.at(i))){
+								cerr << "missing file " << values.at(i) << endl;
+							}
+							if(!m_filenameToID.contains(values.at(j))){
+								cerr << "missing file " << values.at(j) << endl;
+							}
+							unsigned x = m_filenameToID.at(values.at(i));
+							unsigned y = m_filenameToID.at(values.at(j));
+							if (x <= y) {
+								truePairs.insert(
+										((uint64_t) m_filenameToID.at(
+												values.at(i))) << 32
+												| m_filenameToID.at(
+														values.at(j)));
+							} else {
+								truePairs.insert(
+										((uint64_t) m_filenameToID.at(
+												values.at(j))) << 32
+												| m_filenameToID.at(
+														values.at(i)));
+							}
+						}
+					}
+				}
+			}
+			for(tsl::robin_set<uint64_t>::iterator itr = truePairs.begin(); itr != truePairs.end(); ++itr){
+				unsigned x = (uint64_t)((*itr & 0xFFFFFFFF00000000LL) >> 32);
+				unsigned y = (uint64_t)(*itr & 0xFFFFFFFFLL);
+				unsigned indexesUsed = 0;
+				vector<unsigned> validIndexes = gatherValidEntries(x, y);
+				double score = skew(
+						computeLogLikelihood(x, y, indexesUsed, validIndexes),
+						genotype[x].cov, genotype[y].cov);
+				score /= double(indexesUsed);
+				double distance = calcDistance(m_cloud[x], m_cloud[y]);
+				unsigned consideredCount = 0;
+				for (unsigned i = 0; i < m_counts.size(); ++i) {
+					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
+					size_t nMatches = kdTree.index->radiusSearch(
+							&(m_cloud[i])[0], distance, ret_matches);
+					for (size_t j = 0; j < nMatches; j++) {
+						auto k = ret_matches[j].first;
+						if (genotype.at(i).expandSearch
+								== genotype.at(k).expandSearch) {
+							if (k <= i) {
+								continue;
+							}
+						} else if (genotype.at(k).expandSearch) {
+							continue;
+						}
+						++consideredCount;
+					}
+				}
+				Relate info = calcRelatedness(x, y, validIndexes);
+				resultsStr(temp, genotype, info, indexesUsed,
+						score, x, y);
+				temp += "\t";
+				temp += to_string(distance);
+				temp += "\t";
+				temp += to_string(consideredCount);
+				temp += "\n";
+#pragma omp critical(cout)
+				{
+					cout << temp;
 				}
 			}
 		}
@@ -274,6 +342,19 @@ private:
 		unsigned homs2 = 0;
 	};
 
+	struct GenotypeSummary{
+		unsigned hets = 0;
+		unsigned homs = 0;
+		unsigned miss = 0;
+		double madFreq = 0;
+		double median = 0;
+		double mean = 0;
+		double var50 = 0;
+		double errorRate = 0;
+		double cov = 0;
+		bool expandSearch = 0;
+	};
+
 	const vector<string> &m_filenames;
 	typedef vector<vector<pair<unsigned, unsigned>>> PairedCount;
 	typedef std::vector<std::vector<double>> vector_of_vectors_t;
@@ -288,6 +369,193 @@ private:
 	vector<uint64_t> m_totalCounts;
 	tsl::robin_map<string,unsigned> m_sampleIDs;
 	vector_of_vectors_t m_cloud;
+	tsl::robin_map<string,unsigned> m_filenameToID;
+
+	GenotypeSummary calcHomHetMiss(const vector<pair<unsigned, unsigned>> &counts){
+		GenotypeSummary count = {};
+		vector<double> hetCount;
+		for(size_t i = 0; i < counts.size(); ++i){
+			if (counts.at(i).first > opt::minCov) {
+				if (counts.at(i).second > opt::minCov) {
+					++count.hets;
+					hetCount.push_back(double(counts.at(i).first)/double(counts.at(i).first + counts.at(i).second));
+				} else {
+					++count.homs;
+				}
+			} else if (counts.at(i).second > opt::minCov) {
+				++count.homs;
+			}
+			else{
+				++count.miss;
+			}
+		}
+		count.median = 0.5;
+		count.madFreq = calculateMAD(hetCount, count.median);
+		count.mean = 0.5;
+		count.var50 = calculateVar50(hetCount, count.mean);
+		return(count);
+	}
+
+	/*
+	 * Calculates variance assuming equal AT vs CG counts
+	 */
+	double calculateVar50(const vector<double> &freq, double &mean){
+		double sum = 0.0;
+		for(size_t i = 0; i < freq.size(); ++i){
+			sum += freq.at(i);
+		}
+		mean = sum/double(freq.size());
+		double varSum = 0.0;
+
+		for(size_t i = 0; i < freq.size(); ++i){
+			varSum += pow(freq.at(i) - 0.5, 2);
+		}
+		return (varSum/freq.size());
+	}
+
+	/*
+	 * Calculates the median absolute deviation
+	 */
+	double calculateMAD(const vector<double> &freq, double &median){
+		vector<double> sumCounts(freq.size(), 0);
+		for(size_t i = 0; i < sumCounts.size(); ++i){
+			sumCounts[i] = freq.at(i);
+		}
+		sort(sumCounts.begin(), sumCounts.end());
+		median =
+				sumCounts.size() % 2 == 0 ?
+						(sumCounts[sumCounts.size() / 2]
+								+ sumCounts[sumCounts.size() / 2 - 1]) / 2.0 :
+						sumCounts[sumCounts.size() / 2];
+
+		for(size_t i = 0; i < sumCounts.size(); ++i){
+			sumCounts[i] = abs(sumCounts[i] - 0.5);
+		}
+		sort(sumCounts.begin(), sumCounts.end());
+		return (sumCounts.size() % 2 == 0 ?
+				(sumCounts[sumCounts.size() / 2]
+						+ sumCounts[sumCounts.size() / 2 - 1]) / 2.0 :
+				sumCounts[sumCounts.size() / 2]);
+	}
+
+	/*
+	 * Calculates the median absolute deviation of the counts
+	 * Takes the sum between each allele first before sorting
+	 */
+	double calculateMAD(const vector<pair<unsigned, unsigned>> &counts) const{
+		vector<double> sumCounts(counts.size(), 0);
+		for(size_t i = 0; i < counts.size(); ++i){
+			sumCounts[i] = double(counts.at(i).first + counts.at(i).second);
+		}
+		sort(sumCounts.begin(), sumCounts.end());
+		double median =
+				sumCounts.size() % 2 == 0 ?
+						(sumCounts[sumCounts.size() / 2]
+								+ sumCounts[sumCounts.size() / 2 - 1]) / 2.0 :
+						sumCounts[sumCounts.size() / 2];
+
+		for(size_t i = 0; i < sumCounts.size(); ++i){
+			sumCounts[i] = abs(sumCounts[i] - median);
+		}
+		sort(sumCounts.begin(), sumCounts.end());
+		return (sumCounts.size() % 2 == 0 ?
+				(sumCounts[sumCounts.size() / 2]
+						+ sumCounts[sumCounts.size() / 2 - 1]) / 2.0 :
+				sumCounts[sumCounts.size() / 2]);
+	}
+
+	/*
+	 * prepare results string
+	 */
+	void resultsStr(string &temp, const vector<GenotypeSummary> &genotype,
+			const Relate &info, uint64_t indexesUsed, double score, unsigned i,
+			unsigned j) {
+		temp.clear();
+		temp += m_filenames[i];
+		temp += "\t";
+		temp += m_filenames[j];
+		temp += "\t";
+		temp += to_string(score);
+		if (opt::all) {
+			if (score < opt::scoreThresh) {
+				temp += "\t1\t";
+			} else {
+				temp += "\t0\t";
+			}
+		} else {
+			temp += "\t1\t";
+		}
+		temp += to_string(calcDistance(m_cloud[i], m_cloud[j]));
+		temp += "\t";
+		temp += to_string(info.relatedness);
+		temp += "\t";
+		temp += to_string(info.ibs0);
+		temp += "\t";
+		temp += to_string(info.ibs2);
+		temp += "\t";
+		temp += to_string(info.homConcord);
+		temp += "\t";
+		temp += to_string(info.hets1);
+		temp += "\t";
+		temp += to_string(info.hets2);
+		temp += "\t";
+		temp += to_string(info.sharedHets);
+		temp += "\t";
+		temp += to_string(info.homs1);
+		temp += "\t";
+		temp += to_string(info.homs2);
+		temp += "\t";
+		temp += to_string(info.sharedHoms);
+		temp += "\t";
+		temp += to_string(indexesUsed);
+		temp += "\t";
+		temp += to_string(genotype.at(i).cov);
+		temp += "\t";
+		temp += to_string(genotype.at(j).cov);
+		temp += "\t";
+		temp += to_string(genotype.at(i).errorRate);
+		temp += "\t";
+		temp += to_string(genotype.at(j).errorRate);
+		temp += "\t";
+		temp += to_string(genotype.at(i).miss);
+		temp += "\t";
+		temp += to_string(genotype.at(j).miss);
+		temp += "\t";
+		temp += to_string(genotype.at(i).homs);
+		temp += "\t";
+		temp += to_string(genotype.at(j).homs);
+		temp += "\t";
+		temp += to_string(genotype.at(i).hets);
+		temp += "\t";
+		temp += to_string(genotype.at(j).hets);
+		temp += "\t";
+		temp += to_string(genotype.at(i).median);
+		temp += "\t";
+		temp += to_string(genotype.at(j).median);
+		temp += "\t";
+		temp += to_string(genotype.at(i).madFreq);
+		temp += "\t";
+		temp += to_string(genotype.at(j).madFreq);
+		temp += "\t";
+		temp += to_string(genotype.at(i).mean);
+		temp += "\t";
+		temp += to_string(genotype.at(j).mean);
+		temp += "\t";
+		temp += to_string(genotype.at(i).var50);
+		temp += "\t";
+		temp += to_string(genotype.at(j).var50);
+	}
+
+	/*
+	 * Computes squared Euclidian distance
+	 */
+	double calcDistance(const std::vector<double> &pos1, const std::vector<double> &pos2){
+		double dist = 0.0;
+		for (unsigned i = 0; i < opt::dim; ++i) {
+			dist += pow(pos1.at(i) < pos2.at(i) ? pos2.at(i) - pos1.at(i) : pos1.at(i) - pos2.at(i), 2);
+		}
+		return(dist);
+	}
 
 	void projectPCs() {
 		if(opt::verbose > 0){
@@ -352,14 +620,25 @@ private:
 			for (unsigned j = 0; j < vals.size(); ++j) {
 				const pair<unsigned, unsigned> &tempCounts = m_counts.at(i).at(
 						j);
-				unsigned denom = tempCounts.first + tempCounts.second;
+				unsigned countAT = 0;
+				unsigned countCG = 0;
+				if(tempCounts.first > opt::minCov){
+					countAT = tempCounts.first;
+				}
+				if(tempCounts.second > opt::minCov){
+					countCG = tempCounts.second;
+				}
+				unsigned denom = countAT + countCG;
 				//if value is missing set to zero (so it gets centered correctly)
 				if(denom == 0){
 					vals[j] = 0.0;
 				}
 				else {
-					vals[j] = (double(tempCounts.first) / double(denom))
+					double nonNormGeno = double(countAT) / double(denom);
+					vals[j] = ((nonNormGeno - 0.25) < 0.0 ? 0.0 :
+								(nonNormGeno - 0.75) < 0.0 ? 0.5 : 1.0)
 							- normVals[j];
+//					vals[j] = nonNormGeno - normVals[j];
 				}
 			}
 			//compute dot product for each PC
@@ -651,7 +930,7 @@ private:
 					- pow(double(sum) / expected,
 							1.0 / double(m_kmerSize.at(index))));
 		} else {
-			return 0.0;
+			return -1.0;
 		}
 	}
 
