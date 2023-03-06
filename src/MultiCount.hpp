@@ -17,7 +17,6 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <numbers>
 
 #include "Options.h"
 
