@@ -110,8 +110,99 @@ public:
 				}
 			}
 		}
-		projectPCs();
 	}
+
+	void projectPCs() {
+		if(opt::verbose > 0){
+			cerr << "Projecting samples onto PCA" << endl;
+		}
+
+		//load in normalization values
+		vector<long double> normVals;
+		{
+			ifstream fh(opt::norm);
+			string line;
+			if (fh.is_open()) {
+				while (getline(fh, line)) {
+					stringstream ss(line);
+					long double value;
+					ss >> value;
+					normVals.emplace_back(value);
+				}
+			}
+		}
+
+		//load in rotational components
+		//log number of components found
+		unsigned compNum = 0;
+		ifstream fh(opt::pca);
+		string line;
+		getline(fh, line);
+		{
+			stringstream ss(line);
+			string val;
+			//skip first entry
+			ss >> val;
+			//count number of components
+			while (ss >> val) {
+				++compNum;
+			}
+		}
+		if(opt::verbose > 0){
+			cerr << "Detected " << compNum << " components for " << normVals.size() << " sites" << endl;
+		}
+		assert(opt::dim <= compNum);
+
+		vector<vector<long double>> rotVals(compNum,
+				vector<long double>(normVals.size(), 0.0));
+		unsigned index = 0;
+		while (getline(fh, line)) {
+			stringstream ss(line);
+			//skip rsid
+			string rsID;
+			ss >> rsID;
+			for (unsigned i = 0; i < compNum; ++i) {
+				ss >> rotVals[i][index];
+			}
+			++index;
+		}
+		assert(index == normVals.size());
+		//for each sample
+#pragma omp parallel for
+		for (unsigned i = 0; i < m_counts.size(); ++i) {
+			//normalize
+			vector<double> vals(m_counts.at(i).size(), 0.0);
+			for (unsigned j = 0; j < vals.size(); ++j) {
+				const pair<unsigned, unsigned> &tempCounts = m_counts.at(i).at(
+						j);
+				unsigned countAT = 0;
+				unsigned countCG = 0;
+				if(tempCounts.first > opt::minCov){
+					countAT = tempCounts.first;
+				}
+				if(tempCounts.second > opt::minCov){
+					countCG = tempCounts.second;
+				}
+				unsigned denom = countAT + countCG;
+				//if value is missing set to zero (so it gets centered correctly)
+				if(denom == 0){
+					vals[j] = 0.0;
+				}
+				else {
+					double nonNormGeno = double(countAT) / double(denom);
+					vals[j] = ((nonNormGeno - 0.25) < 0.0 ? 0.0 :
+								(nonNormGeno - 0.75) < 0.0 ? 0.5 : 1.0)
+							- normVals[j];
+//					vals[j] = nonNormGeno - normVals[j];
+				}
+			}
+			//compute dot product for each PC
+			for (unsigned j = 0; j < opt::dim; ++j) {
+				m_cloud[i][j] = inner_product(vals.begin(), vals.end(), rotVals.at(j).begin(), 0.0);
+			}
+		}
+	}
+
 
 //	void runLogLikelihood() {
 //		initLogPSum();
@@ -646,97 +737,6 @@ private:
 			dist += pow(pos1.at(i) < pos2.at(i) ? pos2.at(i) - pos1.at(i) : pos1.at(i) - pos2.at(i), 2);
 		}
 		return(dist);
-	}
-
-	void projectPCs() {
-		if(opt::verbose > 0){
-			cerr << "Projecting samples onto PCA" << endl;
-		}
-
-		//load in normalization values
-		vector<long double> normVals;
-		{
-			ifstream fh(opt::norm);
-			string line;
-			if (fh.is_open()) {
-				while (getline(fh, line)) {
-					stringstream ss(line);
-					long double value;
-					ss >> value;
-					normVals.emplace_back(value);
-				}
-			}
-		}
-
-		//load in rotational components
-		//log number of components found
-		unsigned compNum = 0;
-		ifstream fh(opt::pca);
-		string line;
-		getline(fh, line);
-		{
-			stringstream ss(line);
-			string val;
-			//skip first entry
-			ss >> val;
-			//count number of components
-			while (ss >> val) {
-				++compNum;
-			}
-		}
-		if(opt::verbose > 0){
-			cerr << "Detected " << compNum << " components for " << normVals.size() << " sites" << endl;
-		}
-		assert(opt::dim <= compNum);
-
-		vector<vector<long double>> rotVals(compNum,
-				vector<long double>(normVals.size(), 0.0));
-		unsigned index = 0;
-		while (getline(fh, line)) {
-			stringstream ss(line);
-			//skip rsid
-			string rsID;
-			ss >> rsID;
-			for (unsigned i = 0; i < compNum; ++i) {
-				ss >> rotVals[i][index];
-			}
-			++index;
-		}
-		assert(index == normVals.size());
-		//for each sample
-#pragma omp parallel for
-		for (unsigned i = 0; i < m_counts.size(); ++i) {
-			//normalize
-			vector<double> vals(m_counts.at(i).size(), 0.0);
-			for (unsigned j = 0; j < vals.size(); ++j) {
-				const pair<unsigned, unsigned> &tempCounts = m_counts.at(i).at(
-						j);
-				unsigned countAT = 0;
-				unsigned countCG = 0;
-				if(tempCounts.first > opt::minCov){
-					countAT = tempCounts.first;
-				}
-				if(tempCounts.second > opt::minCov){
-					countCG = tempCounts.second;
-				}
-				unsigned denom = countAT + countCG;
-				//if value is missing set to zero (so it gets centered correctly)
-				if(denom == 0){
-					vals[j] = 0.0;
-				}
-				else {
-					double nonNormGeno = double(countAT) / double(denom);
-					vals[j] = ((nonNormGeno - 0.25) < 0.0 ? 0.0 :
-								(nonNormGeno - 0.75) < 0.0 ? 0.5 : 1.0)
-							- normVals[j];
-//					vals[j] = nonNormGeno - normVals[j];
-				}
-			}
-			//compute dot product for each PC
-			for (unsigned j = 0; j < opt::dim; ++j) {
-				m_cloud[i][j] = inner_product(vals.begin(), vals.end(), rotVals.at(j).begin(), 0.0);
-			}
-		}
 	}
 
 	pair<unsigned, unsigned> loadPair(stringstream &ss, string &item) {
