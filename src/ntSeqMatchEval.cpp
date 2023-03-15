@@ -231,17 +231,6 @@ int main(int argc, char *argv[])
 		cerr << "Error: Need Input File" << endl;
 		die = true;
 	}
-
-	if (!Util::fexists(opt::norm)) {
-		cerr << "Error: Need normalization file" << endl;
-		die = true;
-	}
-
-	if (!Util::fexists(opt::pca)) {
-		cerr << "Error: Need rotational PCA file" << endl;
-		die = true;
-	}
-
 	if (die) {
 		cerr << "Try '--help' for more information.\n";
 		exit(EXIT_FAILURE);
@@ -257,7 +246,10 @@ int main(int argc, char *argv[])
 		comp.computeScore();
 	}
 	else{
-		assert(!opt::norm.empty());
+		if (!Util::fexists(opt::norm)) {
+			cerr << "Error: Need normalization file" << endl;
+			die = true;
+		}
 		comp.computeScorePCA();
 	}
 	if(!opt::merge.empty()){
