@@ -493,6 +493,7 @@ public:
 			tmp += to_string(m_distinct.at(i).first);
 			tmp += "\t";
 			tmp += to_string(m_distinct.at(i).second);
+			tmp += "\n";
 			out << tmp;
 		}
 	}
