@@ -40,7 +40,6 @@ public:
 			ifstream fh(m_filenames.at(0));
 			string line;
 			if (fh.is_open()) {
-				unsigned count = 0;
 				while (getline(fh, line)) {
 					if (line.length() > 0) {
 						stringstream ss;
@@ -49,7 +48,8 @@ public:
 						getline(ss, item, '\t');
 						if (line.at(0) != '#') {
 							string locusID = item;
-							m_sampleIDs[locusID] = count++;
+							m_locusIDToIndex[locusID] = m_locusIDs.size();
+							m_locusIDs.emplace_back(locusID);
 							getline(ss, item, '\t');
 							getline(ss, item, '\t');
 
@@ -98,12 +98,12 @@ public:
 							string locusID = item;
 							//locusID\tcountAT\tcountCG\tsumAT\\tsumCG\tdistinctAT\tdistinctCG\n
 							getline(ss, item, '\t');
-							m_counts[i][m_sampleIDs.at(locusID)] = loadPair(ss,
+							m_counts[i][m_locusIDToIndex.at(locusID)] = loadPair(ss,
 									item);
-							m_totalCounts[i] += m_counts[i][m_sampleIDs.at(
+							m_totalCounts[i] += m_counts[i][m_locusIDToIndex.at(
 									locusID)].first
-									+ m_counts[i][m_sampleIDs.at(locusID)].second;
-							m_sum[i][m_sampleIDs.at(locusID)] = loadPair(ss,
+									+ m_counts[i][m_locusIDToIndex.at(locusID)].second;
+							m_sum[i][m_locusIDToIndex.at(locusID)] = loadPair(ss,
 									item);
 						}
 					}
@@ -324,6 +324,55 @@ public:
 		}
 	}
 
+	void mergeCounts(){
+		ofstream out(opt::merge);
+		//merge tags
+		uint64_t tk = 0;
+		//check if k-mers are the same
+		for (unsigned i = 0; i != m_kmerSize.size(); ++i) {
+			for (unsigned j = i + 1; j != m_kmerSize.size(); ++j) {
+				assert(i == j);
+			}
+		}
+		for (unsigned i = 0; i != m_rawTotalCounts.size(); ++i) {
+			tk += m_rawTotalCounts.at(i);
+		}
+		string tmp = "#@TK\t";
+		tmp += to_string(tk);
+		tmp += "\n#@KS\t";
+		tmp += to_string(m_kmerSize[0]);
+		//TODO redundant string found in FingerPrint.hpp, refactor?
+		tmp = "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
+		out << tmp;
+		for (unsigned i = 0; i != m_distinct.size(); ++i) {
+			unsigned countAT = 0;
+			unsigned countCG = 0;
+			unsigned sumAT = 0;
+			unsigned sumCG = 0;
+			for (unsigned j = 0; j != m_counts.size(); ++j) {
+				countAT += m_counts.at(j).at(i).first;
+				countCG += m_counts.at(j).at(i).second;
+				sumAT += m_sum.at(j).at(i).first;
+				sumCG += m_sum.at(j).at(i).second;
+			}
+			tmp += m_locusIDs.at(i);
+			tmp += "\t";
+			tmp += to_string(countAT);
+			tmp += "\t";
+			tmp += to_string(countCG);
+			tmp += "\t";
+			tmp += to_string(sumAT);
+			tmp += "\t";
+			tmp += to_string(sumCG);
+			tmp += "\t";
+			tmp += to_string(m_distinct.at(i).first);
+			tmp += "\t";
+			tmp += to_string(m_distinct.at(i).second);
+			out << tmp;
+			tmp.clear();
+		}
+	}
+
 	~CompareCounts() {
 		// TODO Auto-generated destructor stub
 	}
@@ -367,7 +416,8 @@ private:
 	vector<uint64_t> m_rawTotalCounts;
 	vector<unsigned> m_kmerSize;
 	vector<uint64_t> m_totalCounts;
-	tsl::robin_map<string,unsigned> m_sampleIDs;
+	vector<string> m_locusIDs;
+	tsl::robin_map<string,unsigned> m_locusIDToIndex;
 	vector_of_vectors_t m_cloud;
 	tsl::robin_map<string,unsigned> m_filenameToID;
 

@@ -19,6 +19,9 @@ using namespace std;
  * execution of the program.
  */
 namespace opt {
+//Change at compile time to increase or lower number of dimensions
+const unsigned dim = 20;
+
 int verbose = 0;
 unsigned threads = 1;
 unsigned k = 19;
@@ -38,7 +41,9 @@ double pcMissThresh = 0.01;
 
 string pca = "";
 string norm = "";
-unsigned dim = 20;
+
+//merge counts files filename
+string merge = "";
 
 double scoreThresh = 0.5;
 double covSkew = 0.2;
