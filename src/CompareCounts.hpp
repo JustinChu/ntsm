@@ -466,9 +466,10 @@ public:
 		tmp += "\n#@KS\t";
 		tmp += to_string(m_kmerSize[0]);
 		//TODO redundant string found in FingerPrint.hpp, refactor?
-		tmp = "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
+		tmp += "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
 		out << tmp;
 		for (unsigned i = 0; i != m_distinct.size(); ++i) {
+			tmp.clear();
 			unsigned countAT = 0;
 			unsigned countCG = 0;
 			unsigned sumAT = 0;
@@ -493,7 +494,6 @@ public:
 			tmp += "\t";
 			tmp += to_string(m_distinct.at(i).second);
 			out << tmp;
-			tmp.clear();
 		}
 	}
 
