@@ -429,7 +429,7 @@ public:
 		cout << temp;
 #pragma omp parallel for
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
-			for (size_t j = i; j < m_counts.size(); j++) {
+			for (size_t j = i + 1; j < m_counts.size(); j++) {
 				unsigned indexesUsed = 0;
 				vector<unsigned> validIndexes = gatherValidEntries(i, j);
 				double score = skew(
