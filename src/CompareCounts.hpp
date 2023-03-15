@@ -302,18 +302,17 @@ public:
 						continue;
 					}
 					unsigned indexesUsed = 0;
-					vector<unsigned> validIndexes = gatherValidEntries(i,
-							k);
+					vector<unsigned> validIndexes = gatherValidEntries(i, k);
 					double score = skew(
-							computeLogLikelihood(i, k,
-									indexesUsed, validIndexes), genotype[i].cov,
+							computeLogLikelihood(i, k, indexesUsed,
+									validIndexes), genotype[i].cov,
 							genotype[k].cov);
 					score /= double(indexesUsed);
 					if (opt::all || score < opt::scoreThresh) {
-						Relate info = calcRelatedness(i, k,
-								validIndexes);
-						resultsStr(temp, genotype, info,
-								indexesUsed, score, i, k);
+						Relate info = calcRelatedness(i, k, validIndexes);
+						resultsStr(temp, genotype, info, indexesUsed, score,
+								to_string(calcDistance(m_cloud[i], m_cloud[k])),
+								i, k);
 						temp += "\n";
 #pragma omp critical(cout)
 						{
@@ -393,8 +392,8 @@ public:
 					}
 				}
 				Relate info = calcRelatedness(x, y, validIndexes);
-				resultsStr(temp, genotype, info, indexesUsed,
-						score, x, y);
+				resultsStr(temp, genotype, info, indexesUsed, score,
+						to_string(calcDistance(m_cloud[x], m_cloud[y])), x, y);
 				temp += "\t";
 				temp += to_string(distance);
 				temp += "\t";
@@ -438,7 +437,7 @@ public:
 				score /= double(indexesUsed);
 				if (opt::all || score < opt::scoreThresh) {
 					Relate info = calcRelatedness(i, j, validIndexes);
-					resultsStr(temp, genotype, info, indexesUsed, score, i, j);
+					resultsStr(temp, genotype, info, indexesUsed, score, "0", i, j);
 					temp += "\n";
 #pragma omp critical(cout)
 					{
@@ -650,7 +649,7 @@ private:
 	 * prepare results string
 	 */
 	void resultsStr(string &temp, const vector<GenotypeSummary> &genotype,
-			const Relate &info, uint64_t indexesUsed, double score, unsigned i,
+			const Relate &info, uint64_t indexesUsed, double score, const string &dist, unsigned i,
 			unsigned j) {
 		temp.clear();
 		temp += m_filenames[i];
@@ -667,7 +666,7 @@ private:
 		} else {
 			temp += "\t1\t";
 		}
-		temp += to_string(calcDistance(m_cloud[i], m_cloud[j]));
+		temp += dist;
 		temp += "\t";
 		temp += to_string(info.relatedness);
 		temp += "\t";
