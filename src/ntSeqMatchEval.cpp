@@ -250,6 +250,7 @@ int main(int argc, char *argv[])
 			cerr << "Error: Need normalization file" << endl;
 			die = true;
 		}
+		comp.projectPCs();
 		comp.computeScorePCA();
 	}
 	if(!opt::merge.empty()){
