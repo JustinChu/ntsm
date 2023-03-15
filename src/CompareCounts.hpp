@@ -437,7 +437,7 @@ public:
 				score /= double(indexesUsed);
 				if (opt::all || score < opt::scoreThresh) {
 					Relate info = calcRelatedness(i, j, validIndexes);
-					resultsStr(temp, genotype, info, indexesUsed, score, "0", i, j);
+					resultsStr(temp, genotype, info, indexesUsed, score, "-1", i, j);
 					temp += "\n";
 #pragma omp critical(cout)
 					{
