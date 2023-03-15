@@ -35,20 +35,21 @@ void printVersion()
 void printHelpDialog(){
 	const string dialog =
 	"Usage: " PROGRAM " [FILES...]\n"
+	"  -t, --threads              Number of threads to run.[1]\n"
 	"  -s, --score_thresh = FLOAT Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
 	"  -a, --all                  Output results of all tests tried, not just those that\n"
 	"                             pass the score threshold.\n"
-	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
-	"                             set of rotational values from a PCA.\n"
-	"  -n, --norm = STR           Set of values use to center the data before rotation.\n"
-	"  -r, --radius = FLOAT       Search radius for initial PCA based search step.[" + to_string(opt::pcSearchRadius) + "]\n"
-	"  -c, --min_cov = INT        Keep only sites with this coverage and above.[" + to_string(opt::minCov) + "]\n"
 	"  -w, --skew = FLOAT         Divides the score by coverage. Formula: (cov1*cov2)^skew\n"
 	"                             Set to zero for no skew.[" + to_string(opt::covSkew) + "]\n"
+	"  -c, --min_cov = INT        Keep only sites with this coverage and above.[" + to_string(opt::minCov) + "]\n"
 	"  -g, --genome_size = INT    Diploid genome size for error rate estimation.\n"
 	"                             ["+ to_string(opt::genomeSize)+"]\n"
-	"  -t, --threads              Number of threads to run.[1]\n"
-	"  -e, --merge                After analysis merge counts output to filename.\n"
+	"  -e, --merge = STR          After analysis merge counts output to filename.\n"
+	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
+	"                             set of rotational values from a PCA.\n"
+	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
+	"                             during PCA. [Required if -p is enabled]\n"
+	"  -r, --radius = FLOAT       Search radius for initial PCA based search step.[" + to_string(opt::pcSearchRadius) + "]\n"
 	"  -h, --help                 Display this dialog.\n"
 	"  -v, --verbose              Display verbose output.\n"
 	"      --version              Print version information.\n";
@@ -251,7 +252,14 @@ int main(int argc, char *argv[])
 	if(opt::verbose > 1){
 		cerr << "Finished loading files. Now comparing all samples." << endl;
 	}
-	comp.computeScore();
+	if(opt::pca.empty()){
+		cerr << "Performing all-to-all score computation.\nSpecify -p (--pca) to enable faster comparisons." << endl;
+		comp.computeScore();
+	}
+	else{
+		assert(!opt::norm.empty());
+		comp.computeScorePCA();
+	}
 	if(!opt::merge.empty()){
 		comp.mergeCounts();
 	}

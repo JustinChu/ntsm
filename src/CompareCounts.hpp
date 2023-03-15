@@ -171,15 +171,8 @@ public:
 //		}
 //	}
 
-	void computeScore() {
-		const string header =
-				"sample1\tsample2\tscore\tsame\tdist\trelate\tibs0\tibs2\thomConcord"
-						"\thet1\thet2\tsharedHet\thom1\thom2\tsharedHom\tn"
-						"\tcov1\tcov2\terrorRate1\terrorRate2\tmiss1\tmiss2"
-						"\tallHom1\tallHom2\tallHet1\tallHet2"
-						"\tmedianGC1\tmedianGC2\tmad50GC1\tmad50GC2"
-						"\tmeanGC1\tmeanGC2\tvar50GC1\tvar50GC2";
-		cout << header;
+	void computeScorePCA() {
+		cout << m_header;
 		//build tree
 		//max leaf size can be changed (10-50 seems to be fast for queries)
 		kd_tree_t kdTree(opt::dim, m_cloud, { 10 });
@@ -324,6 +317,47 @@ public:
 		}
 	}
 
+	/*
+	 * Compute comparisons between all combinations
+	 * Slower than using PCA to lower comparison numbers
+	 */
+	void computeScore() {
+		cout << m_header;
+		vector<GenotypeSummary> genotype(m_totalCounts.size());
+		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
+			genotype[i] = calcHomHetMiss(m_counts.at(i));
+			genotype[i].errorRate = computeErrorRate(i);
+			genotype[i].cov = double(m_totalCounts[i])
+					/ double(m_distinct.size());
+			genotype[i].expandSearch = genotype[i].errorRate
+					> opt::pcErrorThresh
+					|| (double(genotype.at(i).miss) / double(m_counts.size()))
+							> opt::pcMissThresh;
+		}
+		string temp = "\n";
+		cout << temp;
+#pragma omp parallel for
+		for (unsigned i = 0; i < m_counts.size(); ++i) {
+			for (size_t j = i; j < m_counts.size(); j++) {
+				unsigned indexesUsed = 0;
+				vector<unsigned> validIndexes = gatherValidEntries(i, j);
+				double score = skew(
+						computeLogLikelihood(i, j, indexesUsed, validIndexes),
+						genotype[i].cov, genotype[j].cov);
+				score /= double(indexesUsed);
+				if (opt::all || score < opt::scoreThresh) {
+					Relate info = calcRelatedness(i, j, validIndexes);
+					resultsStr(temp, genotype, info, indexesUsed, score, i, j);
+					temp += "\n";
+#pragma omp critical(cout)
+					{
+						cout << temp;
+					}
+				}
+			}
+		}
+	}
+
 	void mergeCounts(){
 		ofstream out(opt::merge);
 		//merge tags
@@ -420,6 +454,13 @@ private:
 	tsl::robin_map<string,unsigned> m_locusIDToIndex;
 	vector_of_vectors_t m_cloud;
 	tsl::robin_map<string,unsigned> m_filenameToID;
+	const string m_header =
+			"sample1\tsample2\tscore\tsame\tdist\trelate\tibs0\tibs2\thomConcord"
+					"\thet1\thet2\tsharedHet\thom1\thom2\tsharedHom\tn"
+					"\tcov1\tcov2\terrorRate1\terrorRate2\tmiss1\tmiss2"
+					"\tallHom1\tallHom2\tallHet1\tallHet2"
+					"\tmedianGC1\tmedianGC2\tmad50GC1\tmad50GC2"
+					"\tmeanGC1\tmeanGC2\tvar50GC1\tvar50GC2";
 
 	GenotypeSummary calcHomHetMiss(const vector<pair<unsigned, unsigned>> &counts){
 		GenotypeSummary count = {};
