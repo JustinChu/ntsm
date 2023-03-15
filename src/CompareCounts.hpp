@@ -455,7 +455,7 @@ public:
 		//check if k-mers are the same
 		for (unsigned i = 0; i != m_kmerSize.size(); ++i) {
 			for (unsigned j = i + 1; j != m_kmerSize.size(); ++j) {
-				assert(i == j);
+				assert(m_kmerSize.at(i) == m_kmerSize.at(j));
 			}
 		}
 		for (unsigned i = 0; i != m_rawTotalCounts.size(); ++i) {
