@@ -44,7 +44,9 @@ void printHelpDialog(){
 	"  -c, --min_cov = INT        Keep only sites with this coverage and above.[" + to_string(opt::minCov) + "]\n"
 	"  -g, --genome_size = INT    Diploid genome size for error rate estimation.\n"
 	"                             ["+ to_string(opt::genomeSize)+"]\n"
-	"  -e, --merge = STR          After analysis merge counts output to filename.\n"
+	"  -e, --merge = STR          After analysis merge counts and output to file.\n"
+	"  -l, --only_merge           Do not perform an analysis. Only functions when"
+	"                             -e (--merge) option is specified.\n"
 	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
 	"                             set of rotational values from a PCA.\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
@@ -77,6 +79,7 @@ int main(int argc, char *argv[])
 		"genome_size", required_argument, NULL, 'g' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"merge", required_argument, NULL, 'e' }, {
+		"only_merge", required_argument, NULL, 'l' }, {
 		"help", no_argument, NULL, 'h' }, {
 	    "pca", required_argument, NULL, 'p' }, {
 		"norm", required_argument, NULL, 'n' }, {
@@ -87,7 +90,7 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:l", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -161,6 +164,10 @@ int main(int argc, char *argv[])
 						<< optarg << endl;
 				return 0;
 			}
+			break;
+		}
+		case 'l': {
+			opt::onlyMerge = true;
 			break;
 		}
 		case 'p': {
@@ -241,17 +248,27 @@ int main(int argc, char *argv[])
 	if(opt::verbose > 1){
 		cerr << "Finished loading files. Now comparing all samples." << endl;
 	}
-	if(opt::pca.empty()){
-		cerr << "Performing all-to-all score computation.\nSpecify -p (--pca) to enable faster comparisons." << endl;
-		comp.computeScore();
+	if(opt::onlyMerge){
+		if(opt::merge.empty()){
+			cerr << "(-l) cannot be used without --merge (-e)" << endl;
+		}
+		else{
+			cerr << "Not performing analysis. (-l) option detected." << endl;
+		}
 	}
 	else{
-		if (!Util::fexists(opt::norm)) {
-			cerr << "Error: Need normalization file" << endl;
-			die = true;
+		if(opt::pca.empty()){
+			cerr << "Performing all-to-all score computation.\nSpecify -p (--pca) to enable faster comparisons." << endl;
+			comp.computeScore();
 		}
-		comp.projectPCs();
-		comp.computeScorePCA();
+		else{
+			if (!Util::fexists(opt::norm)) {
+				cerr << "Error: Need normalization file" << endl;
+				die = true;
+			}
+			comp.projectPCs();
+			comp.computeScorePCA();
+		}
 	}
 	if(!opt::merge.empty()){
 		comp.mergeCounts();

@@ -44,6 +44,7 @@ string norm = "";
 
 //merge counts files filename
 string merge = "";
+bool onlyMerge = false;
 
 double scoreThresh = 0.5;
 double covSkew = 0.2;
