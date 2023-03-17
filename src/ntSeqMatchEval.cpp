@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		else{
-			cerr << " (-l) option detected. Not performing analysism, only merging." << endl;
+			cerr << " (-l) option detected. Not performing analysis, only merging." << endl;
 		}
 	}
 	else{
