@@ -250,10 +250,11 @@ int main(int argc, char *argv[])
 	}
 	if(opt::onlyMerge){
 		if(opt::merge.empty()){
-			cerr << "(-l) cannot be used without --merge (-e)" << endl;
+			cerr << "(-l) cannot be used without --merge (-e) option." << endl;
+			exit(EXIT_FAILURE);
 		}
 		else{
-			cerr << "Not performing analysis. (-l) option detected." << endl;
+			cerr << " (-l) option detected. Not performing analysism, only merging." << endl;
 		}
 	}
 	else{
