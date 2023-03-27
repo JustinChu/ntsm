@@ -359,7 +359,6 @@ public:
 				unsigned x = (uint64_t)((*itr & 0xFFFFFFFF00000000LL) >> 32);
 				unsigned y = (uint64_t)(*itr & 0xFFFFFFFFLL);
 				unsigned indexesUsed = 0;
-				cerr << x << " " << y << " " << m_filenames.at(x) << " " << m_filenames.at(y) << endl;
 				vector<unsigned> validIndexes = gatherValidEntries(x, y);
 				double score = skew(
 						computeLogLikelihood(x, y, indexesUsed, validIndexes),
