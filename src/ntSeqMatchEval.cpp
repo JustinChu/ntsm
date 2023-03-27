@@ -45,7 +45,7 @@ void printHelpDialog(){
 	"  -g, --genome_size = INT    Diploid genome size for error rate estimation.\n"
 	"                             ["+ to_string(opt::genomeSize)+"]\n"
 	"  -e, --merge = STR          After analysis merge counts and output to file.\n"
-	"  -l, --only_merge           Do not perform an analysis. Only functions when"
+	"  -l, --only_merge           Do not perform an analysis. Only functions when\n"
 	"                             -e (--merge) option is specified.\n"
 	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
 	"                             set of rotational values from a PCA.\n"
