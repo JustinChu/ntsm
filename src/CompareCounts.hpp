@@ -347,17 +347,9 @@ public:
 							unsigned x = m_filenameToID.at(values.at(i));
 							unsigned y = m_filenameToID.at(values.at(j));
 							if (x <= y) {
-								truePairs.insert(
-										((uint64_t) m_filenameToID.at(
-												values.at(i))) << 32
-												| m_filenameToID.at(
-														values.at(j)));
+								truePairs.insert(((uint64_t) x) << 32 | y);
 							} else {
-								truePairs.insert(
-										((uint64_t) m_filenameToID.at(
-												values.at(j))) << 32
-												| m_filenameToID.at(
-														values.at(i)));
+								truePairs.insert(((uint64_t) y) << 32 | x);
 							}
 						}
 					}
@@ -367,6 +359,7 @@ public:
 				unsigned x = (uint64_t)((*itr & 0xFFFFFFFF00000000LL) >> 32);
 				unsigned y = (uint64_t)(*itr & 0xFFFFFFFFLL);
 				unsigned indexesUsed = 0;
+				cerr << x << " " << y << " " << m_filenames.at(x) << " " << m_filenames.at(y) << endl;
 				vector<unsigned> validIndexes = gatherValidEntries(x, y);
 				double score = skew(
 						computeLogLikelihood(x, y, indexesUsed, validIndexes),
@@ -374,6 +367,7 @@ public:
 				score /= double(indexesUsed);
 				double distance = calcDistance(m_cloud[x], m_cloud[y]);
 				unsigned consideredCount = 0;
+#pragma omp parallel for
 				for (unsigned i = 0; i < m_counts.size(); ++i) {
 					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
 					size_t nMatches = kdTree.index->radiusSearch(
@@ -394,8 +388,6 @@ public:
 				Relate info = calcRelatedness(x, y, validIndexes);
 				resultsStr(temp, genotype, info, indexesUsed, score,
 						to_string(calcDistance(m_cloud[x], m_cloud[y])), x, y);
-				temp += "\t";
-				temp += to_string(distance);
 				temp += "\t";
 				temp += to_string(consideredCount);
 				temp += "\n";

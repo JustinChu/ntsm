@@ -45,13 +45,14 @@ void printHelpDialog(){
 	"  -g, --genome_size = INT    Diploid genome size for error rate estimation.\n"
 	"                             ["+ to_string(opt::genomeSize)+"]\n"
 	"  -e, --merge = STR          After analysis merge counts and output to file.\n"
-	"  -l, --only_merge           Do not perform an analysis. Only functions when\n"
+	"  -o, --only_merge           Do not perform an analysis. Only functions when\n"
 	"                             -e (--merge) option is specified.\n"
 	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
 	"                             set of rotational values from a PCA.\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
 	"                             during PCA. [Required if -p is enabled]\n"
 	"  -r, --radius = FLOAT       Search radius for initial PCA based search step.[" + to_string(opt::pcSearchRadius) + "]\n"
+	"  -l, --large = FLOAT        Search radius for large PCA based search step.[" + to_string(opt::pcLargeRadius) + "]\n"
 	"  -h, --help                 Display this dialog.\n"
 	"  -v, --verbose              Display verbose output.\n"
 	"      --version              Print version information.\n";
@@ -79,18 +80,19 @@ int main(int argc, char *argv[])
 		"genome_size", required_argument, NULL, 'g' }, {
 		"threads", required_argument, NULL, 't' }, {
 		"merge", required_argument, NULL, 'e' }, {
-		"only_merge", required_argument, NULL, 'l' }, {
+		"only_merge", required_argument, NULL, 'o' }, {
 		"help", no_argument, NULL, 'h' }, {
 	    "pca", required_argument, NULL, 'p' }, {
 		"norm", required_argument, NULL, 'n' }, {
 		"radius", required_argument, NULL, 'r' }, {
+		"deep_radius", required_argument, NULL, 'd' }, {
 		"debug", required_argument, NULL, 'd' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
 		"verbose", no_argument, NULL, 'v' }, {
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:l", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:od:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -166,7 +168,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
-		case 'l': {
+		case 'o': {
 			opt::onlyMerge = true;
 			break;
 		}
@@ -192,6 +194,15 @@ int main(int argc, char *argv[])
 			stringstream convert(optarg);
 			if (!(convert >> opt::pcSearchRadius)) {
 				cerr << "Error - Invalid parameter r: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'l': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::pcLargeRadius)) {
+				cerr << "Error - Invalid parameter l: "
 						<< optarg << endl;
 				return 0;
 			}
