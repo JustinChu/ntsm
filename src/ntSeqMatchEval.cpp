@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	    "pca", required_argument, NULL, 'p' }, {
 		"norm", required_argument, NULL, 'n' }, {
 		"radius", required_argument, NULL, 'r' }, {
-		"deep_radius", required_argument, NULL, 'd' }, {
+		"large", required_argument, NULL, 'l' }, {
 		"debug", required_argument, NULL, 'd' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
 		"verbose", no_argument, NULL, 'v' }, {
