@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:od:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:ol:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
