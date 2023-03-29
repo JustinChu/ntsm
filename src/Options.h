@@ -19,8 +19,7 @@ using namespace std;
  * execution of the program.
  */
 namespace opt {
-//Change at compile time to increase or lower number of dimensions
-const unsigned dim = 20;
+unsigned dim = 20;
 
 int verbose = 0;
 unsigned threads = 1;

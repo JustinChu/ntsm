@@ -49,6 +49,7 @@ void printHelpDialog(){
 	"                             -e (--merge) option is specified.\n"
 	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
 	"                             set of rotational values from a PCA.\n"
+	"  -d, --dim = INT            Number of dimensions to consider inf PCA. [" + to_string(opt::dim) + "]\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
 	"                             during PCA. [Required if -p is enabled]\n"
 	"  -r, --radius = FLOAT       Search radius for initial PCA based search step.[" + to_string(opt::pcSearchRadius) + "]\n"
@@ -86,13 +87,13 @@ int main(int argc, char *argv[])
 		"norm", required_argument, NULL, 'n' }, {
 		"radius", required_argument, NULL, 'r' }, {
 		"large", required_argument, NULL, 'l' }, {
-		"debug", required_argument, NULL, 'd' }, {
+		"debug", required_argument, NULL, 'b' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
 		"verbose", no_argument, NULL, 'v' }, {
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:ol:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:ol:b:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -210,8 +211,17 @@ int main(int argc, char *argv[])
 		}
 		case 'd': {
 			stringstream convert(optarg);
-			if (!(convert >> opt::debug)) {
+			if (!(convert >> opt::dim)) {
 				cerr << "Error - Invalid parameter d: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'b': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::debug)) {
+				cerr << "Error - Invalid parameter b: "
 						<< optarg << endl;
 				return 0;
 			}
