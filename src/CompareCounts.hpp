@@ -280,7 +280,7 @@ public:
 		if (opt::debug.empty()) {
 			string temp = "\n";
 			cout << temp;
-#pragma omp parallel for
+#pragma omp parallel for private(temp)
 			for (unsigned i = 0; i < m_counts.size(); ++i) {
 				std::vector<nanoflann::ResultItem<long unsigned, double>> ret_matches;
 				size_t nMatches = 0;
@@ -322,9 +322,12 @@ public:
 				}
 			}
 		} else {
-			string temp = "\tpairs\n";
+			if(opt::verbose > 0){
+				cerr << "Debug output enabled" << endl;
+			}
+			string temp = "\tpairs\tcandidates\tpossible\n";
 			cout << temp;
-			tsl::robin_set<uint64_t> truePairs;
+			std::unordered_set<std::pair<unsigned, unsigned>, pair_hash> truePairs;
 			//load in debug file
 			ifstream fh(opt::debug);
 			string line;
@@ -347,17 +350,20 @@ public:
 							unsigned x = m_filenameToID.at(values.at(i));
 							unsigned y = m_filenameToID.at(values.at(j));
 							if (x <= y) {
-								truePairs.insert(((uint64_t) x) << 32 | y);
+								truePairs.insert(std::make_pair(x,y));
 							} else {
-								truePairs.insert(((uint64_t) y) << 32 | x);
+								truePairs.insert(std::make_pair(y,x));
 							}
 						}
 					}
 				}
 			}
-			for(tsl::robin_set<uint64_t>::iterator itr = truePairs.begin(); itr != truePairs.end(); ++itr){
-				unsigned x = (uint64_t)((*itr & 0xFFFFFFFF00000000LL) >> 32);
-				unsigned y = (uint64_t)(*itr & 0xFFFFFFFFLL);
+			if(opt::verbose > 0){
+				cerr << "Finished creating ground truth pairs" << endl;
+			}
+			for(auto itr = truePairs.begin(); itr != truePairs.end(); ++itr){
+				unsigned x = itr->first;
+				unsigned y = itr->second;
 				unsigned indexesUsed = 0;
 				vector<unsigned> validIndexes = gatherValidEntries(x, y);
 				double score = skew(
@@ -366,7 +372,7 @@ public:
 				score /= double(indexesUsed);
 				double distance = calcDistance(m_cloud[x], m_cloud[y]);
 				unsigned consideredCount = 0;
-#pragma omp parallel for
+#pragma omp parallel for private(temp)
 				for (unsigned i = 0; i < m_counts.size(); ++i) {
 					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
 					size_t nMatches = kdTree.index->radiusSearch(
@@ -384,11 +390,39 @@ public:
 						++consideredCount;
 					}
 				}
+				size_t candidates = 0;
+				if (genotype.at(x).expandSearch
+						== genotype.at(y).expandSearch) {
+					if (y < x) {
+						std::vector<
+								nanoflann::ResultItem<long unsigned int, double>> ret_matches;
+						candidates = kdTree.index->radiusSearch(
+								&(m_cloud[y])[0], distance, ret_matches);
+					} else {
+						std::vector<
+								nanoflann::ResultItem<long unsigned int, double>> ret_matches;
+						candidates = kdTree.index->radiusSearch(
+								&(m_cloud[x])[0], distance, ret_matches);
+					}
+				} else if (genotype.at(y).expandSearch) {
+					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
+					candidates = kdTree.index->radiusSearch(&(m_cloud[y])[0],
+							distance, ret_matches);
+				} else {
+					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
+					candidates = kdTree.index->radiusSearch(&(m_cloud[x])[0],
+							distance, ret_matches);
+				}
+
 				Relate info = calcRelatedness(x, y, validIndexes);
 				resultsStr(temp, genotype, info, indexesUsed, score,
 						to_string(calcDistance(m_cloud[x], m_cloud[y])), x, y);
 				temp += "\t";
 				temp += to_string(consideredCount);
+				temp += "\t";
+				temp += to_string(candidates);
+				temp += "\t";
+				temp += to_string(double((m_filenames.size()-1)*m_filenames.size())/2.0);
 				temp += "\n";
 #pragma omp critical(cout)
 				{
@@ -543,6 +577,14 @@ private:
 					"\tallHom1\tallHom2\tallHet1\tallHet2"
 					"\tmedianGC1\tmedianGC2\tmad50GC1\tmad50GC2"
 					"\tmeanGC1\tmeanGC2\tvar50GC1\tvar50GC2";
+
+	struct pair_hash
+	{
+	    template <class T1, class T2>
+	    std::size_t operator() (const std::pair<T1, T2> &pair) const {
+	        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+	    }
+	};
 
 	GenotypeSummary calcHomHetMiss(const vector<pair<unsigned, unsigned>> &counts){
 		GenotypeSummary count = {};
