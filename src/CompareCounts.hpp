@@ -286,10 +286,10 @@ public:
 				size_t nMatches = 0;
 				if (genotype.at(i).expandSearch) {
 					nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
-							opt::pcLargeRadius, ret_matches);
+							pow(opt::pcLargeRadius, 2), ret_matches);
 				} else {
 					nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
-							opt::pcSearchRadius, ret_matches);
+							pow(opt::pcSearchRadius, 2), ret_matches);
 				}
 				for (size_t j = 0; j < nMatches; j++) {
 					unsigned k = ret_matches[j].first;
@@ -448,7 +448,7 @@ public:
 		}
 		string temp = "\n";
 		cout << temp;
-#pragma omp parallel for
+#pragma omp parallel for private(temp)
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (size_t j = i + 1; j < m_counts.size(); j++) {
 				unsigned indexesUsed = 0;
