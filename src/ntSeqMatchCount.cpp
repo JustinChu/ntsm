@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
 	int OPT_VERSION = 0;
 
 	//long form arguments
-	static struct option long_options[] = { { "threads", required_argument, NULL, 't' },
+	static struct option long_options[] = {
+			{ "threads", required_argument, NULL, 't' },
 			{ "maxCov", required_argument, NULL, 'm' },
 			{ "output", required_argument, NULL, 'o' },
 			{ "dupes", required_argument, NULL, 'd' },

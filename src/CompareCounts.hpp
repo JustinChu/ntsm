@@ -301,16 +301,14 @@ public:
 					} else if (genotype.at(k).expandSearch) {
 						continue;
 					}
-					unsigned indexesUsed = 0;
 					vector<unsigned> validIndexes = gatherValidEntries(i, k);
 					double score = skew(
-							computeLogLikelihood(i, k, indexesUsed,
-									validIndexes), genotype[i].cov,
+							computeLogLikelihood(i, k, validIndexes), genotype[i].cov,
 							genotype[k].cov);
-					score /= double(indexesUsed);
-					if (opt::all || score < opt::scoreThresh) {
+					score /= double(validIndexes.size());
+					if (opt::all || (score < opt::scoreThresh)) {
 						Relate info = calcRelatedness(i, k, validIndexes);
-						resultsStr(temp, genotype, info, indexesUsed, score,
+						resultsStr(temp, genotype, info, validIndexes.size(), score,
 								to_string(calcDistance(m_cloud[i], m_cloud[k])),
 								i, k);
 						temp += "\n";
@@ -364,12 +362,11 @@ public:
 			for(auto itr = truePairs.begin(); itr != truePairs.end(); ++itr){
 				unsigned x = itr->first;
 				unsigned y = itr->second;
-				unsigned indexesUsed = 0;
 				vector<unsigned> validIndexes = gatherValidEntries(x, y);
 				double score = skew(
-						computeLogLikelihood(x, y, indexesUsed, validIndexes),
+						computeLogLikelihood(x, y, validIndexes),
 						genotype[x].cov, genotype[y].cov);
-				score /= double(indexesUsed);
+				score /= double(validIndexes.size());
 				double distance = calcDistance(m_cloud[x], m_cloud[y]);
 				unsigned consideredCount = 0;
 #pragma omp parallel for private(temp)
@@ -415,7 +412,7 @@ public:
 				}
 
 				Relate info = calcRelatedness(x, y, validIndexes);
-				resultsStr(temp, genotype, info, indexesUsed, score,
+				resultsStr(temp, genotype, info, validIndexes.size(), score,
 						to_string(calcDistance(m_cloud[x], m_cloud[y])), x, y);
 				temp += "\t";
 				temp += to_string(consideredCount);
@@ -457,10 +454,10 @@ public:
 				unsigned indexesUsed = 0;
 				vector<unsigned> validIndexes = gatherValidEntries(i, j);
 				double score = skew(
-						computeLogLikelihood(i, j, indexesUsed, validIndexes),
+						computeLogLikelihood(i, j, validIndexes),
 						genotype[i].cov, genotype[j].cov);
-				score /= double(indexesUsed);
-				if (opt::all || score < opt::scoreThresh) {
+				score /= double(validIndexes.size());
+				if (opt::all || (score < opt::scoreThresh)) {
 					Relate info = calcRelatedness(i, j, validIndexes);
 					resultsStr(temp, genotype, info, indexesUsed, score, "-1", i, j);
 					temp += "\n";
@@ -932,8 +929,7 @@ private:
 
 	//compute only sites that aren't missing
 	double computeLogLikelihood(unsigned index1, unsigned index2,
-			unsigned &numRetained, const vector<unsigned> &validIndexes) {
-		numRetained = validIndexes.size();
+			const vector<unsigned> &validIndexes) {
 		return -2.0
 				* (computeSumLogPJoint(index1, index2, validIndexes)
 						- (computeSumLogPSingle(index1, validIndexes)
