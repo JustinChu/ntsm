@@ -50,11 +50,17 @@ public:
 			gzFile fp;
 			fp = gzopen(filenames[i].c_str(), "r");
 			if (fp == Z_NULL) {
-				std::cerr << "file " << filenames[i] << " cannot be opened"
-						<< std::endl;
+#pragma omp critical (stderr)
+				{
+					std::cerr << "file " << filenames[i] << " cannot be opened"
+							<< std::endl;
+				}
 				exit(1);
 			} else if (opt::verbose) {
-				std::cerr << "Opening " << filenames[i] << std::endl;
+#pragma omp critical (stderr)
+				{
+					std::cerr << "Opening " << filenames[i] << std::endl;
+				}
 			}
 			//read in seq
 			kseq_t *seq = kseq_init(fp);
@@ -63,9 +69,12 @@ public:
 				processSingleRead(seq);
 				l = kseq_read(seq);
 				if (opt::verbose > 2 && (m_totalReads % 100000) == 0) {
-					cerr << "Current Total: " << m_totalKmers << " reads, "
-							<< m_totalCounts << " total counts, and "
-							<< m_totalBases << " total bases " << endl;
+#pragma omp critical (stderr)
+					{
+						cerr << "Current Total: " << m_totalKmers << " reads, "
+								<< m_totalCounts << " total counts, and "
+								<< m_totalBases << " total bases " << endl;
+					}
 				}
 			}
 			kseq_destroy(seq);
@@ -458,9 +467,12 @@ private:
 		insertCount(seq->seq.s, seq->seq.l);
 		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
 			if (opt::verbose > 2) {
+#pragma omp critical (stderr)
+				{
 				cerr << "max count reached at " << m_totalKmers << " reads, "
 						<< m_totalCounts << " total counts, and "
 						<< m_totalBases << " total bases " << endl;
+				}
 			}
 			m_earlyTerm = true;
 		}
@@ -470,11 +482,17 @@ private:
 		gzFile fp = gzopen(opt::snp.c_str(), "r");
 		tsl::robin_set<uint64_t> dupes;
 		if (fp == Z_NULL) {
+#pragma omp critical (stderr)
+				{
 			std::cerr << "file " << opt::snp.c_str() << " cannot be opened"
 					<< std::endl;
+				}
 			exit(1);
 		} else if (opt::verbose) {
+#pragma omp critical (stderr)
+				{
 			std::cerr << "Opening " << opt::snp.c_str() << std::endl;
+				}
 		}
 		{
 			kseq_t *seq = kseq_init(fp);
