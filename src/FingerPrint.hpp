@@ -35,7 +35,7 @@ public:
 	typedef uint16_t AlleleID;
 	typedef uint64_t HashedKmer;
 
-	FingerPrint() : m_totalCounts(0), m_maxCounts(0), m_totalBases(0) {
+	FingerPrint() : m_totalCounts(0), m_maxCounts(0), m_totalBases(0), m_totalReads(0) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
@@ -62,6 +62,11 @@ public:
 			while (l >= 0 && !m_earlyTerm) {
 				processSingleRead(seq);
 				l = kseq_read(seq);
+				if (opt::verbose > 2 && (m_totalReads % 100000) == 0) {
+					cerr << "Current Total: " << m_totalKmers << " reads, "
+							<< m_totalCounts << " total counts, and "
+							<< m_totalBases << " total bases " << endl;
+				}
 			}
 			kseq_destroy(seq);
 			gzclose(fp);
@@ -441,14 +446,22 @@ private:
 	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar;
 	vector<string> m_alleleIDs;
 	uint64_t m_totalBases;
+	uint64_t m_totalReads; //for debugging purposes
 	bool m_earlyTerm;
 //	unsigned m_maxSiteSize;
 //	static const unsigned interval = 65536;
 
 	void processSingleRead(kseq_t *seq){
+#pragma omp atomic
+		m_totalReads++;
 		//k-merize and insert
 		insertCount(seq->seq.s, seq->seq.l);
 		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
+			if (opt::verbose > 2) {
+				cerr << "max count reached at " << m_totalKmers << " reads, "
+						<< m_totalCounts << " total counts, and "
+						<< m_totalBases << " total bases " << endl;
+			}
 			m_earlyTerm = true;
 		}
 	}
@@ -466,7 +479,7 @@ private:
 		{
 			kseq_t *seq = kseq_init(fp);
 			int l = kseq_read(seq);
-			unsigned entryNum = 0;
+			size_t entryNum = 0;
 			while (l >= 0) {
 				if (entryNum % 2 == 0) {
 					unsigned index = entryNum / 2;
