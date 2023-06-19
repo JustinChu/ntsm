@@ -470,7 +470,7 @@ private:
 #pragma omp critical (stderr)
 				{
 					cerr << "max count reached at " << m_totalKmers
-							<< " reads, " << m_totalCounts
+							<< " total k-mers, " << m_totalCounts
 							<< " total counts, and " << m_totalBases
 							<< " total bases " << endl;
 				}
