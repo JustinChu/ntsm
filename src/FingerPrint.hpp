@@ -466,11 +466,11 @@ private:
 		//k-merize and insert
 		insertCount(seq->seq.s, seq->seq.l);
 		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
-			if (opt::verbose > 2) {
+			if (opt::verbose > 0) {
 #pragma omp critical (stderr)
 				{
-					cerr << "max count reached at " << m_totalKmers
-							<< " total k-mers, " << m_totalCounts
+					cerr << "max count reached at " << m_totalReads << " reads, "
+							<< m_totalKmers << " k-mers, " << m_totalCounts
 							<< " total counts, and " << m_totalBases
 							<< " total bases " << endl;
 				}
