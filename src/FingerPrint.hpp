@@ -68,12 +68,14 @@ public:
 			while (l >= 0 && !m_earlyTerm) {
 				processSingleRead(seq);
 				l = kseq_read(seq);
-				if (opt::verbose > 2 && (m_totalReads % 100000) == 0) {
+				if (opt::verbose > 2) {
 #pragma omp critical (stderr)
+					if((++m_totalReads % 1000000) == 0)
 					{
-						cerr << "Current Total: " << m_totalKmers << " reads, "
-								<< m_totalCounts << " total counts, and "
-								<< m_totalBases << " total bases " << endl;
+						cerr << "Current Total: " << m_totalReads << " reads, "
+								<< m_totalCounts << " k-mers, " << m_totalCounts
+								<< " total counts, and " << m_totalBases
+								<< " total bases " << endl;
 					}
 				}
 			}
@@ -461,17 +463,16 @@ private:
 //	static const unsigned interval = 65536;
 
 	void processSingleRead(kseq_t *seq){
-#pragma omp atomic
-		m_totalReads++;
 		//k-merize and insert
 		insertCount(seq->seq.s, seq->seq.l);
 		if (m_maxCounts != 0 && m_totalCounts > m_maxCounts) {
 			if (opt::verbose > 2) {
 #pragma omp critical (stderr)
 				{
-				cerr << "max count reached at " << m_totalKmers << " reads, "
-						<< m_totalCounts << " total counts, and "
-						<< m_totalBases << " total bases " << endl;
+					cerr << "max count reached at " << m_totalKmers
+							<< " reads, " << m_totalCounts
+							<< " total counts, and " << m_totalBases
+							<< " total bases " << endl;
 				}
 			}
 			m_earlyTerm = true;
@@ -483,72 +484,68 @@ private:
 		tsl::robin_set<uint64_t> dupes;
 		if (fp == Z_NULL) {
 #pragma omp critical (stderr)
-				{
-			std::cerr << "file " << opt::snp.c_str() << " cannot be opened"
-					<< std::endl;
-				}
+			{
+				std::cerr << "file " << opt::snp.c_str() << " cannot be opened"
+						<< std::endl;
+			}
 			exit(1);
 		} else if (opt::verbose) {
 #pragma omp critical (stderr)
-				{
-			std::cerr << "Opening " << opt::snp.c_str() << std::endl;
-				}
-		}
-		{
-			kseq_t *seq = kseq_init(fp);
-			int l = kseq_read(seq);
-			size_t entryNum = 0;
-			while (l >= 0) {
-				if (entryNum % 2 == 0) {
-					unsigned index = entryNum / 2;
-					assert(index == m_alleleIDToKmerRef.size());
-					m_alleleIDToKmerRef.emplace_back(
-							shared_ptr<vector<uint64_t>>(
-									new vector<uint64_t>()));
-					//k-merize and
-					for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
-							itr != itr.end(); ++itr) {
-						uint64_t hv = *itr;
-						//check for duplicates
-						if (m_counts.find(hv) != m_counts.end()) {
-							cerr << "Warning: " << seq->name.s
-									<< " of REF file has a k-mer collision at pos: "
-									<< itr.getPos() << endl;
-							dupes.insert(hv);
-						} else {
-							m_alleleIDToKmerRef[index]->emplace_back(hv);
-							m_counts[hv] = 0;
-						}
-					}
-					m_alleleIDs.emplace_back(seq->name.s);
-				} else {
-					unsigned index = entryNum / 2;
-					assert(index == m_alleleIDToKmerVar.size());
-					m_alleleIDToKmerVar.emplace_back(
-							shared_ptr<vector<uint64_t>>(
-									new vector<uint64_t>()));
-					//k-merize and insert
-					for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
-							itr != itr.end(); ++itr) {
-						uint64_t hv = *itr;
-						//check for duplicates
-						if (m_counts.find(hv) != m_counts.end()) {
-							cerr << "Warning: " << seq->name.s
-									<< " of VAR file has a k-mer collision at pos: "
-									<< itr.getPos() << endl;
-							dupes.insert(hv);
-						} else {
-							m_alleleIDToKmerVar[index]->emplace_back(hv);
-							m_counts[hv] = 0;
-						}
-					}
-				}
-				l = kseq_read(seq);
-				entryNum++;
+			{
+				std::cerr << "Opening " << opt::snp.c_str() << std::endl;
 			}
-			kseq_destroy(seq);
-			gzclose(fp);
 		}
+		kseq_t *seq = kseq_init(fp);
+		int l = kseq_read(seq);
+		size_t entryNum = 0;
+		while (l >= 0) {
+			if (entryNum % 2 == 0) {
+				unsigned index = entryNum / 2;
+				assert(index == m_alleleIDToKmerRef.size());
+				m_alleleIDToKmerRef.emplace_back(
+						shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+				//k-merize and
+				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+						itr != itr.end(); ++itr) {
+					uint64_t hv = *itr;
+					//check for duplicates
+					if (m_counts.find(hv) != m_counts.end()) {
+						cerr << "Warning: " << seq->name.s
+								<< " of REF file has a k-mer collision at pos: "
+								<< itr.getPos() << endl;
+						dupes.insert(hv);
+					} else {
+						m_alleleIDToKmerRef[index]->emplace_back(hv);
+						m_counts[hv] = 0;
+					}
+				}
+				m_alleleIDs.emplace_back(seq->name.s);
+			} else {
+				unsigned index = entryNum / 2;
+				assert(index == m_alleleIDToKmerVar.size());
+				m_alleleIDToKmerVar.emplace_back(
+						shared_ptr<vector<uint64_t>>(new vector<uint64_t>()));
+				//k-merize and insert
+				for (KseqHashIterator itr(seq->seq.s, seq->seq.l, opt::k);
+						itr != itr.end(); ++itr) {
+					uint64_t hv = *itr;
+					//check for duplicates
+					if (m_counts.find(hv) != m_counts.end()) {
+						cerr << "Warning: " << seq->name.s
+								<< " of VAR file has a k-mer collision at pos: "
+								<< itr.getPos() << endl;
+						dupes.insert(hv);
+					} else {
+						m_alleleIDToKmerVar[index]->emplace_back(hv);
+						m_counts[hv] = 0;
+					}
+				}
+			}
+			l = kseq_read(seq);
+			entryNum++;
+		}
+		kseq_destroy(seq);
+		gzclose(fp);
 		if (!opt::dupes) {
 			//remove dupes
 			for (tsl::robin_set<uint64_t>::iterator itr = dupes.begin();
