@@ -459,7 +459,7 @@ public:
 				vector<unsigned> validIndexes = gatherValidEntries(i, j);
 				double score = std::numeric_limits<double>::max();
 				if (validIndexes.size() > 0) {
-					double score = skew(computeLogLikelihood(i, j, validIndexes),
+					score = skew(computeLogLikelihood(i, j, validIndexes),
 							genotype[i].cov, genotype[j].cov);
 					score /= double(validIndexes.size());
 				}
