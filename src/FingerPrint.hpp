@@ -73,7 +73,7 @@ public:
 					if((++m_totalReads % 1000000) == 0)
 					{
 						cerr << "Current Total: " << m_totalReads << " reads, "
-								<< m_totalCounts << " k-mers, " << m_totalCounts
+								<< m_totalKmers << " k-mers, " << m_totalCounts
 								<< " total counts, and " << m_totalBases
 								<< " total bases " << endl;
 					}
