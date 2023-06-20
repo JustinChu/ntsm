@@ -302,13 +302,16 @@ public:
 						continue;
 					}
 					vector<unsigned> validIndexes = gatherValidEntries(i, k);
-					double score = skew(
-							computeLogLikelihood(i, k, validIndexes), genotype[i].cov,
-							genotype[k].cov);
-					score /= double(validIndexes.size());
+					double score = std::numeric_limits<double>::max();
+					if (validIndexes.size() > 0) {
+						score = skew(computeLogLikelihood(i, k, validIndexes),
+								genotype[i].cov, genotype[k].cov);
+						score /= double(validIndexes.size());
+					}
 					if (opt::all || (score < opt::scoreThresh)) {
 						Relate info = calcRelatedness(i, k, validIndexes);
-						resultsStr(temp, genotype, info, validIndexes.size(), score,
+						resultsStr(temp, genotype, info, validIndexes.size(),
+								score,
 								to_string(calcDistance(m_cloud[i], m_cloud[k])),
 								i, k);
 						temp += "\n";
@@ -363,10 +366,12 @@ public:
 				unsigned x = itr->first;
 				unsigned y = itr->second;
 				vector<unsigned> validIndexes = gatherValidEntries(x, y);
-				double score = skew(
-						computeLogLikelihood(x, y, validIndexes),
-						genotype[x].cov, genotype[y].cov);
-				score /= double(validIndexes.size());
+				double score = std::numeric_limits<double>::max();
+				if (validIndexes.size() > 0) {
+					score = skew(computeLogLikelihood(x, y, validIndexes),
+							genotype[x].cov, genotype[y].cov);
+					score /= double(validIndexes.size());
+				}
 				double distance = calcDistance(m_cloud[x], m_cloud[y]);
 				unsigned consideredCount = 0;
 #pragma omp parallel for private(temp)
@@ -451,15 +456,17 @@ public:
 #pragma omp parallel for private(temp)
 		for (unsigned i = 0; i < m_counts.size(); ++i) {
 			for (size_t j = i + 1; j < m_counts.size(); j++) {
-				unsigned indexesUsed = 0;
 				vector<unsigned> validIndexes = gatherValidEntries(i, j);
-				double score = skew(
-						computeLogLikelihood(i, j, validIndexes),
-						genotype[i].cov, genotype[j].cov);
-				score /= double(validIndexes.size());
+				double score = std::numeric_limits<double>::max();
+				if (validIndexes.size() > 0) {
+					double score = skew(computeLogLikelihood(i, j, validIndexes),
+							genotype[i].cov, genotype[j].cov);
+					score /= double(validIndexes.size());
+				}
 				if (opt::all || (score < opt::scoreThresh)) {
 					Relate info = calcRelatedness(i, j, validIndexes);
-					resultsStr(temp, genotype, info, indexesUsed, score, "-1", i, j);
+					resultsStr(temp, genotype, info, validIndexes.size(), score, "-1",
+							i, j);
 					temp += "\n";
 #pragma omp critical(cout)
 					{
