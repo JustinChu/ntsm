@@ -196,9 +196,22 @@ public:
 //					vals[j] = nonNormGeno - normVals[j];
 				}
 			}
+			if (opt::verbose > 2) {
+#pragma omp critical(cerr)
+				{
+					cerr << "Normalizing " << m_filenames[i] << endl;
+				}
+			}
 			//compute dot product for each PC
 			for (unsigned j = 0; j < opt::dim; ++j) {
-				m_cloud[i][j] = inner_product(vals.begin(), vals.end(), rotVals.at(j).begin(), 0.0);
+				m_cloud[i][j] = inner_product(vals.begin(), vals.end(),
+						rotVals.at(j).begin(), 0.0);
+			}
+		}
+		if (opt::verbose > 1) {
+#pragma omp critical(cerr)
+			{
+				cerr << "Finished Normalization " << endl;
 			}
 		}
 	}
@@ -263,19 +276,25 @@ public:
 //	}
 
 	void computeScorePCA() {
+		if (opt::verbose > 1) {
+			cerr << "Generating kd-tree" << endl;
+		}
 		cout << m_header;
 		//build tree
 		//max leaf size can be changed (10-50 seems to be fast for queries)
 		kd_tree_t kdTree(opt::dim, m_cloud, { 10 });
 		vector<GenotypeSummary> genotype(m_totalCounts.size());
 		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
-			genotype[i] = calcHomHetMiss(m_counts.at(i));
-			genotype[i].errorRate = computeErrorRate(i);
+						genotype[i] = calcHomHetMiss(m_counts.at(i));
+						genotype[i].errorRate = computeErrorRate(i);
 			genotype[i].cov = double(m_totalCounts[i]) / double(m_distinct.size());
 			genotype[i].expandSearch = genotype[i].errorRate
 					> opt::pcErrorThresh
 					|| (double(genotype.at(i).miss) / double(m_counts.size()))
 							> opt::pcMissThresh;
+		}
+		if (opt::verbose > 1) {
+			cerr << "Starting Score Computation with PCA" << endl;
 		}
 		if (opt::debug.empty()) {
 			string temp = "\n";
@@ -326,7 +345,7 @@ public:
 			if(opt::verbose > 0){
 				cerr << "Debug output enabled" << endl;
 			}
-			string temp = "\tpairs\tcandidates\tpossible\n";
+			string temp = "\tpairs\tcandidates\tpossible\tcorrect\n";
 			cout << temp;
 			std::unordered_set<std::pair<unsigned, unsigned>, pair_hash> truePairs;
 			//load in debug file
@@ -362,40 +381,60 @@ public:
 			if(opt::verbose > 0){
 				cerr << "Finished creating ground truth pairs" << endl;
 			}
-			for(auto itr = truePairs.begin(); itr != truePairs.end(); ++itr){
-				unsigned x = itr->first;
-				unsigned y = itr->second;
-				vector<unsigned> validIndexes = gatherValidEntries(x, y);
-				double score = std::numeric_limits<double>::max();
-				if (validIndexes.size() > 0) {
-					score = skew(computeLogLikelihood(x, y, validIndexes),
-							genotype[x].cov, genotype[y].cov);
-					score /= double(validIndexes.size());
-				}
-				double distance = calcDistance(m_cloud[x], m_cloud[y]);
-				unsigned consideredCount = 0;
+			if(opt::all) {
+				cerr << "Currently unable to output all pairs in debug mode." << endl;
+				exit(1);
+			}
+			else {
+				for (auto itr = truePairs.begin(); itr != truePairs.end();
+						++itr) {
+					unsigned x = itr->first;
+					unsigned y = itr->second;
+					vector<unsigned> validIndexes = gatherValidEntries(x, y);
+					double score = std::numeric_limits<double>::max();
+					if (validIndexes.size() > 0) {
+						score = skew(computeLogLikelihood(x, y, validIndexes),
+								genotype[x].cov, genotype[y].cov);
+						score /= double(validIndexes.size());
+					}
+					double distance = calcDistance(m_cloud[x], m_cloud[y]);
+					unsigned consideredCount = 0;
 #pragma omp parallel for private(temp)
-				for (unsigned i = 0; i < m_counts.size(); ++i) {
-					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
-					size_t nMatches = kdTree.index->radiusSearch(
-							&(m_cloud[i])[0], distance, ret_matches);
-					for (size_t j = 0; j < nMatches; j++) {
-						auto k = ret_matches[j].first;
-						if (genotype.at(i).expandSearch
-								== genotype.at(k).expandSearch) {
-							if (k <= i) {
+					for (unsigned i = 0; i < m_counts.size(); ++i) {
+						std::vector<
+								nanoflann::ResultItem<long unsigned int, double>> ret_matches;
+						size_t nMatches = kdTree.index->radiusSearch(
+								&(m_cloud[i])[0], distance, ret_matches);
+						for (size_t j = 0; j < nMatches; j++) {
+							auto k = ret_matches[j].first;
+							if (genotype.at(i).expandSearch
+									== genotype.at(k).expandSearch) {
+								if (k <= i) {
+									continue;
+								}
+							} else if (genotype.at(k).expandSearch) {
 								continue;
 							}
-						} else if (genotype.at(k).expandSearch) {
-							continue;
+							++consideredCount;
 						}
-						++consideredCount;
 					}
-				}
-				size_t candidates = 0;
-				if (genotype.at(x).expandSearch
-						== genotype.at(y).expandSearch) {
-					if (y < x) {
+					size_t candidates = 0;
+					if (genotype.at(x).expandSearch
+							== genotype.at(y).expandSearch) {
+						if (y < x) {
+							std::vector<
+									nanoflann::ResultItem<long unsigned int,
+											double>> ret_matches;
+							candidates = kdTree.index->radiusSearch(
+									&(m_cloud[y])[0], distance, ret_matches);
+						} else {
+							std::vector<
+									nanoflann::ResultItem<long unsigned int,
+											double>> ret_matches;
+							candidates = kdTree.index->radiusSearch(
+									&(m_cloud[x])[0], distance, ret_matches);
+						}
+					} else if (genotype.at(y).expandSearch) {
 						std::vector<
 								nanoflann::ResultItem<long unsigned int, double>> ret_matches;
 						candidates = kdTree.index->radiusSearch(
@@ -406,29 +445,25 @@ public:
 						candidates = kdTree.index->radiusSearch(
 								&(m_cloud[x])[0], distance, ret_matches);
 					}
-				} else if (genotype.at(y).expandSearch) {
-					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
-					candidates = kdTree.index->radiusSearch(&(m_cloud[y])[0],
-							distance, ret_matches);
-				} else {
-					std::vector<nanoflann::ResultItem<long unsigned int, double>> ret_matches;
-					candidates = kdTree.index->radiusSearch(&(m_cloud[x])[0],
-							distance, ret_matches);
-				}
 
-				Relate info = calcRelatedness(x, y, validIndexes);
-				resultsStr(temp, genotype, info, validIndexes.size(), score,
-						to_string(calcDistance(m_cloud[x], m_cloud[y])), x, y);
-				temp += "\t";
-				temp += to_string(consideredCount);
-				temp += "\t";
-				temp += to_string(candidates);
-				temp += "\t";
-				temp += to_string(double((m_filenames.size()-1)*m_filenames.size())/2.0);
-				temp += "\n";
+					Relate info = calcRelatedness(x, y, validIndexes);
+					resultsStr(temp, genotype, info, validIndexes.size(), score,
+							to_string(calcDistance(m_cloud[x], m_cloud[y])), x,
+							y);
+					temp += "\t";
+					temp += to_string(consideredCount);
+					temp += "\t";
+					temp += to_string(candidates);
+					temp += "\t";
+					temp += to_string(
+							double(
+									(m_filenames.size() - 1)
+											* m_filenames.size()) / 2.0);
+					temp += "\t1\n";
 #pragma omp critical(cout)
-				{
-					cout << temp;
+					{
+						cout << temp;
+					}
 				}
 			}
 		}
@@ -592,27 +627,27 @@ private:
 
 	GenotypeSummary calcHomHetMiss(const vector<pair<unsigned, unsigned>> &counts){
 		GenotypeSummary count = {};
-		vector<double> hetCount;
+		vector<double> hetCount; //heterozygous frequency
 		for(size_t i = 0; i < counts.size(); ++i){
-			if (counts.at(i).first > opt::minCov) {
-				if (counts.at(i).second > opt::minCov) {
-					++count.hets;
-					hetCount.push_back(double(counts.at(i).first)/double(counts.at(i).first + counts.at(i).second));
-				} else {
+						if (counts.at(i).first > opt::minCov) {
+								if (counts.at(i).second > opt::minCov) {
+										++count.hets;
+										hetCount.push_back(double(counts.at(i).first)/double(counts.at(i).first + counts.at(i).second));
+									} else {
 					++count.homs;
-				}
+									}
 			} else if (counts.at(i).second > opt::minCov) {
 				++count.homs;
-			}
+							}
 			else{
 				++count.miss;
-			}
+							}
 		}
 		count.median = 0.5;
-		count.madFreq = calculateMAD(hetCount, count.median);
-		count.mean = 0.5;
-		count.var50 = calculateVar50(hetCount, count.mean);
-		return(count);
+				count.madFreq = calculateMAD(hetCount, count.median);
+				count.mean = 0.5;
+				count.var50 = calculateVar50(hetCount, count.mean);
+				return(count);
 	}
 
 	/*
@@ -634,24 +669,27 @@ private:
 
 	/*
 	 * Calculates the median absolute deviation
+	 * Return 0.0 if there is no values within the frequency set
 	 */
 	double calculateMAD(const vector<double> &freq, double &median){
-		vector<double> sumCounts(freq.size(), 0);
-		for(size_t i = 0; i < sumCounts.size(); ++i){
+		if(freq.size() == 0) {
+			return 0.0;
+		}
+				vector<double> sumCounts(freq.size(), 0);
+				for(size_t i = 0; i < sumCounts.size(); ++i){
 			sumCounts[i] = freq.at(i);
 		}
-		sort(sumCounts.begin(), sumCounts.end());
+				sort(sumCounts.begin(), sumCounts.end());
 		median =
 				sumCounts.size() % 2 == 0 ?
 						(sumCounts[sumCounts.size() / 2]
 								+ sumCounts[sumCounts.size() / 2 - 1]) / 2.0 :
 						sumCounts[sumCounts.size() / 2];
-
-		for(size_t i = 0; i < sumCounts.size(); ++i){
+				for(size_t i = 0; i < sumCounts.size(); ++i){
 			sumCounts[i] = abs(sumCounts[i] - 0.5);
 		}
-		sort(sumCounts.begin(), sumCounts.end());
-		return (sumCounts.size() % 2 == 0 ?
+				sort(sumCounts.begin(), sumCounts.end());
+				return (sumCounts.size() % 2 == 0 ?
 				(sumCounts[sumCounts.size() / 2]
 						+ sumCounts[sumCounts.size() / 2 - 1]) / 2.0 :
 				sumCounts[sumCounts.size() / 2]);
