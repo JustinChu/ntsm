@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT(ntsm, 0.1.0, cjustin@ds.dfci.harvard.edu)
 AM_INIT_AUTOMAKE
-#AC_CONFIG_SRCDIR([src])
+AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADER([config.h])
 
 #see http://stackoverflow.com/questions/8215785/how-can-i-use-ac-revision-with-git
@@ -26,9 +26,11 @@ AC_TYPE_SIZE_T
 AC_SUBST(CXXFLAGS,"-O3 -std=c++11 $CXXFLAGS")
 AC_SUBST(AM_CXXFLAGS, "-Wall -Wextra -Werror $AM_CXXFLAGS")
 
+#set dimension parameter (determined at compile time)
+AC_ARG_VAR(NTSM_DIMS, dimensions to use with PCA)
+
 # Find the absolute paths.
 srcdir=$(cd $srcdir; pwd)
-
 
 # Checks for header files.
 AC_LANG([C++])	#sets the auto conf to look for c++ headers
