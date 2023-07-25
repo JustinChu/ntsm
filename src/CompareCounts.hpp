@@ -298,14 +298,14 @@ public:
 
 			//search degree 2 == passes all tests, 1 == passes a single level 2 test, 0 == passes no tests
 			genotype[i].searchDegree += genotype[i].errorRate
-					> opt::pcErrorThresh
+					< opt::pcErrorThresh
 					|| (double(genotype.at(i).miss) / double(m_counts.size()))
-							> opt::pcMissSite2;
+							< opt::pcMissSite2;
 
 			genotype[i].searchDegree += genotype[i].errorRate
-					> opt::pcErrorThresh
+					< opt::pcErrorThresh
 					&& (double(genotype.at(i).miss) / double(m_counts.size()))
-							> opt::pcMissSite1;
+							< opt::pcMissSite1;
 		}
 		if (opt::verbose > 1) {
 			cerr << "Starting Score Computation with PCA" << endl;
