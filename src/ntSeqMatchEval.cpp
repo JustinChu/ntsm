@@ -49,7 +49,7 @@ void printHelpDialog(){
 	"                             -e (--merge) option is specified.\n"
 	"  -p, --pca = STR            Use PCA information to speed up analysis. Input is a\n"
 	"                             set of rotational values from a PCA.\n"
-	"  -d, --dim = INT            Number of dimensions to consider inf PCA. [" + to_string(opt::dim) + "]\n"
+	"  -d, --dim = INT            Number of dimensions to consider in PCA. [" + to_string(opt::dim) + "]\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
 	"                             during PCA. [Required if -p is enabled]\n"
 	"  -r, --radius = FLOAT       Search radius for initial PCA based search step.[" + to_string(opt::pcSearchRadius) + "]\n"
