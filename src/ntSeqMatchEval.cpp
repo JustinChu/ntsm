@@ -52,8 +52,11 @@ void printHelpDialog(){
 	"  -d, --dim = INT            Number of dimensions to consider in PCA. [" + to_string(opt::dim) + "]\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
 	"                             during PCA. [Required if -p is enabled]\n"
-	"  -r, --radius = FLOAT       Search radius for initial PCA based search step.[" + to_string(opt::pcSearchRadius) + "]\n"
-	"  -l, --large = FLOAT        Search radius for large PCA based search step.[" + to_string(opt::pcLargeRadius) + "]\n"
+	"  -r, --error_rate = FLOAT   Error rate  threshold for PCA based search [" + to_string(opt::pcErrorThresh) + "]\n"
+	"  -1, --miss_small = FLOAT   Missing site threshold small for PCA based search [" + to_string(opt::pcMissSite1) + "]\n"
+	"  -2, --miss_large = FLOAT   Missing site threshold large PCA based search [" + to_string(opt::pcMissSite2) + "]\n"
+	"  -s, --small = FLOAT        Search radius for small PCA based search [" + to_string(opt::pcSearchRadius1) + "]\n"
+	"  -l, --large = FLOAT        Search radius for large PCA based search [" + to_string(opt::pcSearchRadius2) + "]\n"
 	"  -h, --help                 Display this dialog.\n"
 	"  -v, --verbose              Display verbose output.\n"
 	"      --version              Print version information.\n";
@@ -84,8 +87,11 @@ int main(int argc, char *argv[])
 		"only_merge", required_argument, NULL, 'o' }, {
 		"help", no_argument, NULL, 'h' }, {
 	    "pca", required_argument, NULL, 'p' }, {
-		"norm", required_argument, NULL, 'n' }, {
-		"radius", required_argument, NULL, 'r' }, {
+		"norm", required_argument, NULL, 'n' }, {\
+		"error_rate", required_argument, NULL, 'r' }, {
+		"miss_small", required_argument, NULL, '1' }, {
+		"miss_large", required_argument, NULL, '2' }, {
+		"small", required_argument, NULL, 'k' }, {
 		"large", required_argument, NULL, 'l' }, {
 		"debug", required_argument, NULL, 'b' }, {
 		"version", no_argument, &OPT_VERSION, 1 }, {
@@ -93,7 +99,7 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:ol:b:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:o1:2:k:l:b:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -193,8 +199,35 @@ int main(int argc, char *argv[])
 		}
 		case 'r': {
 			stringstream convert(optarg);
-			if (!(convert >> opt::pcSearchRadius)) {
+			if (!(convert >> opt::pcErrorThresh)) {
 				cerr << "Error - Invalid parameter r: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case '1': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::pcMissSite1)) {
+				cerr << "Error - Invalid parameter 1: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case '2': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::pcMissSite2)) {
+				cerr << "Error - Invalid parameter 2: "
+						<< optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'k': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::pcSearchRadius1)) {
+				cerr << "Error - Invalid parameter k: "
 						<< optarg << endl;
 				return 0;
 			}
@@ -202,7 +235,7 @@ int main(int argc, char *argv[])
 		}
 		case 'l': {
 			stringstream convert(optarg);
-			if (!(convert >> opt::pcLargeRadius)) {
+			if (!(convert >> opt::pcSearchRadius2)) {
 				cerr << "Error - Invalid parameter l: "
 						<< optarg << endl;
 				return 0;

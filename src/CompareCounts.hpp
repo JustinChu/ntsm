@@ -275,6 +275,12 @@ public:
 //		}
 //	}
 
+	/*
+	 * Filters on 3 levels (proposed):
+	 * 1) based on minimum count percent missing (first radius) < 0.001 & error rate < 0.01, radius = 2
+	 * 2) based on minimum count percent missing (less stringent) < 0.01 | error rate < 0.01, radius = 15
+	 * 3) if failing -> no radius (exhaustive search)
+	 */
 	void computeScorePCA() {
 		if (opt::verbose > 1) {
 			cerr << "Generating kd-tree" << endl;
@@ -284,14 +290,22 @@ public:
 		//max leaf size can be changed (10-50 seems to be fast for queries)
 		kd_tree_t kdTree(opt::dim, m_cloud, { 10 });
 		vector<GenotypeSummary> genotype(m_totalCounts.size());
+
 		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
 						genotype[i] = calcHomHetMiss(m_counts.at(i));
 						genotype[i].errorRate = computeErrorRate(i);
 			genotype[i].cov = double(m_totalCounts[i]) / double(m_distinct.size());
-			genotype[i].expandSearch = genotype[i].errorRate
+
+			//search degree 2 == passes all tests, 1 == passes a single level 2 test, 0 == passes no tests
+			genotype[i].searchDegree += genotype[i].errorRate
 					> opt::pcErrorThresh
 					|| (double(genotype.at(i).miss) / double(m_counts.size()))
-							> opt::pcMissThresh;
+							> opt::pcMissSite2;
+
+			genotype[i].searchDegree += genotype[i].errorRate
+					> opt::pcErrorThresh
+					&& (double(genotype.at(i).miss) / double(m_counts.size()))
+							> opt::pcMissSite1;
 		}
 		if (opt::verbose > 1) {
 			cerr << "Starting Score Computation with PCA" << endl;
@@ -303,21 +317,47 @@ public:
 			for (unsigned i = 0; i < m_counts.size(); ++i) {
 				std::vector<nanoflann::ResultItem<long unsigned, double>> ret_matches;
 				size_t nMatches = 0;
-				if (genotype.at(i).expandSearch) {
+				if (genotype.at(i).searchDegree == 2) {
 					nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
-							pow(opt::pcLargeRadius, 2), ret_matches);
+							pow(opt::pcSearchRadius1, 2), ret_matches);
+				} else if (genotype.at(i).searchDegree == 1) {
+					nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
+							pow(opt::pcSearchRadius2, 2), ret_matches);
 				} else {
-					nMatches = kdTree.index->radiusSearch(&(m_cloud[i])[0],
-							pow(opt::pcSearchRadius, 2), ret_matches);
+					//Search all
+					for (size_t j = i + 1; j < m_counts.size(); j++) {
+						vector<unsigned> validIndexes = gatherValidEntries(i,
+								j);
+						double score = std::numeric_limits<double>::max();
+						if (validIndexes.size() > 0) {
+							score = skew(
+									computeLogLikelihood(i, j, validIndexes),
+									genotype[i].cov, genotype[j].cov);
+							score /= double(validIndexes.size());
+						}
+						if (opt::all || (score < opt::scoreThresh)) {
+							Relate info = calcRelatedness(i, j, validIndexes);
+							resultsStr(temp, genotype, info,
+									validIndexes.size(), score, "-1", i, j);
+							temp += "\n";
+#pragma omp critical(cout)
+							{
+								cout << temp;
+							}
+						}
+					}
+					continue;
 				}
 				for (size_t j = 0; j < nMatches; j++) {
 					unsigned k = ret_matches[j].first;
-					if (genotype.at(i).expandSearch
-							== genotype.at(k).expandSearch) {
+					if (genotype.at(i).searchDegree
+							== genotype.at(k).searchDegree) {
 						if (k <= i) {
 							continue;
 						}
-					} else if (genotype.at(k).expandSearch) {
+					}
+					else if (genotype.at(i).searchDegree
+							< genotype.at(k).searchDegree) {
 						continue;
 					}
 					vector<unsigned> validIndexes = gatherValidEntries(i, k);
@@ -407,20 +447,23 @@ public:
 								&(m_cloud[i])[0], distance, ret_matches);
 						for (size_t j = 0; j < nMatches; j++) {
 							auto k = ret_matches[j].first;
-							if (genotype.at(i).expandSearch
-									== genotype.at(k).expandSearch) {
+							if (genotype.at(i).searchDegree
+									== genotype.at(k).searchDegree) {
 								if (k <= i) {
 									continue;
 								}
-							} else if (genotype.at(k).expandSearch) {
+							}
+							else if (genotype.at(i).searchDegree
+									< genotype.at(k).searchDegree) {
 								continue;
 							}
 							++consideredCount;
 						}
 					}
 					size_t candidates = 0;
-					if (genotype.at(x).expandSearch
-							== genotype.at(y).expandSearch) {
+					if (genotype.at(x).searchDegree > 0
+							&& genotype.at(x).searchDegree
+									== genotype.at(y).searchDegree) {
 						if (y < x) {
 							std::vector<
 									nanoflann::ResultItem<long unsigned int,
@@ -434,16 +477,20 @@ public:
 							candidates = kdTree.index->radiusSearch(
 									&(m_cloud[x])[0], distance, ret_matches);
 						}
-					} else if (genotype.at(y).expandSearch) {
+					} else if (genotype.at(y).searchDegree
+									< genotype.at(x).searchDegree) {
 						std::vector<
 								nanoflann::ResultItem<long unsigned int, double>> ret_matches;
 						candidates = kdTree.index->radiusSearch(
 								&(m_cloud[y])[0], distance, ret_matches);
-					} else {
+					} else if (genotype.at(y).searchDegree > 0) {
 						std::vector<
 								nanoflann::ResultItem<long unsigned int, double>> ret_matches;
 						candidates = kdTree.index->radiusSearch(
 								&(m_cloud[x])[0], distance, ret_matches);
+					}
+					else{
+						candidates = m_counts.size() - 1;
 					}
 
 					Relate info = calcRelatedness(x, y, validIndexes);
@@ -481,10 +528,6 @@ public:
 			genotype[i].errorRate = computeErrorRate(i);
 			genotype[i].cov = double(m_totalCounts[i])
 					/ double(m_distinct.size());
-			genotype[i].expandSearch = genotype[i].errorRate
-					> opt::pcErrorThresh
-					|| (double(genotype.at(i).miss) / double(m_counts.size()))
-							> opt::pcMissThresh;
 		}
 		string temp = "\n";
 		cout << temp;
@@ -590,7 +633,7 @@ private:
 		double var50 = 0;
 		double errorRate = 0;
 		double cov = 0;
-		bool expandSearch = 0;
+		unsigned searchDegree = 0;
 	};
 
 	const vector<string> &m_filenames;

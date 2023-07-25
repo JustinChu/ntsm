@@ -32,11 +32,11 @@ float siteCovThreshold = 0.75;
 double covThresh = std::numeric_limits<double>::max();
 
 //PCA search criteria
-double pcSearchRadius = 1.0;
+double pcSearchRadius1 = 2;
+double pcSearchRadius2 = 15;
 double pcErrorThresh = 0.01;
-double pcCovThresh = 10;
-double pcLargeRadius = 20.0;
-double pcMissThresh = 0.01;
+double pcMissSite1 = 0.001;
+double pcMissSite2 = 0.01;
 
 string pca = "";
 string norm = "";
