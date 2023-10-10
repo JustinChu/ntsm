@@ -277,8 +277,8 @@ public:
 
 	/*
 	 * Filters on 3 levels (proposed):
-	 * 1) based on minimum count percent missing (first radius) < 0.001 & error rate < 0.01, radius = 2
-	 * 2) based on minimum count percent missing (less stringent) < 0.01 | error rate < 0.01, radius = 15
+	 * 1) based on minimum count percent missing (first radius) < 0.01 & error rate < 0.01, radius = 2
+	 * 2) based on minimum count percent missing (less stringent) < 0.3, radius = 15
 	 * 3) if failing -> no radius (exhaustive search)
 	 */
 	void computeScorePCA() {
@@ -296,16 +296,13 @@ public:
 						genotype[i].errorRate = computeErrorRate(i);
 			genotype[i].cov = double(m_totalCounts[i]) / double(m_distinct.size());
 
-			//search degree 2 == passes all tests, 1 == passes a single level 2 test, 0 == passes no tests
-			genotype[i].searchDegree += genotype[i].errorRate
-					< opt::pcErrorThresh
-					|| (double(genotype.at(i).miss) / double(m_counts.size()))
-							< opt::pcMissSite2;
+			genotype[i].searchDegree += ((double(genotype.at(i).miss) / double(m_counts.size()))
+							< opt::pcMissSite2);
 
 			genotype[i].searchDegree += genotype[i].errorRate
 					< opt::pcErrorThresh
-					&& (double(genotype.at(i).miss) / double(m_counts.size()))
-							< opt::pcMissSite1;
+					&& ((double(genotype.at(i).miss) / double(m_counts.size()))
+							< opt::pcMissSite1);
 		}
 		if (opt::verbose > 1) {
 			cerr << "Starting Score Computation with PCA" << endl;
@@ -325,7 +322,12 @@ public:
 							pow(opt::pcSearchRadius2, 2), ret_matches);
 				} else {
 					//Search all
-					for (size_t j = i + 1; j < m_counts.size(); j++) {
+					for (size_t j = 0; j < m_counts.size(); j++) {
+						if (0 == genotype.at(j).searchDegree) {
+							if (j <= i) {
+								continue;
+							}
+						}
 						vector<unsigned> validIndexes = gatherValidEntries(i,
 								j);
 						double score = std::numeric_limits<double>::max();
@@ -338,7 +340,10 @@ public:
 						if (opt::all || (score < opt::scoreThresh)) {
 							Relate info = calcRelatedness(i, j, validIndexes);
 							resultsStr(temp, genotype, info,
-									validIndexes.size(), score, "-1", i, j);
+									validIndexes.size(), score,
+									to_string(
+											calcDistance(m_cloud[i],
+													m_cloud[j])), i, j);
 							temp += "\n";
 #pragma omp critical(cout)
 							{
@@ -357,7 +362,7 @@ public:
 						}
 					}
 					else if (genotype.at(i).searchDegree
-							< genotype.at(k).searchDegree) {
+							> genotype.at(k).searchDegree) {
 						continue;
 					}
 					vector<unsigned> validIndexes = gatherValidEntries(i, k);
@@ -454,7 +459,7 @@ public:
 								}
 							}
 							else if (genotype.at(i).searchDegree
-									< genotype.at(k).searchDegree) {
+									> genotype.at(k).searchDegree) {
 								continue;
 							}
 							++consideredCount;
@@ -503,7 +508,7 @@ public:
 					temp += to_string(candidates);
 					temp += "\t";
 					temp += to_string(
-							double(
+							size_t(
 									(m_filenames.size() - 1)
 											* m_filenames.size()) / 2.0);
 					temp += "\t1\n";
@@ -669,22 +674,25 @@ private:
 	};
 
 	GenotypeSummary calcHomHetMiss(const vector<pair<unsigned, unsigned>> &counts){
-		GenotypeSummary count = {};
+		GenotypeSummary count = { };
 		vector<double> hetCount; //heterozygous frequency
-		for(size_t i = 0; i < counts.size(); ++i){
-						if (counts.at(i).first > opt::minCov) {
-								if (counts.at(i).second > opt::minCov) {
-										++count.hets;
-										hetCount.push_back(double(counts.at(i).first)/double(counts.at(i).first + counts.at(i).second));
-									} else {
+		for (size_t i = 0; i < counts.size(); ++i) {
+			if (counts.at(i).first > opt::minCov) {
+				if (counts.at(i).second > opt::minCov) {
+					++count.hets;
+					hetCount.push_back(
+							double(counts.at(i).first)
+									/ double(
+											counts.at(i).first
+													+ counts.at(i).second));
+				} else {
 					++count.homs;
-									}
+				}
 			} else if (counts.at(i).second > opt::minCov) {
 				++count.homs;
-							}
-			else{
+			} else {
 				++count.miss;
-							}
+			}
 		}
 		count.median = 0.5;
 				count.madFreq = calculateMAD(hetCount, count.median);
