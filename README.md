@@ -65,7 +65,7 @@ t=4 #threads for any subprocess or tools
 n=0 #number of sub k-mers to allow
 ```
 
-If you do not wish to select your own sites, we currently include `human_sites_n10.fa` a fasta selected sites with 95638 sites adequate for sample swap detection for human samples in the `data` folder.
+If you do not wish to select your own sites, we currently include `human_sites_n10.fa` a fasta selected sites with 96287 sites adequate for sample swap detection for human samples in the `data` folder.
 
 ##### Counting the k-mers:
 
