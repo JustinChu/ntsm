@@ -35,8 +35,8 @@ double covThresh = std::numeric_limits<double>::max();
 double pcSearchRadius1 = 2;
 double pcSearchRadius2 = 15;
 double pcErrorThresh = 0.01;
-double pcMissSite1 = 0.001;
-double pcMissSite2 = 0.01;
+double pcMissSite1 = 0.01;
+double pcMissSite2 = 0.3;
 
 string pca = "";
 string norm = "";
