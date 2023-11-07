@@ -126,16 +126,16 @@ public:
 			}
 
 		}
-		if(!opt::pca.empty()){
 #pragma omp parallel for
 		for(unsigned i = 0; i < m_sampleIDs.size(); ++i){
 			ofstream out(m_sampleIDs.at(i) + ".counts.txt");
 			counts.printCountsMax(i, out);
 			out.close();
 		}
-		ofstream out(opt::pca + "_matrix.tsv");
-		ofstream centerFile(opt::pca + "_center.txt");
-		counts.printNormMatrix(out, centerFile);
+		if (!opt::pca.empty()) {
+			ofstream out(opt::pca + "_matrix.tsv");
+			ofstream centerFile(opt::pca + "_center.txt");
+			counts.printNormMatrix(out, centerFile);
 		}
 	}
 

@@ -192,16 +192,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	double time = omp_get_wtime();
-	//detect filetype (parse if multivcf notation exists)
 
-
-	//multivcf
 	VCFConvert convert;
 	assert(inputFiles.size() == 1);
 	convert.count(inputFiles[0]);
-
-	//singlevcf
-
 
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
