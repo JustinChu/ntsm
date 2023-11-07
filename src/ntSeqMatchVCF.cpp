@@ -36,8 +36,10 @@ void printHelpDialog() {
 			"                         be counted.\n"
 			"  -s, --snp = STR        Interleaved fasta of SNP sites to\n"
 			"                         k-merize. [required]\n"
+			"  -p, --pca = STR        With multivcf generate rotation and\n"
+			"                         centering files with this prefix.\n"
 			"  -k, --kmer = INT       k-mer size used. [19]\n"
-			"  -m, --multi = INT      Multiply counts by this.[1]\n"
+			"  -m, --multi = INT      Value to multiply base counts [" + to_string(opt::multi) + "]\n"
 			"  -w, --window = INT     Window size used. [" + to_string(opt::window) + "]\n"
 			"  -r, --ref = STR        Reference fasta. [required]\n"
 			"  -h, --help             Display this dialog.\n"
@@ -61,6 +63,7 @@ int main(int argc, char *argv[]) {
 			{ "threads", required_argument, NULL, 't' },
 			{ "dupes", required_argument, NULL, 'd' },
 			{ "snp", required_argument, NULL, 's' },
+			{ "pca", required_argument, NULL, 'p' },
 			{ "kmer", required_argument, NULL, 'k' },
 			{ "multi", required_argument, NULL, 'm' },
 			{ "window", required_argument, NULL, 'w' },
@@ -71,7 +74,7 @@ int main(int argc, char *argv[]) {
 			{NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "s:t:vhk:dr:w:m:", long_options,
+	while ((c = getopt_long(argc, argv, "s:t:vhk:dr:w:m:p:", long_options,
 			&option_index)) != -1) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
@@ -88,6 +91,14 @@ int main(int argc, char *argv[]) {
 			stringstream convert(optarg);
 			if (!(convert >> opt::snp)) {
 				cerr << "Error - Invalid parameter s: " << optarg << endl;
+				return 0;
+			}
+			break;
+		}
+		case 'p': {
+			stringstream convert(optarg);
+			if (!(convert >> opt::pca)) {
+				cerr << "Error - Invalid parameter p: " << optarg << endl;
 				return 0;
 			}
 			break;
@@ -181,10 +192,16 @@ int main(int argc, char *argv[]) {
 	}
 
 	double time = omp_get_wtime();
+	//detect filetype (parse if multivcf notation exists)
 
+
+	//multivcf
 	VCFConvert convert;
 	assert(inputFiles.size() == 1);
 	convert.count(inputFiles[0]);
+
+	//singlevcf
+
 
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;

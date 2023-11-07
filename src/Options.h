@@ -56,7 +56,7 @@ uint64_t genomeSize = 6200000000;
 
 string ref;
 unsigned window = 31;
-unsigned multi = 1;
+unsigned multi = 20;
 
 string debug = "";
 }
