@@ -301,39 +301,43 @@ int main(int argc, char *argv[])
 
 	double time = omp_get_wtime();
 
-	if(inputFiles.size() == 1){
-		cerr << "Detected only 1 file, providing only QC information." << endl;
-	}
-
 	CompareCounts comp(inputFiles);
-	if(opt::verbose > 1){
-		cerr << "Finished loading files. Now comparing all samples." << endl;
-	}
-	if(opt::onlyMerge){
-		if(opt::merge.empty()){
-			cerr << "(-l) cannot be used without --merge (-e) option." << endl;
-			exit(EXIT_FAILURE);
+	if(inputFiles.size() == 1){
+		if(opt::verbose > 1){
+			cerr << "Detected only 1 file, providing only QC information." << endl;
 		}
-		else{
-			cerr << " (-l) option detected. Not performing analysis, only merging." << endl;
-		}
+
 	}
 	else{
-		if(opt::pca.empty()){
-			cerr << "Performing all-to-all score computation.\nSpecify -p (--pca) to enable faster comparisons." << endl;
-			comp.computeScore();
+		if(opt::verbose > 1){
+			cerr << "Finished loading files. Now comparing all samples." << endl;
+		}
+		if(opt::onlyMerge){
+			if(opt::merge.empty()){
+				cerr << "(-l) cannot be used without --merge (-e) option." << endl;
+				exit(EXIT_FAILURE);
+			}
+			else{
+				cerr << " (-l) option detected. Not performing analysis, only merging." << endl;
+			}
 		}
 		else{
-			if (!Util::fexists(opt::norm)) {
-				cerr << "Error: Need normalization file" << endl;
-				die = true;
+			if(opt::pca.empty()){
+				cerr << "Performing all-to-all score computation.\nSpecify -p (--pca) to enable faster comparisons." << endl;
+				comp.computeScore();
 			}
-			comp.projectPCs();
-			comp.computeScorePCA();
+			else{
+				if (!Util::fexists(opt::norm)) {
+					cerr << "Error: Need normalization file" << endl;
+					die = true;
+				}
+				comp.projectPCs();
+				comp.computeScorePCA();
+			}
 		}
-	}
-	if(!opt::merge.empty()){
-		comp.mergeCounts();
+		if(!opt::merge.empty()){
+			comp.mergeCounts();
+		}
 	}
 
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: "  << Util::getRSS() << " kbytes" << endl;

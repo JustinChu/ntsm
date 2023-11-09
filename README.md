@@ -108,30 +108,35 @@ ntsmEval sampleA_counts.txt sampleB_counts.txt sampleC_counts.txt > summary.tsv
 Output Example:
 
 ```
-sample1	sample2	relate	ibs0	ibs2	homConcord	hets1	hets2	sharedHets	hom1	hom2	sharedHom	n	score	same	cov1	cov2	error_rate1	error_rate2
-a1	a2	0.997193	0	209139	0.998521	72327	72463	72124	137354	137218	137015	209681	0.079416	1	37.275289	45.248168	0.004990	0.005695
-a1	b	0.473059	902	136180	0.717727	72327	71862	35799	137346	137811	100381	209673	1.690037	0	37.275289	45.040483	0.004990	0.007278
-a1	c	0.499938	57	136556	0.734409	72327	73271	36273	137338	136394	100283	209665	1.643607	0	37.275289	44.389736	0.004990	0.005253
-a2	b	0.473880	899	136153	0.717900	72463	71862	35852	137210	137811	100301	209673	1.790874	0	45.248168	45.040483	0.005695	0.007278
-a2	c	0.499814	56	136535	0.733852	72463	73271	36330	137202	136394	100205	209665	1.741786	0	45.248168	44.389736	0.005695	0.005253
-b	c	-0.017423	14756	106307	0.355821	71860	73269	28260	137812	136403	78047	209672	3.430927	0	45.040483	44.389736	0.007278	0.005253
+sample1	sample2	score	same	dist	relate	ibs0	ibs2	homConcord	het1	het2	sharedHet	hom1	hom2	sharedHom	n	cov1	cov2	errorRate1	errorRate2	miss1	miss2	allHom1	allHom2	allHet1	allHet2
+HG002_rep1_counts.txt	HG002_rep2_counts.txt	0.07988	1	0.004839	0.996827	0	95971	0.998287	33720	33787	33613	62532	62465	62358	96252	37.416162	45.260554	0.003493	0.004301	35	35	62532	62465	33720	33787
+HG003_counts.txt	HG004_counts.txt	3.430842	0	7.512569	-0.003973	6649	48672	0.355549	33473	33781	13165	62772	62464	35507	96245	44.931787	44.068285	0.005968	0.004208	34	38	62779	62466	33474	33783
+HG002_rep1_counts.txt	HG003_counts.txt	1.660803	0	4.732675	0.498775	24	62518	0.731288	33720	33474	16744	62528	62774	45774	96248	37.416162	44.931787	0.003493	0.005968	35	34	62532	62779	33720	33474
+HG002_rep1_counts.txt	HG004_counts.txt	1.653478	0	2.872071	0.500089	19	62525	0.72982	33720	33783	16901	62525	62462	45624	96245	37.416162	44.068285	0.003493	0.004208	35	38	62532	62466	33720	33783
+HG002_rep2_counts.txt	HG003_counts.txt	1.760081	0	4.707002	0.499821	24	62521	0.73156	33787	33474	16779	62461	62774	45742	96248	45.260554	44.931787	0.004301	0.005968	35	34	62465	62779	33787	33474
+HG002_rep2_counts.txt	HG004_counts.txt	1.74858	0	2.78644	0.4996	19	62488	0.729034	33787	33783	16916	62458	62462	45572	96245	45.260554	44.068285	0.004301	0.004208	35	38	62465	62466	33787	33783
 ...
 ```
 
 Column explainations:
-
+* sampleX: Filename for sample X
+* score: Log-likelihood based score to determine in samples are the same or differ
+* same: 1 means the tool thinks the sample is the same and 0 is if the tools thinks they differ
+* dist: Distance of sample in PCA space
+* relate: Relatedness determined via shared heterozygous sites
 * relate: Relatedness determined via shared heterozygous sites
 * ibs0: Number of sites with alleles not shared between two samples
 * ibs2: Number of sites with the same genotype between two samples
 * homConcord: Homozygous concordance determined via shared homozygous sites
-* hetsX: Number of heterzygous sites for sample X
-* sharedHets: Number of shared hetero
-* homX: Number of homozygous sites for sample X
+* hetX: Number of heterzygous sites for sample X for all sites considered in comparison
+* sharedHets: Number of shared heterozygous sites
+* homX: Number of homozygous sites for sample X for all sites considered in comparison
 * sharedHom: Number of shared homozygous sites
 * n: number of unfiltered sites used in comparison
-* score: log-likelihood based score to determine in samples are the same or differ
-* same: 1 means the tool thinks the sample is the same and 0 is if the tools thinks they differ
-* covX: coverage of sample X
-* error_rateX: error rate of sample X. May underestimate error caused by long indels.
+* covX: Coverage of sample X
+* errorRateX: Error rate of sample X. May underestimate error caused by long indels.
+* missX: Total number of missing sites in sample X
+* allHomX: Total number of homozygous sites in sample X
+* allHetX: Total number of heterozygous sites in sample X
 
 
