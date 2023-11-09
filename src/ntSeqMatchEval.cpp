@@ -35,6 +35,8 @@ void printVersion()
 void printHelpDialog(){
 	const string dialog =
 	"Usage: " PROGRAM " [FILES...]\n"
+    "Processes sets of counts files and compares their similarity.\n"
+    "If only a single file is provided general QC information returned.\n"
 	"  -t, --threads              Number of threads to run.[1]\n"
 	"  -s, --score_thresh = FLOAT Score threshold ["+ to_string(opt::scoreThresh)+"]\n"
 	"  -a, --all                  Output results of all tests tried, not just those that\n"
@@ -298,6 +300,11 @@ int main(int argc, char *argv[])
 	}
 
 	double time = omp_get_wtime();
+
+	if(inputFiles.size() == 1){
+		cerr << "Detected only 1 file, providing only QC information." << endl;
+	}
+
 	CompareCounts comp(inputFiles);
 	if(opt::verbose > 1){
 		cerr << "Finished loading files. Now comparing all samples." << endl;

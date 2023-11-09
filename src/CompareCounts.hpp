@@ -392,7 +392,7 @@ public:
 			}
 			string temp = "\tpairs\tcandidates\tpossible\tcorrect\n";
 			cout << temp;
-			std::unordered_set<std::pair<unsigned, unsigned>, pair_hash> truePairs;
+			tsl::robin_set<std::pair<unsigned, unsigned>, pair_hash> truePairs;
 			//load in debug file
 			ifstream fh(opt::debug);
 			string line;
@@ -632,10 +632,10 @@ private:
 		unsigned hets = 0;
 		unsigned homs = 0;
 		unsigned miss = 0;
-		double madFreq = 0;
-		double median = 0;
-		double mean = 0;
-		double var50 = 0;
+//		double madFreq = 0;
+//		double median = 0;
+//		double mean = 0;
+//		double var50 = 0;
 		double errorRate = 0;
 		double cov = 0;
 		unsigned searchDegree = 0;
@@ -661,9 +661,9 @@ private:
 			"sample1\tsample2\tscore\tsame\tdist\trelate\tibs0\tibs2\thomConcord"
 					"\thet1\thet2\tsharedHet\thom1\thom2\tsharedHom\tn"
 					"\tcov1\tcov2\terrorRate1\terrorRate2\tmiss1\tmiss2"
-					"\tallHom1\tallHom2\tallHet1\tallHet2"
-					"\tmedianGC1\tmedianGC2\tmad50GC1\tmad50GC2"
-					"\tmeanGC1\tmeanGC2\tvar50GC1\tvar50GC2";
+					"\tallHom1\tallHom2\tallHet1\tallHet2";
+//					"\tmedianGC1\tmedianGC2\tmad50GC1\tmad50GC2"
+//					"\tmeanGC1\tmeanGC2\tvar50GC1\tvar50GC2";
 
 	struct pair_hash
 	{
@@ -694,11 +694,11 @@ private:
 				++count.miss;
 			}
 		}
-		count.median = 0.5;
-				count.madFreq = calculateMAD(hetCount, count.median);
-				count.mean = 0.5;
-				count.var50 = calculateVar50(hetCount, count.mean);
-				return(count);
+//		count.median = 0.5;
+//		count.madFreq = calculateMAD(hetCount, count.median);
+//		count.mean = 0.5;
+//		count.var50 = calculateVar50(hetCount, count.mean);
+		return (count);
 	}
 
 	/*
@@ -837,21 +837,21 @@ private:
 		temp += "\t";
 		temp += to_string(genotype.at(j).hets);
 		temp += "\t";
-		temp += to_string(genotype.at(i).median);
-		temp += "\t";
-		temp += to_string(genotype.at(j).median);
-		temp += "\t";
-		temp += to_string(genotype.at(i).madFreq);
-		temp += "\t";
-		temp += to_string(genotype.at(j).madFreq);
-		temp += "\t";
-		temp += to_string(genotype.at(i).mean);
-		temp += "\t";
-		temp += to_string(genotype.at(j).mean);
-		temp += "\t";
-		temp += to_string(genotype.at(i).var50);
-		temp += "\t";
-		temp += to_string(genotype.at(j).var50);
+//		temp += to_string(genotype.at(i).median);
+//		temp += "\t";
+//		temp += to_string(genotype.at(j).median);
+//		temp += "\t";
+//		temp += to_string(genotype.at(i).madFreq);
+//		temp += "\t";
+//		temp += to_string(genotype.at(j).madFreq);
+//		temp += "\t";
+//		temp += to_string(genotype.at(i).mean);
+//		temp += "\t";
+//		temp += to_string(genotype.at(j).mean);
+//		temp += "\t";
+//		temp += to_string(genotype.at(i).var50);
+//		temp += "\t";
+//		temp += to_string(genotype.at(j).var50);
 	}
 
 	/*
