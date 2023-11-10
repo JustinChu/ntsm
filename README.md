@@ -65,7 +65,7 @@ t=4 #threads for any subprocess or tools
 n=0 #number of sub k-mers to allow
 ```
 
-If you do not wish to select your own sites, we currently include `human_sites_n10.fa` a fasta selected sites with 96287 sites adequate for sample swap detection for human samples in the `data` folder.
+If you do not wish to select your own sites, we currently include `data/human_sites_n10.fa` a fasta selected sites with 96287 sites adequate for sample swap detection for human samples in the `data` folder.
 
 ##### Counting the k-mers:
 
@@ -99,14 +99,19 @@ Header lines (`#@`) help in error rate estimation.
 
 ##### Evaluating the samples:
 
-Example:
+Example command:
 
 ```bash
-ntsmEval sampleA_counts.txt sampleB_counts.txt sampleC_counts.txt > summary.tsv
+ntsmEval HG002_rep1_counts.txt HG002_rep2_counts.txt HG003_counts.txt HG004_counts.txt > summary.tsv
 ```
 
-Output Example:
+or if you wish optionally to speed up the analysis using a PCA rotation matrix:
 
+```bash
+ntsmEval -a -t 16 -n data/human_sites_center.txt -p data/human_sites_rotationMat.tsv HG002_rep1_counts.txt HG002_rep2_counts.txt HG003_counts.txt HG004_counts.txt > summary.tsv
+```
+
+Output Example (with -a option):
 ```
 sample1	sample2	score	same	dist	relate	ibs0	ibs2	homConcord	het1	het2	sharedHet	hom1	hom2	sharedHom	n	cov1	cov2	errorRate1	errorRate2	miss1	miss2	allHom1	allHom2	allHet1	allHet2
 HG002_rep1_counts.txt	HG002_rep2_counts.txt	0.07988	1	0.004839	0.996827	0	95971	0.998287	33720	33787	33613	62532	62465	62358	96252	37.416162	45.260554	0.003493	0.004301	35	35	62532	62465	33720	33787
