@@ -15,7 +15,6 @@ ntsmCount_SOURCES = ntSeqMatchCount.cpp \
 	FingerPrint.hpp \
 	Options.cpp Options.h \
 	Util.h
-	
 
 ntsmEval_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
@@ -29,6 +28,7 @@ ntsmEval_LDFLAGS = $(OPENMP_CXXFLAGS) \
 ntsmEval_SOURCES = ntSeqMatchEval.cpp \
 	CompareCounts.hpp \
 	Options.cpp Options.h \
+	KDTreeUtil.h \
 	Util.h
 	
 ntsmVCF_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
