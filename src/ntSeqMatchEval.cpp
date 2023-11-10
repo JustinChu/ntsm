@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 		if(opt::verbose > 1){
 			cerr << "Detected only 1 file, providing only QC information." << endl;
 		}
-
+		comp.computeScoreSingle();
 	}
 	else{
 		if(opt::verbose > 1){

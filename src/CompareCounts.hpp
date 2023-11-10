@@ -522,6 +522,63 @@ public:
 	}
 
 	/*
+	 * Single file QC
+	 * Outputs:
+	 * sample: Filename for sample X
+	 * cov: Coverage of sample X
+	 * error_rate: Error rate of sample X. May underestimate error caused by long indels.
+	 * miss: Total number of missing sites in sample X
+	 * hom: Total number of homozygous sites in sample X
+	 * het: Total number of heterozygous sites in sample X
+	 * PCX: Principle components after projection
+	 */
+	void computeScoreSingle() {
+		string temp =
+				"sample\tcov\terrorRate\tmiss\thom\thet";
+		vector<GenotypeSummary> genotype(m_totalCounts.size());
+		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
+			genotype[i] = calcHomHetMiss(m_counts.at(i));
+			genotype[i].errorRate = computeErrorRate(i);
+			genotype[i].cov = double(m_totalCounts[i])
+					/ double(m_distinct.size());
+		}
+		//print header information for PCAs
+		if(!opt::pca.empty()){
+			projectPCs();
+			for(size_t i = 1; i <= m_cloud[0].size(); ++i){
+				temp += "\tPC";
+				temp += to_string(i);
+			}
+		}
+		cout << temp << endl;
+#pragma omp parallel for private(temp)
+		for (unsigned i = 0; i < m_totalCounts.size(); ++i) {
+			temp.clear();
+			temp += m_filenames[i];
+			temp += "\t";
+			temp += to_string(genotype.at(i).cov);
+			temp += "\t";
+			temp += to_string(genotype.at(i).errorRate);
+			temp += "\t";
+			temp += to_string(genotype.at(i).miss);
+			temp += "\t";
+			temp += to_string(genotype.at(i).homs);
+			temp += "\t";
+			temp += to_string(genotype.at(i).hets);
+			if (!opt::pca.empty()) {
+				for (size_t j = 0; j < m_cloud[i].size(); ++j) {
+					temp += "\t";
+					temp += to_string(m_cloud[i][j]);
+				}
+			}
+#pragma omp critical(cout)
+			{
+				cout << temp;
+			}
+		}
+	}
+
+	/*
 	 * Compute comparisons between all combinations
 	 * Slower than using PCA to lower comparison numbers
 	 */
@@ -836,7 +893,7 @@ private:
 		temp += to_string(genotype.at(i).hets);
 		temp += "\t";
 		temp += to_string(genotype.at(j).hets);
-		temp += "\t";
+//		temp += "\t";
 //		temp += to_string(genotype.at(i).median);
 //		temp += "\t";
 //		temp += to_string(genotype.at(j).median);

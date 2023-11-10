@@ -139,4 +139,11 @@ Column explainations:
 * allHomX: Total number of homozygous sites in sample X
 * allHetX: Total number of heterozygous sites in sample X
 
+If run on a single counts file the output can look like this:
+```
+sample	cov	errorRate	miss	hom	het	PC1	PC2	PC3	PC4	PC5	PC6	PC7	PC8	PC9	PC10	PC11	PC12	PC13	PC14	PC15	PC16	PC17	PC18	PC19	PC20
+HG002_rep1_counts.txt	37.416162	0.003493	35	62532	33720	-14.254352	-23.285693	-0.373179	-7.315873	-1.187992	-5.494577	-0.434657	-0.334589	-0.832297	-1.160507	0.286102	-0.114464	1.013333	0.252766	-0.204102	0.465836	0.694361	0.099620	0.019345	-1.195279
+```
+
+This provides generic QC information useful without other samples (e.g. error rate) and if inclined a means of plotting the sample relative to others on a PCA plot. Number of columns is variable dependant on the number of principle components used.
 
