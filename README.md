@@ -3,6 +3,10 @@
 
 This tools counts the number of specific k-mers within sequence data. The counts can then be compare to other counts to determine to compute the probability that sample are of the same origin to discover incongruent samples or sample swaps.
 
+Intended to be run at before any analysis and can provide some additional QC information like sequencing error rate.
+
+Manuscript preprint: https://doi.org/10.1101/2023.11.01.565041
+
 ## Dependencies
 
 General:
