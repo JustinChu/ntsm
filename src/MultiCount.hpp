@@ -48,28 +48,47 @@ public:
 		initCountsHash();
 	}
 
-	void insertCount(unsigned sampleIndex, const char *seqs, uint64_t seql, unsigned multi = 1) {
-		for (KseqHashIterator itr(seqs, seql, opt::k); itr != itr.end();
-				++itr) {
-			//collapse duplicate counts
-			if (m_kmerToHash.find(*itr) != m_kmerToHash.end()) {
-				uint8_t oldValue;
-				do {
-					oldValue = m_matCounts[m_kmerToHash.size() * sampleIndex
-							+ m_kmerToHash.at(*itr)];
-					if (oldValue > 0) {
-						if (oldValue != multi) {
-							cerr << "Warning: Inconsistent k-mer counts, check for overlapping sites. "
-									<< endl;
-						}
-						break;
+	void insertCount(unsigned sampleIndex, uint64_t hashVal, unsigned multi = 1){
+		if (m_kmerToHash.find(hashVal) != m_kmerToHash.end()) {
+			uint8_t oldValue;
+			do {
+				oldValue = m_matCounts[m_kmerToHash.size() * sampleIndex
+						+ m_kmerToHash.at(hashVal)];
+				if (oldValue > 0) {
+					if (oldValue != multi) {
+						cerr << "Warning: Inconsistent k-mer counts, check for overlapping sites: " << oldValue << " vs " << multi
+								<< endl;
 					}
-				} while (!__sync_bool_compare_and_swap(
-						&m_matCounts[m_kmerToHash.size() * sampleIndex
-								+ m_kmerToHash.at(*itr)], oldValue, multi));
-			}
+					break;
+				}
+			} while (!__sync_bool_compare_and_swap(
+					&m_matCounts[m_kmerToHash.size() * sampleIndex
+							+ m_kmerToHash.at(hashVal)], oldValue, multi));
 		}
 	}
+
+//	void insertCount(unsigned sampleIndex, const char *seqs, uint64_t seql, unsigned multi = 1) {
+//		for (KseqHashIterator itr(seqs, seql, opt::k); itr != itr.end();
+//				++itr) {
+//			//collapse duplicate counts
+//			if (m_kmerToHash.find(*itr) != m_kmerToHash.end()) {
+//				uint8_t oldValue;
+//				do {
+//					oldValue = m_matCounts[m_kmerToHash.size() * sampleIndex
+//							+ m_kmerToHash.at(*itr)];
+//					if (oldValue > 0) {
+//						if (oldValue != multi) {
+//							cerr << "Warning: Inconsistent k-mer counts, check for overlapping sites: " << oldValue << " vs " << multi
+//									<< endl;
+//						}
+//						break;
+//					}
+//				} while (!__sync_bool_compare_and_swap(
+//						&m_matCounts[m_kmerToHash.size() * sampleIndex
+//								+ m_kmerToHash.at(*itr)], oldValue, multi));
+//			}
+//		}
+//	}
 
 	void printCountsMax(unsigned index, ostream &out = cout) const{
 		out << "\n#locusID\tcountAT\tcountCG\tsumAT\tsumCG\tdistinctAT\tdistinctCG\n";
