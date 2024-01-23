@@ -57,7 +57,7 @@ void printHelpDialog(){
 	"  -r, --error_rate = FLOAT   Error rate  threshold for PCA based search [" + to_string(opt::pcErrorThresh) + "]\n"
 	"  -1, --miss_small = FLOAT   Missing site threshold small for PCA based search [" + to_string(opt::pcMissSite1) + "]\n"
 	"  -2, --miss_large = FLOAT   Missing site threshold large PCA based search [" + to_string(opt::pcMissSite2) + "]\n"
-	"  -s, --small = FLOAT        Search radius for small PCA based search [" + to_string(opt::pcSearchRadius1) + "]\n"
+	"  -S, --small = FLOAT        Search radius for small PCA based search [" + to_string(opt::pcSearchRadius1) + "]\n"
 	"  -l, --large = FLOAT        Search radius for large PCA based search [" + to_string(opt::pcSearchRadius2) + "]\n"
 	"  -h, --help                 Display this dialog.\n"
 	"  -v, --verbose              Display verbose output.\n"
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 		NULL, 0, NULL, 0 } };
 
 	int option_index = 0;
-	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:o1:2:k:l:b:", long_options,
+	while ((c = getopt_long(argc, argv, "t:vhs:c:m:aw:g:p:n:d:r:e:o1:2:S:l:b:", long_options,
 			&option_index)) != -1)
 	{
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -226,10 +226,10 @@ int main(int argc, char *argv[])
 			}
 			break;
 		}
-		case 'k': {
+		case 'S': {
 			stringstream convert(optarg);
 			if (!(convert >> opt::pcSearchRadius1)) {
-				cerr << "Error - Invalid parameter k: "
+				cerr << "Error - Invalid parameter S: "
 						<< optarg << endl;
 				return 0;
 			}
