@@ -285,7 +285,6 @@ public:
 		if (opt::verbose > 1) {
 			cerr << "Generating kd-tree" << endl;
 		}
-		cout << m_header;
 		//build tree
 		//max leaf size can be changed (10-50 seems to be fast for queries)
 		kd_tree_t kdTree(opt::dim, m_cloud, { 10 });
@@ -309,6 +308,7 @@ public:
 		if (opt::verbose > 1) {
 			cerr << "Starting Score Computation with PCA" << endl;
 		}
+		cout << m_header;
 		if (opt::debug.empty()) {
 			string temp = "\n";
 			cout << temp;
@@ -731,7 +731,7 @@ private:
 	{
 	    template <class T1, class T2>
 	    std::size_t operator() (const std::pair<T1, T2> &pair) const {
-	        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+	        return std::hash<T1>()(pair.first) * std::hash<T2>()(pair.second);
 	    }
 	};
 
