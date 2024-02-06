@@ -71,6 +71,19 @@ n=0 #number of sub k-mers to allow
 
 If you do not wish to select your own sites, we currently include `data/human_sites_n10.fa` a fasta selected sites with 96287 sites adequate for sample swap detection for human samples in the `data` folder.
 
+##### Generating PCA from multiVCF file:
+
+Once fasta files for sites have been created, it is possible to create a PCA rotation matrix for speeding up the analysis. To do so you must supply a multiVCF file from which the PCA will be built from.
+
+Example:
+
+```{bash}
+ntsmVCF -p prefix -s sites.fa -r reference.fa multiVCF.vcf
+scripts/convertTSVtoPCA.py -p prefix -m prefix_matrix.tsv
+```
+
+Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA based heurstic.
+
 ##### Counting the k-mers:
 
 Using these set of k-mers we can then count all of these k-mers within a fastq file. Files may be gziped and multiple threads can be used.
