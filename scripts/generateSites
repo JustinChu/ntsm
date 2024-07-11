@@ -51,9 +51,23 @@ $(name)_reference.fa: $(ref)
 $(name)_snps.vcf: $(vcf)
 	ln -s $< $@
 
+#link index files if they aready exist
+ifneq ("$(wildcard $(ref).bwt)","")
+$(name)_reference.fa.ann: $(ref).ann
+	ln -s $< $@
+$(name)_reference.fa.amb: $(ref).amb
+	ln -s $< $@
+$(name)_reference.fa.bwt: $(ref).bwt
+	ln -s $< $@
+$(name)_reference.fa.pac: $(ref).pac
+	ln -s $< $@
+$(name)_reference.fa.sa: $(ref).sa
+	ln -s $< $@
+else
 #index reference file
 %.fa.ann %.fa.amb %.fa.bwt %.fa.pac %.fa.sa: %.fa
 	bwa index $<
+endif
 
 #create snp sub k-mer fasta files
 %_subKmers.fa: %_snps.vcf %_reference.fa
