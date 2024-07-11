@@ -52,7 +52,7 @@ while ($line) {
 			}
 		}
 		else {
-			print STDERR "unable to parses: " . $line . "\n";
+			print STDERR "unable to parse: " . $line . "\n";
 		}
 	}
 	$line = $fh->getline();
