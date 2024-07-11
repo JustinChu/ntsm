@@ -18,7 +18,7 @@ while ($line) {
 
 #rs4970383|0|AT	0	chr1	903160	20	19M	*	0	0	CCCATGACCCCATTTCACC	*	XT:A:U	NM:i:0	X0:i:1	X1:i:2	XM:i:0	XO:i:0	XG:i:0	MD:Z:19	XA:Z:chr20,+44466325,19M,1;chr15,+45228912,19M,1;
 		my @tmpAr = split( /\t/, $line );
-		if ( $tmpAr[0] =~ /(rs\d+)\|\d+\|(AT|CG)/ ) {
+		if ( $tmpAr[0] =~ /([^\|]+)\|\d+\|(AT|CG)/ ) {
 			my $id   = $1;
 			my $type = $2;
 			my $seq  = $tmpAr[9];
