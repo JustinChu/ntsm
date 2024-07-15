@@ -88,7 +88,7 @@ Again if you are working with human samples and do not wish to generate your own
 
 ##### Counting the k-mers:
 
-Using this set of k-mers we can then count all of these k-mers within a fastq file. Files may be gzipped and multiple threads can be used.
+Using this set of k-mers we can then count all of these k-mers within a fastq file. Files may be gzipped and multiple threads can be used. Each sample needs a separate run of this command and its own count files.
 
 Example:
 
