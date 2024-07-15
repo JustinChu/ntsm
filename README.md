@@ -56,10 +56,10 @@ Given a VCF file and a reference genome, you can produce fasta files with k-mers
 Example:
 
 ```bash
-scripts/generateSites name=prefix ref=reference.fa vcf=snps.vcf
+scripts/generateSites name=sites ref=reference.fa vcf=snps.vcf
 ```
 
-Creates a fasta file (used as sites for ntsm referred to as `sites.fa` below. All non C/G <-> A/T conversions are ignored.
+Creates a fasta file referred to as `sites.fa` below (but name can be changed by specific another `name`). All non C/G <-> A/T conversions are ignored.
 
 Parameters:
 
@@ -70,7 +70,7 @@ t=4 #threads for any subprocess or tools
 n=0 #number of sub k-mers to allow
 ```
 
-If you do not wish to select your own sites, we currently include `data/human_sites_n10.fa` a fasta-selected sites with 96287 sites adequate for sample swap detection for human samples in the `data` folder.
+If you do not wish to select your own sites, we currently include `data/human_sites_n10.fa` a fasta file with selected 96287 sites adequate for sample swap detection for human samples in the `data` folder.
 
 ##### Generating PCA from multiVCF file:
 
@@ -93,7 +93,7 @@ Using this set of k-mers we can then count all of these k-mers within a fastq fi
 Example:
 
 ```bash
-ntsmCount -t 2 -s sites.fa sample_part1.fq sample_part2.fq > counts.txt
+ntsmCount -t 2 -s  sample_part1.fq sample_part2.fq > counts.txt
 ```
 
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
