@@ -59,7 +59,7 @@ Example:
 scripts/generateSites name=prefix ref=reference.fa vcf=snps.vcf
 ```
 
-Creates a fasta file (used as sites for ntsm) and a VCF file (used for. All non C/G <-> A/T conversions are ignored.
+Creates a fasta file (used as sites for ntsm referred to as `sites.fa` below. All non C/G <-> A/T conversions are ignored.
 
 Parameters:
 
