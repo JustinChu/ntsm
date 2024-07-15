@@ -53,6 +53,8 @@ To install in a specified directory:
 
 Given a VCF file and a reference genome, you can produce fasta files with k-mers that one can use to create fingerprinting. We have provided a set of human data based on similar criteria found in SNP microarrays.
 
+The VCF file in this stage can be a single sample VCF, it just needs the variants.
+
 Example:
 
 ```bash
@@ -74,8 +76,7 @@ If you do not wish to select your own sites, we currently include `data/human_si
 
 ##### Generating PCA from multiVCF file:
 
-Once fasta files for sites have been created, it is possible to create a PCA rotation matrix for speeding up the analysis. To do so you must supply a multiVCF file from which the PCA will be built.
-We note that the use of a rotational matrix is optional.
+Once fasta files for sites have been created, it is possible to create a PCA rotation matrix for speeding up the analysis. To do so you must supply a multiVCF file from which the PCA will be built. This multi-sample VCF ideally should not contain the same samples as the VCF used in the sample swap detection process. It should be a set of reliable samples on which a PCA and rotational matrix would be based on. We note that the use of a rotational matrix is optional.
 
 Example:
 
@@ -84,7 +85,7 @@ ntsmVCF -p prefix -s sites.fa -r reference.fa multiVCF.vcf
 scripts/convertTSVtoPCA.py -p prefix -m prefix_matrix.tsv
 ```
 
-Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA-based heurstic.
+Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA-based heurstic. We based our PCA and rotation matrix on 3202 samples from the 1000 Genomes Project.
 
 ##### Counting the k-mers:
 
