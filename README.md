@@ -94,11 +94,12 @@ ntsmCount -t 2 -s sites.fa sample_part1.fq sample_part2.fq > counts.txt
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
 
 If your files are unsorted and have massive coverage, you may also intentionally run less reads using the `-m` parameter:
+
 ```bash
 ntsmCount -t 2 -m 10 -s sites.fa sample_part1.fq sample_part2.fq > counts.txt
 ```
 
-This will run the file until site coverage reaches 10x, which should be adequate to run ntsm for most sequencing data types. Lower coverage is possible if the read error rate is lower enough.
+This will run the file until the average site coverage reaches 10x, which should be adequate for most sequencing data types. Lower coverage is possible if the read error rate is low enough.
 
 Output Example:
 
