@@ -23,12 +23,6 @@ For generating site fasta files given a VCF file
 
 ## Installation
 
-If cloning directly from the repository make sure you get the required submodules:
-
-```bash
-git submodule update --init
-```
-
 If cloning directly from the repository run:
 
 ```bash
@@ -94,10 +88,17 @@ Using this set of k-mers we can then count all of these k-mers within a fastq fi
 Example:
 
 ```bash
-ntsmCount -t 2 -s  sample_part1.fq sample_part2.fq > counts.txt
+ntsmCount -t 2 -s sites.fa sample_part1.fq sample_part2.fq > counts.txt
 ```
 
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
+
+If your files are unsorted and have massive coverage, you may also intentionally run less reads using the `-m` parameter:
+```bash
+ntsmCount -t 2 -m 10 -s sites.fa sample_part1.fq sample_part2.fq > counts.txt
+```
+
+This will run the file until site coverage reaches 10x, which should be adequate to run ntsm for most sequencing data types. Lower coverage is possible if the read error rate is lower enough.
 
 Output Example:
 
