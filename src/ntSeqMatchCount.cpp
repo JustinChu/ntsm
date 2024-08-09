@@ -146,7 +146,12 @@ int main(int argc, char *argv[]) {
 
 	if (opt::k > 32) {
 		die = true;
-		cerr << "k cannot be greater than 32" << endl;
+		cerr << "Error: k cannot be greater than 32" << endl;
+	}
+
+	if (opt::snp.empty()) {
+		die = true;
+		cerr << "Error: Missing variants (-s) file" << endl;
 	}
 
 	vector<string> inputFiles;
@@ -158,7 +163,7 @@ int main(int argc, char *argv[]) {
 
 	//Check needed options
 	if (inputFiles.size() == 0) {
-		cerr << "Error: Need Input File" << endl;
+		cerr << "Error: Need input files" << endl;
 		die = true;
 	}
 
