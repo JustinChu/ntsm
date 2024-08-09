@@ -1,9 +1,9 @@
 # ntsm - Nucleotide Sequence/Sample Matcher
 ## Summary
 
-This tools counts the number of specific k-mers within sequence data. The counts can then be compare to other counts to determine to compute the probability that sample are of the same origin to discover incongruent samples or sample swaps.
+This tool counts the number of specific k-mers within sequence data. The counts can then be compared to other counts to determine and compute the probability that samples are of the same origin to discover incongruent samples or sample swaps.
 
-Intended to be run at before any analysis and can provide some additional QC information like sequencing error rate.
+It is intended to be run before any analysis and can provide additional QC information like sequencing error rate.
 
 Manuscript preprint: https://doi.org/10.1101/2023.11.01.565041
 
@@ -51,30 +51,32 @@ To install in a specified directory:
 
 ##### Generating k-mers from fasta file:
 
-Given a VCF file and a reference genome you can produce fasta files with k-mers that one can use to create a fingerprinting. We have provided a set for human data based on similar criterion found in SNP microarrays.
+Given a VCF file and a reference genome, you can produce fasta files with k-mers that one can use to create fingerprinting. We have provided a set of human data based on similar criteria found in SNP microarrays.
+
+The VCF file in this stage can be a single sample VCF, it just needs the variants.
 
 Example:
 
 ```bash
-scripts/generateSites name=prefix ref=reference.fa vcf=snps.vcf
+scripts/generateSites name=sites ref=reference.fa vcf=snps.vcf
 ```
 
-Creates a fasta files VCF file. All non C/G <-> A/T conversions are ignored.
+Creates a fasta file referred to as `sites.fa` below (but name can be changed by specific another `name`). All non C/G <-> A/T conversions are ignored.
 
 Parameters:
 
 ```
 w=31 #window size to consider sequences in this region
-k=19 #kmer size used in window region
+k=19 #kmer size used in the window region
 t=4 #threads for any subprocess or tools
 n=0 #number of sub k-mers to allow
 ```
 
-If you do not wish to select your own sites, we currently include `data/human_sites_n10.fa` a fasta selected sites with 96287 sites adequate for sample swap detection for human samples in the `data` folder.
+If you do not wish to select your own sites, we currently include `data/human_sites_n10.fa` a fasta file with selected 96287 sites adequate for sample swap detection for human samples in the `data` folder.
 
 ##### Generating PCA from multiVCF file:
 
-Once fasta files for sites have been created, it is possible to create a PCA rotation matrix for speeding up the analysis. To do so you must supply a multiVCF file from which the PCA will be built from.
+Once fasta files for sites have been created, it is possible to create a PCA rotation matrix for speeding up the analysis. To do so you must supply a multiVCF file from which the PCA will be built. This multi-sample VCF ideally should not contain the same samples as the VCF used in the sample swap detection process. It should be a set of reliable samples on which a PCA and rotational matrix would be based on. We note that the use of a rotational matrix is optional.
 
 Example:
 
@@ -83,21 +85,21 @@ ntsmVCF -p prefix -s sites.fa -r reference.fa multiVCF.vcf
 scripts/convertTSVtoPCA.py -p prefix -m prefix_matrix.tsv
 ```
 
-Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA based heurstic.
+Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA-based heurstic. We based our PCA and rotation matrix on 3202 samples from the 1000 Genomes Project.
 
 ##### Counting the k-mers:
 
-Using these set of k-mers we can then count all of these k-mers within a fastq file. Files may be gziped and multiple threads can be used.
+Using this set of k-mers we can then count all of these k-mers within a fastq file. Files may be gzipped and multiple threads can be used. Each sample needs a separate run of this command and its own count files.
 
 Example:
 
 ```bash
-ntsmCount -t 2 -s sites.fa sample_part1.fq sample_part2.fq > counts.txt
+ntsmCount -t 2 -s  sample_part1.fq sample_part2.fq > counts.txt
 ```
 
 Creates count file using 2 threads. A sliding window using 19-mers is used in this case and the highest count in the window is recorded.
 
-Outout Example:
+Output Example:
 
 ```
 #@TK	119443488624
@@ -141,17 +143,17 @@ HG002_rep2_counts.txt	HG004_counts.txt	1.74858	0	2.78644	0.4996	19	62488	0.72903
 ...
 ```
 
-Column explainations:
+Column explanations:
 * sampleX: Filename for sample X
-* score: Log-likelihood based score to determine in samples are the same or differ
-* same: 1 means the tool thinks the sample is the same and 0 is if the tools thinks they differ
+* score: Log-likelihood-based score to determine if samples are the same or differ
+* same: 1 means the tool thinks the sample is the same and 0 is if the tool thinks they differ
 * dist: Distance of sample in PCA space
 * relate: Relatedness determined via shared heterozygous sites
 * relate: Relatedness determined via shared heterozygous sites
 * ibs0: Number of sites with alleles not shared between two samples
 * ibs2: Number of sites with the same genotype between two samples
 * homConcord: Homozygous concordance determined via shared homozygous sites
-* hetX: Number of heterzygous sites for sample X for all sites considered in comparison
+* hetX: Number of heterozygous sites for sample X for all sites considered in comparison
 * sharedHets: Number of shared heterozygous sites
 * homX: Number of homozygous sites for sample X for all sites considered in comparison
 * sharedHom: Number of shared homozygous sites
@@ -168,5 +170,5 @@ sample	cov	errorRate	miss	hom	het	PC1	PC2	PC3	PC4	PC5	PC6	PC7	PC8	PC9	PC10	PC11	
 HG002_rep1_counts.txt	37.416162	0.003493	35	62532	33720	-14.254352	-23.285693	-0.373179	-7.315873	-1.187992	-5.494577	-0.434657	-0.334589	-0.832297	-1.160507	0.286102	-0.114464	1.013333	0.252766	-0.204102	0.465836	0.694361	0.099620	0.019345	-1.195279
 ```
 
-This provides generic QC information useful without other samples (e.g. error rate) and if inclined a means of plotting the sample relative to others on a PCA plot. Number of columns is variable dependant on the number of principle components used.
+This provides generic QC information useful without other samples (e.g. error rate) and if inclined a means of plotting the sample relative to others on a PCA plot. The number of columns is dependant on the number of principal components used.
 
