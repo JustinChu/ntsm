@@ -54,7 +54,7 @@ void printHelpDialog(){
 	"  -d, --dim = INT            Number of dimensions to consider in PCA. [" + to_string(opt::dim) + "]\n"
 	"  -n, --norm = STR           Set of values use to center the data before rotation\n"
 	"                             during PCA. [Required if -p is enabled]\n"
-	"  -r, --error_rate = FLOAT   Error rate  threshold for PCA based search [" + to_string(opt::pcErrorThresh) + "]\n"
+	"  -r, --error_rate = FLOAT   Error rate threshold for PCA based search [" + to_string(opt::pcErrorThresh) + "]\n"
 	"  -1, --miss_small = FLOAT   Missing site threshold small for PCA based search [" + to_string(opt::pcMissSite1) + "]\n"
 	"  -2, --miss_large = FLOAT   Missing site threshold large PCA based search [" + to_string(opt::pcMissSite2) + "]\n"
 	"  -S, --small = FLOAT        Search radius for small PCA based search [" + to_string(opt::pcSearchRadius1) + "]\n"
