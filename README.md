@@ -1,11 +1,8 @@
 # ntsm - Nucleotide Sequence/Sample Matcher
 ## Summary
+Publication: [https://doi.org/10.1101/2023.11.01.565041](https://academic.oup.com/gigascience/article/doi/10.1093/gigascience/giae024/7687245?login=false)
 
-This tool counts the number of specific k-mers within sequence data. The counts can then be compared to other counts to determine and compute the probability that samples are of the same origin to discover incongruent samples or sample swaps.
-
-It is intended to be run before any analysis and can provide additional QC information like sequencing error rate.
-
-Manuscript preprint: https://doi.org/10.1101/2023.11.01.565041
+This tool counts the number of specific k-mers within sequence data. The counts can then be compared to other counts to determine and compute the probability that samples are of the same origin to discover incongruent samples or sample swaps. It is intended to be run before any analysis and can provide additional QC information like sequencing error rate.
 
 ## Dependencies
 
