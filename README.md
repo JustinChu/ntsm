@@ -132,7 +132,7 @@ or if you wish optionally to speed up the analysis using a PCA rotation matrix:
 ntsmEval -a -t 16 -n data/human_sites_center.txt -p data/human_sites_rotationMat.tsv HG002_rep1_counts.txt HG002_rep2_counts.txt HG003_counts.txt HG004_counts.txt > summary.tsv
 ```
 
-Output Example (with -a option):
+Output Example (with `-a` option):
 ```
 sample1	sample2	score	same	dist	relate	ibs0	ibs2	homConcord	het1	het2	sharedHet	hom1	hom2	sharedHom	n	cov1	cov2	errorRate1	errorRate2	miss1	miss2	allHom1	allHom2	allHet1	allHet2
 HG002_rep1_counts.txt	HG002_rep2_counts.txt	0.07988	1	0.004839	0.996827	0	95971	0.998287	33720	33787	33613	62532	62465	62358	96252	37.416162	45.260554	0.003493	0.004301	35	35	62532	62465	33720	33787
@@ -143,7 +143,7 @@ HG002_rep2_counts.txt	HG003_counts.txt	1.760081	0	4.707002	0.499821	24	62521	0.7
 HG002_rep2_counts.txt	HG004_counts.txt	1.74858	0	2.78644	0.4996	19	62488	0.729034	33787	33783	16916	62458	62462	45572	96245	45.260554	44.068285	0.004301	0.004208	35	38	62465	62466	33787	33783
 ...
 ```
-Note that the `-a` parameter will not output all pairwise comparisons if the PCA heuristic is used and will only consider comparing samples within a certain distance in PCA space. Though related samples are more likely to exist closer in PCA space, if using ntsm for relatedness inference you may miss some related pairs if you use this heurstic.
+Note that the `-a` parameter will not output all pairwise comparisons if the PCA heuristic is used and will only consider comparing samples within a certain distance in PCA space. Though related samples are more likely to exist closer in PCA space, if using ntsm for relatedness inference you may miss some related pairs if you use this heuristic. You would not likely want to use `-a` with the PCA heuristic in most cases and the example above is for more illustrative purposes of the tool's use and output.
 
 Column explanations:
 * sampleX: Filename for sample X
