@@ -114,7 +114,7 @@ rs10888802	0	37	0	355	9	10
 ...
 ```
 
-Header lines (`#@`) help in error rate estimation.
+Header lines (`#@`) helps in error rate estimation.
 
 ##### Evaluating the samples:
 
@@ -141,6 +141,7 @@ HG002_rep2_counts.txt	HG003_counts.txt	1.760081	0	4.707002	0.499821	24	62521	0.7
 HG002_rep2_counts.txt	HG004_counts.txt	1.74858	0	2.78644	0.4996	19	62488	0.729034	33787	33783	16916	62458	62462	45572	96245	45.260554	44.068285	0.004301	0.004208	35	38	62465	62466	33787	33783
 ...
 ```
+Note that the `-a` parameter will not output all pairwise comparisons if the PCA heuristic is used and will only consider comparing samples within a certain distance in PCA space.
 
 Column explanations:
 * sampleX: Filename for sample X
