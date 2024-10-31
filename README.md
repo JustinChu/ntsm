@@ -4,6 +4,8 @@ Publication: [https://doi.org/10.1101/2023.11.01.565041](https://academic.oup.co
 
 This tool counts the number of specific k-mers within sequence data. The counts can then be compared to other counts to determine and compute the probability that samples are of the same origin to discover incongruent samples or sample swaps. It is intended to be run before any analysis and can provide additional QC information like sequencing error rate.
 
+By default, this tool will only return pairs of samples with the same origin. This tool can theoretically also be used for relatedness inference using the `-a` parameter, however in this case the PCA-based heuristic should not be used (see below).
+
 ## Dependencies
 
 General:
