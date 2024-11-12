@@ -35,7 +35,7 @@ public:
 	typedef uint16_t AlleleID;
 	typedef uint64_t HashedKmer;
 
-	FingerPrint() : m_totalCounts(0), m_maxCounts(0), m_totalBases(0), m_totalReads(0) {
+	FingerPrint() : m_totalCounts(0), m_totalKmers(0), m_maxCounts(0), m_totalBases(0), m_totalReads(0) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
