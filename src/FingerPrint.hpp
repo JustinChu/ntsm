@@ -450,6 +450,10 @@ public:
 //	}
 
 private:
+
+	typedef uint16_t AlleleID;
+	typedef uint64_t HashedKmer;
+
 	const static size_t s_bulkSize = 1024;
 	uint64_t m_totalCounts;
 	uint64_t m_totalKmers;
