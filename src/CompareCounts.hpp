@@ -26,9 +26,10 @@ using namespace std;
 
 class CompareCounts {
 public:
+
 	CompareCounts(const vector<string> &filenames) :
 			m_filenames(filenames), m_sumlogPSingle(
-					vector<double>(filenames.size())), m_rawTotalCounts(
+					vector<double>(filenames.size(), 0.0)), m_rawTotalCounts(
 					vector<uint64_t>(filenames.size(), 0)), m_kmerSize(
 					vector<unsigned>(filenames.size(), 0)), m_totalCounts(
 					vector<uint64_t>(filenames.size(), 0)) {
@@ -703,22 +704,25 @@ private:
 		double radius = 0;
 	};
 
-	const vector<string> &m_filenames;
 	typedef vector<vector<pair<unsigned, unsigned>>> PairedCount;
 	typedef std::vector<std::vector<double>> vector_of_vectors_t;
     typedef KDTreeVectorOfVectorsAdaptor<vector_of_vectors_t, double> kd_tree_t;
 
+    const vector<string> &m_filenames;
 	vector<double> m_sumlogPSingle;
-	PairedCount m_counts;
-	PairedCount m_sum;
-	vector<pair<unsigned, unsigned>> m_distinct;
 	vector<uint64_t> m_rawTotalCounts;
 	vector<unsigned> m_kmerSize;
 	vector<uint64_t> m_totalCounts;
 	vector<string> m_locusIDs;
+
+	vector<pair<unsigned, unsigned>> m_distinct;
 	tsl::robin_map<string,unsigned> m_locusIDToIndex;
-	vector_of_vectors_t m_cloud;
 	tsl::robin_map<string,unsigned> m_filenameToID;
+
+	PairedCount m_counts;
+	PairedCount m_sum;
+	vector_of_vectors_t m_cloud;
+
 	const string m_header =
 			"sample1\tsample2\tscore\tsame\tdist\trelate\tibs0\tibs2\thomConcord"
 					"\thet1\thet2\tsharedHet\thom1\thom2\tsharedHom\tn"

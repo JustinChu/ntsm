@@ -32,10 +32,9 @@ using namespace std;
 class FingerPrint {
 public:
 
-	typedef uint16_t AlleleID;
-	typedef uint64_t HashedKmer;
-
-	FingerPrint() : m_totalCounts(0), m_totalKmers(0), m_maxCounts(0), m_totalBases(0), m_totalReads(0) {
+	FingerPrint() :
+			m_totalCounts(0), m_totalKmers(0), m_maxCounts(0), m_totalBases(0), m_totalReads(
+					0), m_earlyTerm(false) {
 		//read in fasta files
 		//generate hash table
 		initCountsHash();
@@ -81,6 +80,9 @@ public:
 			}
 			kseq_destroy(seq);
 			gzclose(fp);
+		}
+		if(m_earlyTerm){
+			cerr << "Reached desired (-m) threshold" << endl;
 		}
 	}
 
@@ -452,13 +454,15 @@ private:
 	uint64_t m_totalCounts;
 	uint64_t m_totalKmers;
 	uint64_t m_maxCounts;
-	tsl::robin_map<uint64_t, size_t> m_counts; //k-mer to count
-	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef;
-	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar;
-	vector<string> m_alleleIDs;
 	uint64_t m_totalBases;
 	uint64_t m_totalReads; //for debugging purposes
 	bool m_earlyTerm;
+
+	vector<string> m_alleleIDs;
+	tsl::robin_map<uint64_t, size_t> m_counts; //k-mer to count
+	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef;
+	vector<shared_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar;
+
 //	unsigned m_maxSiteSize;
 //	static const unsigned interval = 65536;
 

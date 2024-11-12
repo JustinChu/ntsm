@@ -203,12 +203,13 @@ public:
 	}
 
 private:
+	const vector<string> &m_sampleIDs;
+
 	tsl::robin_map<HashedKmer, CountIndex> m_kmerToHash; //kmer->kmerPos
 	vector<uint8_t> m_matCounts; //kmerPos+index->counts[sampleIndex]
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerRef; //alleleID_ref->hashvalue
 	vector<unique_ptr<vector<HashedKmer>>> m_alleleIDToKmerVar; //alleleID_var->hashvalue
 	vector<string> m_alleleIDs;
-	const vector<string> &m_sampleIDs;
 
 	void initCountsHash(){
 		gzFile fp = gzopen(opt::snp.c_str(), "r");
