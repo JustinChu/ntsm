@@ -54,7 +54,7 @@ Example:
 scripts/generateSites name=sites ref=reference.fa vcf=snps.vcf
 ```
 
-Creates a fasta file referred to as `sites.fa` below (but name can be changed by specific another `name`). All non C/G <-> A/T conversions are ignored.
+Creates fasta files referred to as `sites_n{min missing sub k-mers}.fa` below (but name can be changed by specific another `name`). By default all non C/G <-> A/T conversions are ignored.
 
 Parameters:
 
@@ -62,8 +62,9 @@ Parameters:
 w=31 #window size to consider sequences in this region
 k=19 #kmer size used in the window region
 t=4 #threads for any subprocess or tools
-n=0 #number of sub k-mers to allow
 ```
+
+The sites fasta file generated is a set of k-mers for each site. `n` for each fasta file generated refers to the number of missing k-mers allowed after filtering out repetitive k-mers (e.g. `n=0` would mean you need each site to have all possible k-mers). The max value of `n` is `w - k` (so with default parameters 12). Small values of `n` will help you handle sequencing errors, but you need to have enough sites for our statistical analysis to work. In our testing retaining around ~10^5 sites seemed to work well, though if you end up with slightly less or a lot more ntsm should still function well.
 
 If you do not wish to select your own sites, we currently include `data/human_sites_n10.fa` a fasta file with selected 96287 sites adequate for sample swap detection for human samples in the `data` folder.
 

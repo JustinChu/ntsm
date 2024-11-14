@@ -5,12 +5,14 @@ use diagnostics;
 use IO::File;
 
 my $fh     = new IO::File( $ARGV[0], "r" );
-my $totalK = $ARGV[1];
+my $prefix = $ARGV[1];
 my $line   = $fh->getline();
 
 #id->type(AT,CG)->count
 my %idToUniqCount;
 my %idToStr;
+
+my $maxCount = 1;
 
 while ($line) {
 	chomp($line);
@@ -31,7 +33,9 @@ while ($line) {
 					$count += $1;
 				}
 				if ( $count > 1 ) {
-					$idToUniqCount{$id}{$type}++;
+					if ( $maxCount < ++$idToUniqCount{$id}{$type} ) {
+						$maxCount = $idToUniqCount{$id}{$type};
+					}
 				}
 				else {
 					if ( exists( $idToStr{$id}{$type} ) ) {
@@ -59,16 +63,26 @@ while ($line) {
 }
 $fh->close();
 
+my @fhs;
+
+for ( my $i = 0 ; $i < $maxCount ; ++$i ) {
+	push( @fhs, new IO::File( $prefix . "_n" . $i . ".fa", 'w' ) );
+}
+
 foreach my $id ( sort keys(%idToUniqCount) ) {
-	if ( $idToUniqCount{$id}{"AT"} <= $totalK &&
-		 $idToUniqCount{$id}{"CG"} <= $totalK )
-	{
-		if(exists($idToStr{$id}{"AT"}) && exists($idToStr{$id}{"CG"})){
-			print ">" . $id . " ref\n" . $idToStr{$id}{"AT"} . "\n";
-			print ">" . $id . " var\n" . $idToStr{$id}{"CG"} . "\n";	
-		}
-		else{
-			print STDERR $id . "\n";
+	for ( my $i = 0 ; $i < $maxCount ; ++$i ) {
+		if (   $idToUniqCount{$id}{"AT"} <= $i
+			&& $idToUniqCount{$id}{"CG"} <= $i )
+		{
+			if (   exists( $idToStr{$id}{"AT"} )
+				&& exists( $idToStr{$id}{"CG"} ) )
+			{
+				$fhs[$i]->write( ">" . $id . " ref\n" . $idToStr{$id}{"AT"} . "\n" );
+				$fhs[$i]->write( ">" . $id . " var\n" . $idToStr{$id}{"CG"} . "\n" );
+			}
+			else {
+				print STDERR $id . " " . $i . "\n";
+			}
 		}
 	}
 }

@@ -14,7 +14,6 @@ ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 w=31 #window size to consider sequences in this region
 k=19 #kmer size used in window region
 t=4 #threads for any subprocess or tools
-n=0 #number of sub k-mers to allow to be missing
 
 #------------------------------------------------------------
 # meta rules
@@ -26,7 +25,7 @@ n=0 #number of sub k-mers to allow to be missing
 
 default: generate-sites
 
-generate-sites: check-params $(name).fa
+generate-sites: check-params $(name)_n0.fa
 
 check-name-param:
 ifndef name
@@ -81,5 +80,5 @@ endif
 	bwa samse $(name)_reference.fa $< $(name)_subKmers.fa > $@
 
 #filter repetitive sub k-mers & create concatenated sub k-mer fasta files
-$(name).fa: $(name).sam
-	perl ~/git/ntsm/scripts/filterRepetiveSNP.pl <(samtools view $<) $(n) > $@
+$(name)_n0.fa: $(name).sam
+	perl ~/git/ntsm/scripts/filterRepetiveSNP.pl <(samtools view $<) $(name)
