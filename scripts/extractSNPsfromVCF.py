@@ -70,6 +70,8 @@ class ExtractKmers:
         # varFH = open(self._prefix + "_CG.fa", 'w')
         
         removeCount = 0
+        processCount = 0
+        atToCGFilterCount = 0
         #for each vcf entry extract wildtype and variant into a string
         for id in self._vcfEntries.keys():
             # print string to repective files
@@ -89,9 +91,10 @@ class ExtractKmers:
                 continue
             
             if(self._checkVariant(self._vcfEntries[id].wt, self._vcfEntries[id].variant)):
-                print("Warning: " + id +" " +self._vcfEntries[id].variant + " " + self._vcfEntries[id].wt 
-                      + " is not a purine <-> pyrimidine variant.", file=sys.stderr)
+                # print("Warning: " + id +" " +self._vcfEntries[id].variant + " " + self._vcfEntries[id].wt 
+                #       + " is not a A/T <-> C/G variant.", file=sys.stderr)
                 removeCount += 1
+                atToCGFilterCount += 1
                 if(self._ignore):
                     continue
             modStr = tmpStr[0:int(self._k / 2)] + self._vcfEntries[id].variant + tmpStr[int(self._k / 2) + 1:]
@@ -117,10 +120,12 @@ class ExtractKmers:
                         print(modStr[pos:pos + self._subKmer])
                         print(">" + id + "|" + str(pos) + "|CG")
                         print(tmpStr[pos:pos + self._subKmer])
+            processCount += 1
         # refFH.close()
         # varFH.close()
-        print("Removed " + str(removeCount) + " SNPs.", file=sys.stderr)
-        
+        print("Processed " + str(processCount) + " SNPs. Removed " + str(removeCount) + " SNPs.", file=sys.stderr)
+        if atToCGFilterCount > 0:
+            print("Filtered " + str(atToCGFilterCount) + " SNPs that did not have A/T to C/G variants", file=sys.stderr)
         
 def main():
     parser = argparse.ArgumentParser(description='Extract k-mers listed from VCF file from reference. Produces 2 files (reference and variant)')
