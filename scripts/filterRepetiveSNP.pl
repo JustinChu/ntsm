@@ -37,7 +37,7 @@ while ($line) {
 			if ( $line =~ /.*X1:i:(\d+)/ ) {
 				$count += $1;
 			}
-			if ( $count > 1 ) {
+			if ( $count == 1 ) {
 				if ( exists( $idToStr{$id}{$type} ) ) {
 #					if ( $currPos{$type} - $pos == 1 ) {
 #						$idToStr{$id}{$type} .= substr( $seq, -1 );
