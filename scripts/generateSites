@@ -81,4 +81,4 @@ endif
 
 #filter repetitive sub k-mers & create concatenated sub k-mer fasta files
 $(name)_n0.fa: $(name).sam
-	perl ~/git/ntsm/scripts/filterRepetiveSNP.pl <(samtools view $<) $(name)
+	perl ~/git/ntsm/scripts/filterRepetiveSNP.pl <(samtools view $<) $(name) $(w) $(k)
