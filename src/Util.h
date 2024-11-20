@@ -19,7 +19,7 @@ namespace Util {
 /*
  * checks if file exists
  */
-static bool fexists(const string &filename) {
+static inline bool fexists(const string &filename) {
 	ifstream ifile(filename.c_str());
 	bool good = ifile.good();
 	ifile.close();
@@ -29,7 +29,7 @@ static bool fexists(const string &filename) {
 /*
  * Get resident set size of memory
  */
-static size_t getRSS(){ //Note: this value is in KB!
+static inline size_t getRSS(){ //Note: this value is in KB!
     FILE* file = fopen("/proc/self/status", "r");
     int result = -1;
     char line[128];
