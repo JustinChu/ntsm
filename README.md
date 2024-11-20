@@ -51,7 +51,7 @@ The VCF file in this stage can be a single sample VCF, it just needs the variant
 Example:
 
 ```bash
-scripts/generateSites name=sites ref=reference.fa vcf=snps.vcf
+ntsmGenSites name=sites ref=reference.fa vcf=snps.vcf
 ```
 
 Creates fasta files referred to as `sites_n{min missing sub k-mers}.fa` below (but name can be changed by specific another `name`). By default all non C/G <-> A/T conversions are ignored.
