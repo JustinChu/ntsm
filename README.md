@@ -76,7 +76,7 @@ Example:
 
 ```{bash}
 ntsmVCF -p prefix -s sites.fa -r reference.fa multiVCF.vcf
-scripts/convertTSVtoPCA.py -p prefix -m prefix_matrix.tsv
+ntsm-scripts/convertTSVtoPCA.py -p prefix -m prefix_matrix.tsv
 ```
 
 Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA-based heurstic. We based our PCA and rotation matrix on 3202 samples from the 1000 Genomes Project.
