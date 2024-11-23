@@ -78,7 +78,7 @@ Example (can be run in same directory as `ntsmSiteGen generate-sites` after pick
 ntsmSiteGen generate-pca-rot-mat name=prefix ref=reference.fa multivcf=/mnt/1886F90E86F8ED5EmultiVCF.vcf sites=prefix_n10.fa
 ```
 
-Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA-based heurstic. We based our PCA and rotation matrix on 3202 samples from the 1000 Genomes Project.
+Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationalMatrix.tsv` and `human_sites_center.txt` to use in our PCA-based heurstic. We based our PCA and rotation matrix on 3202 samples from the 1000 Genomes Project.
 
 ##### Counting the k-mers:
 
@@ -129,7 +129,7 @@ ntsmEval HG002_rep1_counts.txt HG002_rep2_counts.txt HG003_counts.txt HG004_coun
 or if you wish optionally to speed up the analysis using a PCA rotation matrix:
 
 ```bash
-ntsmEval -a -t 16 -n data/human_sites_center.txt -p data/human_sites_rotationMat.tsv HG002_rep1_counts.txt HG002_rep2_counts.txt HG003_counts.txt HG004_counts.txt > summary.tsv
+ntsmEval -a -t 16 -n data/human_sites_center.txt -p data/human_sites_rotationalMatrix.tsv HG002_rep1_counts.txt HG002_rep2_counts.txt HG003_counts.txt HG004_counts.txt > summary.tsv
 ```
 
 Output Example (with `-a` option):
