@@ -51,10 +51,10 @@ The VCF file in this stage can be a single sample VCF, it just needs the variant
 Example:
 
 ```bash
-ntsmSiteGen name=sites ref=reference.fa vcf=snps.vcf
+ntsmSiteGen generate-sites name=prefix ref=reference.fa vcf=snps.vcf
 ```
 
-Creates fasta files referred to as `sites_n{min missing sub k-mers}.fa` below (but name can be changed by specific another `name`). By default all non C/G <-> A/T conversions are ignored.
+Creates site fasta files referred to as `prefix_n{min missing sub k-mers}.fa` which is the set of k-mers used by the tool. By default all non C/G <-> A/T conversions are ignored.
 
 Parameters:
 
@@ -72,11 +72,10 @@ If you do not wish to select your own sites, we currently include `data/human_si
 
 Once fasta files for sites have been created, it is possible to create a PCA rotation matrix for speeding up the analysis. To do so you must supply a multiVCF file from which the PCA will be built. This multi-sample VCF ideally should not contain the same samples as the VCF used in the sample swap detection process. It should be a set of reliable samples on which a PCA and rotational matrix would be based on. We note that the use of a rotational matrix is optional.
 
-Example:
+Example (can be run in same directory as `ntsmSiteGen generate-sites` after picking a sites file to use:
 
 ```{bash}
-ntsmVCF -p prefix -s sites.fa -r reference.fa multiVCF.vcf
-ntsm-scripts/convertTSVtoPCA.py -p prefix -m prefix_matrix.tsv
+ntsmSiteGen generate-pca-rot-mat name=prefix ref=reference.fa multivcf=/mnt/1886F90E86F8ED5EmultiVCF.vcf sites=prefix_n10.fa
 ```
 
 Again if you are working with human samples and do not wish to generate your own, we currently include `data/human_sites_rotationMat.tsv` and `human_sites_center.txt` to use in our PCA-based heurstic. We based our PCA and rotation matrix on 3202 samples from the 1000 Genomes Project.

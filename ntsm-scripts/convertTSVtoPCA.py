@@ -29,7 +29,7 @@ def main():
     parser = argparse.ArgumentParser(description='Computes a PCA on various matrix produced by tools like ntsmVCF. Produces a rotational matrix for n components.')
     parser.add_argument("-m", '--matrix', type=str, dest='matrix', 
                         help='input matrix', required=True)
-    parser.add_argument("-n", '--numComp', type=str, dest='numComp', 
+    parser.add_argument("-n", '--numComp', type=int, dest='numComp', 
                         help='Number of comp', required=False, default = 20)
     parser.add_argument("-p", '--prefix', type=str, dest='prefix', 
                         help='Output prefix', default = "")

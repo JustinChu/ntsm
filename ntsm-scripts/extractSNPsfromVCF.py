@@ -12,11 +12,10 @@ class VCFEntry:
         self.variant = variant
 
 class ExtractKmers:
-    def __init__(self, vcf, fasta, k, prefix, ignore, subKmer):
+    def __init__(self, vcf, fasta, k, ignore, subKmer):
         self._vcf = vcf
         self._fasta = fasta
         self._k = k
-        self._prefix = prefix
         self._ignore = ignore
         self._subKmer = subKmer
         self._vcfEntries = {}
@@ -190,12 +189,11 @@ def main():
     parser.add_argument("-v", '--vcf', type=str, dest='vcf', help='vcf File')
     parser.add_argument("-f", '--fa', type=str, dest='fasta', help='fasta file with fai index')
     parser.add_argument("-k", '--kmer', type=int, dest='kmer', help='kmer size', default=31)
-    parser.add_argument("-p", '--prefix', type=str, dest='prefix', help='output prefix', default = "")
     parser.add_argument("-i", '--ignoreReq', action='store_false', dest='ignore', help='ignore AT to CG conversion requirements', default = True)
     parser.add_argument("-s", '--subKmer', type=int, dest='subKmer', help='Sub kmer size, only needed for kmer overlap integrity purposes', default=19)
 
     args = parser.parse_args()
-    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.prefix, args.ignore, args.subKmer)
+    extractor = ExtractKmers(args.vcf, args.fasta, args.kmer, args.ignore, args.subKmer)
     extractor.extract()
     
 main()
