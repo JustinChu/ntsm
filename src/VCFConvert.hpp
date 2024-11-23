@@ -39,7 +39,7 @@ using namespace std;
 
 class VCFConvert {
 public:
-	VCFConvert() {
+	VCFConvert(): m_counts(MultiCount(m_sampleIDs)) {
 		//load in reference
 		if(opt::verbose > 1){
 			cerr << "Loading Reference " << opt::ref << endl;
@@ -95,8 +95,6 @@ public:
 		if(opt::verbose > 1){
 			cerr << "Starting multicount of each rsID for " << m_sampleIDs.size() << " samples." << endl;
 		}
-
-		MultiCount counts(m_sampleIDs);
 
 		enum Genotype {hom1, het, hom2};
 
@@ -154,9 +152,9 @@ public:
 						opt::k); itr != itr.end(); ++itr) {
 					for (unsigned i = 0; i < sampleIndex; ++i) {
 						if (genotypes[i] == hom1) {
-							counts.insertCount(i, *itr, opt::multi * 2);
+							m_counts.insertCount(i, *itr, opt::multi * 2);
 						} else if (genotypes[i] == het) {
-							counts.insertCount(i, *itr, opt::multi);
+							m_counts.insertCount(i, *itr, opt::multi);
 						}
 					}
 				}
@@ -164,38 +162,37 @@ public:
 						seqs.second.size(), opt::k); itr != itr.end(); ++itr) {
 					for (unsigned i = 0; i < sampleIndex; ++i) {
 						if (genotypes[i] == hom2) {
-							counts.insertCount(i, *itr, opt::multi * 2);
+							m_counts.insertCount(i, *itr, opt::multi * 2);
 						} else if (genotypes[i] == het) {
-							counts.insertCount(i, *itr, opt::multi);
+							m_counts.insertCount(i, *itr, opt::multi);
 						}
 					}
 				}
 			}
 		}
 		fh.close();
+	}
 
-		if(opt::verbose > 1){
-			cerr << "Outputting counts" << endl;
-		}
-
+	void outputCounts() {
 #pragma omp parallel for
-		for(unsigned i = 0; i < m_sampleIDs.size(); ++i){
-			if(opt::verbose > 1){
+		for (unsigned i = 0; i < m_sampleIDs.size(); ++i) {
+			if (opt::verbose > 1) {
 #pragma omp critical(cerr)
 				cerr << "Outputting counts for " << m_sampleIDs.at(i) << endl;
 			}
 			ofstream out(m_sampleIDs.at(i) + ".counts.txt");
-			counts.printCountsMax(i, out);
+			m_counts.printCountsMax(i, out);
 			out.close();
 		}
-		if (!opt::pca.empty()) {
-			if(opt::verbose > 1){
-				cerr << "Outputting matrix and normalization values for PCA" << endl;
-			}
-			ofstream out(opt::pca + "_matrix.tsv");
-			ofstream centerFile(opt::pca + "_center.txt");
-			counts.printNormMatrix(out, centerFile);
+	}
+
+	void outputMatrix(const string &prefix){
+		if(opt::verbose > 1){
+			cerr << "Outputting matrix and normalization values for PCA" << endl;
 		}
+		ofstream out(prefix + "_matrix.tsv");
+		ofstream centerFile(prefix + "_center.txt");
+		m_counts.printNormMatrix(out, centerFile);
 	}
 
 	~VCFConvert() {
@@ -205,6 +202,7 @@ private:
 	vector<kseq_t> m_ref;
 	vector<string> m_sampleIDs;
 	tsl::robin_map<string,unsigned> m_chrIDs;
+	MultiCount m_counts;
 
 	pair<string,string> getSeqFromSite(string chr, size_t pos, char var){
 		unsigned chrIndex = m_chrIDs.at(chr);

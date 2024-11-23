@@ -31,6 +31,7 @@ void printHelpDialog() {
 	const string dialog =
 			"Usage: " PROGRAM " -s [FASTA] -r [FASTA] [VCF]\n"
 			"Converts a multi vcf file to a set of counts files.\n"
+			"Alternatively, you may also create a matrix to be used for PCA.\n"
 			"  -t, --threads = INT    Number of threads to run.[1]\n"
 			"  -d, --dupes            Allow shared k-mers between sites to\n"
 			"                         be counted.\n"
@@ -57,6 +58,7 @@ int main(int argc, char *argv[]) {
 	//control variables
 	bool die = false;
 	int OPT_VERSION = 0;
+	string pca;
 
 	//long form arguments
 	static struct option long_options[] = {
@@ -97,7 +99,7 @@ int main(int argc, char *argv[]) {
 		}
 		case 'p': {
 			stringstream convert(optarg);
-			if (!(convert >> opt::pca)) {
+			if (!(convert >> pca)) {
 				cerr << "Error - Invalid parameter p: " << optarg << endl;
 				return 0;
 			}
@@ -196,6 +198,17 @@ int main(int argc, char *argv[]) {
 	VCFConvert convert;
 	assert(inputFiles.size() == 1);
 	convert.count(inputFiles[0]);
+	if (pca.empty()) {
+		if (opt::verbose > 1) {
+			cerr << "Outputting counts" << endl;
+		}
+	} else {
+		if (opt::verbose > 1) {
+			cerr << "Outputting matrix and normalization values for PCA"
+					<< endl;
+		}
+		convert.outputMatrix(pca);
+	}
 
 	cerr << "Time: " << omp_get_wtime() - time << " s Memory: " << Util::getRSS()
 			<< " kbytes" << endl;
