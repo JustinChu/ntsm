@@ -5,7 +5,7 @@ AC_PREREQ(2.59)
 AC_INIT(ntsm, 1.2.0, cjustin@ds.dfci.harvard.edu)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 #see http://stackoverflow.com/questions/8215785/how-can-i-use-ac-revision-with-git
 AC_REVISION([m4_esyscmd([./tools/configure.commit])])
