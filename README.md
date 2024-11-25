@@ -22,6 +22,12 @@ For generating site fasta files given a VCF file
 
 ## Installation
 
+ntsm can be installed with [conda](https://github.com/conda/conda) using the command:
+```bash
+conda install bioconda::ntsm
+```
+
+
 If cloning directly from the repository run:
 
 ```bash
